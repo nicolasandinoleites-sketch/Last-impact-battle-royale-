@@ -20,6 +20,9 @@ var sun: DirectionalLight3D
 var message := "Campo de entrenamiento"
 
 func _ready() -> void:
+	var config := ConfigFile.new()
+	if config.load("user://lastimpact.cfg") == OK:
+		profile = clampi(int(config.get_value("graphics","profile",0)),0,2)
 	build_arena()
 	apply_profile()
 	player = PlayerScript.new()
@@ -42,6 +45,8 @@ func mat(hex: String) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = Color(hex)
 	m.roughness = 1.0
+	if OS.has_feature("android"):
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	return m
 
 func block(pos: Vector3, size: Vector3, material: Material) -> void:
@@ -164,10 +169,14 @@ func reset_round() -> void:
 
 func apply_profile() -> void:
 	Engine.max_fps = [30,45,60][profile]
-	get_viewport().scaling_3d_scale = [0.65,0.82,1.0][profile]
-	sun.shadow_enabled = profile == 2
+	get_viewport().scaling_3d_scale = 1.0 if OS.has_feature("android") else [0.65,0.82,1.0][profile]
+	sun.shadow_enabled = profile == 2 and not OS.has_feature("android")
 
 func next_profile() -> void:
 	profile = (profile+1)%3
 	apply_profile()
-	message = ["Bajo · 65% · 30 FPS","Medio · 82% · 45 FPS","Alto · 100% · 60 FPS"][profile]
+	message = ["Bajo seguro · 30 FPS","Medio · 45 FPS","Alto · 60 FPS"][profile]
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		get_tree().change_scene_to_file("res://lobby.tscn")

@@ -26,7 +26,7 @@ func unit() -> float:
 	return clampf(size.y/540.0,0.7,1.4)
 
 func buttons() -> Dictionary:
-	return {"FIRE":at(0.91,0.59),"AIM":at(0.79,0.48),"JUMP":at(0.92,0.80),"SLIDE":at(0.80,0.82),"LOAD":at(0.68,0.82),"RUN":at(0.24,0.58),"SIDE":at(0.66,0.49),"FPS":at(0.92,0.10),"RESET":at(0.77,0.10)}
+	return {"FIRE":at(0.91,0.59),"AIM":at(0.79,0.48),"JUMP":at(0.92,0.80),"SLIDE":at(0.80,0.82),"LOAD":at(0.68,0.82),"RUN":at(0.24,0.58),"SIDE":at(0.66,0.49),"FPS":at(0.92,0.10),"RESET":at(0.77,0.10),"LOBBY":at(0.65,0.10)}
 
 func radius(name: String) -> float:
 	return (42.0 if name == "FIRE" else 30.0)*unit()
@@ -44,7 +44,7 @@ func _draw() -> void:
 	var u := unit()
 	var font := int(15*u)
 	draw_rect(Rect2(at(0.025,0.025),Vector2(245,85)*u),DARK)
-	label_at(at(0.025,0.025)+Vector2(12,22)*u,"LAST IMPACT / R02",int(19*u),ACCENT)
+	label_at(at(0.025,0.025)+Vector2(12,22)*u,"LAST IMPACT / R03",int(19*u),ACCENT)
 	label_at(at(0.025,0.025)+Vector2(12,44)*u,"FPS %d   ·   MEM %.0f MB" % [Engine.get_frames_per_second(),Performance.get_monitor(Performance.MEMORY_STATIC)/1048576.0],font)
 	label_at(at(0.025,0.025)+Vector2(12,66)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
 	centered(at(0.5,0.07),game.message,int(17*u))
@@ -56,7 +56,7 @@ func _draw() -> void:
 	draw_circle(joystick,58*u,Color(0.04,0.07,0.09,0.38))
 	draw_arc(joystick,58*u,0,TAU,40,Color(1,1,1,0.55),2*u,true)
 	draw_circle(joystick+knob,25*u,Color(0.88,0.92,0.93,0.58))
-	var names := {"FIRE":"FUEGO","AIM":"MIRA","JUMP":"SALTO","SLIDE":"SLIDE","LOAD":"REC.","RUN":"CORRER","SIDE":"LADO","FPS":"CALIDAD","RESET":"RESET"}
+	var names := {"FIRE":"FUEGO","AIM":"MIRA","JUMP":"SALTO","SLIDE":"SLIDE","LOAD":"REC.","RUN":"CORRER","SIDE":"LADO","FPS":"CALIDAD","RESET":"RESET","LOBBY":"LOBBY"}
 	for name in buttons():
 		var p: Vector2 = buttons()[name]
 		var r := radius(name)
@@ -90,6 +90,7 @@ func press_button(name: String, index: int) -> void:
 		"LOAD": game.start_reload()
 		"RESET": game.reset_round()
 		"FPS": game.next_profile()
+		"LOBBY": get_tree().change_scene_to_file("res://lobby.tscn")
 
 func set_move(pos: Vector2) -> void:
 	knob = (pos-move_center).limit_length(58*unit())
@@ -155,6 +156,7 @@ func _input(event: InputEvent) -> void:
 				KEY_E: game.player.aiming = not game.player.aiming
 				KEY_F1: game.next_profile()
 				KEY_F2: game.reset_round()
+				KEY_ESCAPE: get_tree().change_scene_to_file("res://lobby.tscn")
 	elif event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:

@@ -1,8 +1,12 @@
 ; Engine configuration file.
 config_version=5
 [application]
-config/name="Last Impact R02"
-run/main_scene="res://main.tscn"
+config/name="Last Impact R03"
+run/main_scene="res://lobby.tscn"
+config/quit_on_go_back=false
+boot_splash/bg_color=Color(0.07, 0.11, 0.15, 1)
+boot_splash/show_image=true
+boot_splash/image="res://icon.svg"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 [display]
@@ -18,7 +22,9 @@ renderer/rendering_method.mobile="gl_compatibility"
 textures/default_filters/use_nearest_mipmap_filter=false
 anti_aliasing/quality/msaa_3d=0
 scaling_3d/mode=0
-scaling_3d/scale=0.65
+scaling_3d/scale=1.0
+scaling_3d/scale.android=1.0
+environment/defaults/default_clear_color=Color(0.07, 0.11, 0.15, 1)
 [input_devices]
 pointing/emulate_mouse_from_touch=false
 pointing/emulate_touch_from_mouse=false

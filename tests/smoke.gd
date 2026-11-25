@@ -16,6 +16,24 @@ func check(ok: bool, label: String) -> bool:
 	return true
 
 func run() -> void:
+	var lobby = load("res://lobby.tscn").instantiate()
+	root.add_child(lobby)
+	await frames(5)
+	if not check(lobby.mode == "home" and lobby.size.x > 0, "lobby startup"):
+		return
+	lobby.mode = "settings"
+	lobby.choose_profile(0)
+	if not check(lobby.quality == 0, "safe graphics settings"):
+		return
+	root.remove_child(lobby)
+	lobby.free()
+	var diagnostic = load("res://diagnostic.tscn").instantiate()
+	root.add_child(diagnostic)
+	await frames(5)
+	if not check(is_instance_valid(diagnostic.cube) and root.get_camera_3d() != null, "diagnostic scene"):
+		return
+	root.remove_child(diagnostic)
+	diagnostic.free()
 	var scene = load("res://main.tscn").instantiate()
 	root.add_child(scene)
 	await frames(30)
@@ -53,5 +71,5 @@ func run() -> void:
 	scene.reset_round()
 	if not check(scene.eliminated==0 and scene.ammo==30 and scene.targets[0].active, "reset"):
 		return
-	print("LAST IMPACT R02 SMOKE PASS")
+	print("LAST IMPACT R03 SMOKE PASS")
 	quit(0)
