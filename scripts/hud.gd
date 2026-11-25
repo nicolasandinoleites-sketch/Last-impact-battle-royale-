@@ -118,7 +118,7 @@ func _input(event: InputEvent) -> void:
 	if game == null:
 		return
 	if event is InputEventScreenTouch:
-		var id := event.index
+		var id: int = event.index
 		if event.pressed:
 			var name := button_at(event.position)
 			if not name.is_empty():

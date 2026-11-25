@@ -65,12 +65,12 @@ jobs:
         run: |
           set -euo pipefail
           Godot_v4.6-stable_linux.x86_64 --headless --path . --editor --import 2>&1 | tee /tmp/import.log
-          ! grep -E 'Parse Error|SCRIPT ERROR|Failed to load script' /tmp/import.log
+          if grep -E 'Parse Error|SCRIPT ERROR|Failed to load script' /tmp/import.log; then exit 1; fi
           Godot_v4.6-stable_linux.x86_64 --headless --path . --quit-after 90 2>&1 | tee /tmp/smoke.log
-          ! grep -E 'SCRIPT ERROR|Parse Error|Invalid (call|access)' /tmp/smoke.log
+          if grep -E 'SCRIPT ERROR|Parse Error|Invalid (call|access)' /tmp/smoke.log; then exit 1; fi
           timeout 90s Godot_v4.6-stable_linux.x86_64 --headless --path . --script res://tests/smoke.gd 2>&1 | tee /tmp/tests.log
           grep -F 'LAST IMPACT R02 SMOKE PASS' /tmp/tests.log
-          ! grep -E 'SCRIPT ERROR|Parse Error|TEST FAILED' /tmp/tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|TEST FAILED' /tmp/tests.log; then exit 1; fi
       - name: Export debug APK
         run: |
           set -euo pipefail
