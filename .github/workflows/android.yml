@@ -33,11 +33,18 @@ jobs:
         with:
           path: ~/.android/debug.keystore
           key: last-impact-debug-signing-v1
+      - name: Install Android command-line tools
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.1'
       - name: Configure SDK and debug signing
         shell: bash
         run: |
           set -euo pipefail
-          sdkmanager --sdk_root="$ANDROID_HOME" 'platform-tools' 'platforms;android-35' 'build-tools;35.0.1'
+          export ANDROID_HOME="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/.android/sdk}}"
+          test -x "$ANDROID_HOME/platform-tools/adb"
+          test -x "$ANDROID_HOME/build-tools/35.0.1/apksigner"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
           mkdir -p "$HOME/.android" "$HOME/.config/godot"
           if [ ! -f "$HOME/.android/debug.keystore" ]; then
             keytool -genkeypair -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -dname 'CN=Android Debug,O=Android,C=US' -keyalg RSA -keysize 2048 -validity 10000
