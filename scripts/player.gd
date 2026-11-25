@@ -23,6 +23,9 @@ var slide_cooldown := 0.0
 var jump_buffer := 0.0
 var ground_grace := 0.0
 var combat_facing := false
+const Raze = preload("res://scripts/raze.gd")
+var raze: Node3D
+var model_loaded := false
 const STANDING_HEIGHT := 1.8
 const LOW_HEIGHT := 1.0
 
@@ -56,6 +59,14 @@ func _ready() -> void:
 		visual.add_child(leg)
 		part(leg, Vector3(0,-0.34,0), Vector3(0.25,0.68,0.27), suit)
 		part(leg, Vector3(0,-0.72,-0.06), Vector3(0.27,0.18,0.39), armor)
+	raze = Raze.new()
+	var placeholder := visual.get_children()
+	visual.add_child(raze)
+	model_loaded = raze.load_model()
+	if model_loaded:
+		for child in placeholder:
+			if child is Node3D:
+				child.hide()
 	pivot = Node3D.new()
 	pivot.position = Vector3(0,1.52,0)
 	add_child(pivot)
@@ -178,7 +189,10 @@ func _physics_process(delta: float) -> void:
 	var stride := sin(phase)*0.45 if direction.length()>0.12 and is_on_floor() else 0.0
 	left_leg.rotation.x = stride
 	right_leg.rotation.x = -stride
-	visual.scale.y = lerpf(visual.scale.y,0.55 if low_stance else 1.0,minf(1.0,delta*12.0))
+	if model_loaded:
+		raze.locomotion(phase,clampf(direction.length(),0.0,1.0),is_on_floor(),low_stance,aiming or combat_facing)
+	else:
+		visual.scale.y = lerpf(visual.scale.y,0.55 if low_stance else 1.0,minf(1.0,delta*12.0))
 	if position.y < -8.0:
 		position = Vector3(0,0.1,12)
 		reset_movement()

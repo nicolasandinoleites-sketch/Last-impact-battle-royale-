@@ -21,7 +21,7 @@ func _ready() -> void:
 	if config.load("user://lastimpact.cfg") == OK:
 		quality = clampi(int(config.get_value("graphics","profile",0)),0,2)
 	info = "%s | %s" % [RenderingServer.get_video_adapter_name(),RenderingServer.get_video_adapter_api_version()]
-	print("LAST IMPACT R03 LOBBY READY | ",info)
+	print("LAST IMPACT R04 LOBBY READY | ",info)
 	queue_redraw()
 
 func _process(delta: float) -> void:
@@ -70,8 +70,8 @@ func operator_art() -> void:
 	]
 	for p in parts:
 		draw_rect(rect(p[0],p[1],p[2],p[3]),p[4])
-	text_at(421,439,"OPERADOR 01",17)
-	text_at(405,459,"Modelo provisional",13,MUTED)
+	text_at(421,439,"RAZE / OPERADOR 01",17)
+	text_at(405,459,"Vista previa 3D en OPERADOR",13,MUTED)
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO,size),BG)
@@ -79,7 +79,7 @@ func _draw() -> void:
 		draw_line(point(i*150-300,540),point(i*150+250,0),Color(0.25,0.36,0.43,0.14),1.0)
 	draw_texture_rect(LOGO,rect(24,18,58,58),false)
 	text_at(96,47,"LAST IMPACT",31)
-	text_at(98,69,"R03 / ALPHA TECNICA",13,MUTED)
+	text_at(98,69,"R04 / ALPHA TECNICA",13,MUTED)
 	text_at(768,40,"OFFLINE",15,GOLD)
 	text_at(768,64,"%d FPS" % Engine.get_frames_per_second(),15,MUTED)
 	draw_line(point(24,88),point(936,88),EDGE,1.0)
@@ -152,7 +152,7 @@ func activate(pos: Vector2) -> void:
 		elif rect(24,341,248,54).has_point(pos):
 			mode = "settings"
 		elif rect(24,211,248,54).has_point(pos):
-			mode = "operator"
+			launch("res://operator.tscn")
 		elif rect(24,276,248,54).has_point(pos):
 			status = "Armamento disponible en una futura revision."
 	else:

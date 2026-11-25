@@ -39,6 +39,10 @@ func run() -> void:
 	await frames(30)
 	if not check(scene.targets.size() == 6 and scene.player.is_on_floor(), "spawn and targets"):
 		return
+	if not check(scene.player.model_loaded and scene.player.raze.skeleton.get_bone_count() >= 70, "RAZE imported rig"):
+		return
+	if not check(scene.player.raze.animator != null and scene.player.raze.animator.get_animation_list().size() > 0, "RAZE animation library"):
+		return
 	var origin: Vector3 = scene.player.position
 	scene.mobile_move = Vector2(0,-1)
 	await frames(20)
@@ -71,5 +75,5 @@ func run() -> void:
 	scene.reset_round()
 	if not check(scene.eliminated==0 and scene.ammo==30 and scene.targets[0].active, "reset"):
 		return
-	print("LAST IMPACT R03 SMOKE PASS")
+	print("LAST IMPACT R04 SMOKE PASS")
 	quit(0)
