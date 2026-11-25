@@ -2,7 +2,7 @@ name: Last Impact Android debug
 on:
   workflow_dispatch:
   push:
-    branches: [r04-character]
+    branches: [r05-animation]
 permissions:
   contents: read
 jobs:
@@ -71,29 +71,29 @@ jobs:
           Godot_v4.6-stable_linux.x86_64 --headless --path . --quit-after 90 2>&1 | tee /tmp/smoke.log
           if grep -E 'SCRIPT ERROR|Parse Error|Invalid (call|access)' /tmp/smoke.log; then exit 1; fi
           timeout 90s Godot_v4.6-stable_linux.x86_64 --headless --path . --script res://tests/smoke.gd 2>&1 | tee /tmp/tests.log
-          grep -F 'LAST IMPACT R04 SMOKE PASS' /tmp/tests.log
+          grep -F 'LAST IMPACT R05 SMOKE PASS' /tmp/tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|TEST FAILED' /tmp/tests.log; then exit 1; fi
       - name: Export debug APK
         run: |
           set -euo pipefail
           mkdir -p build
-          Godot_v4.6-stable_linux.x86_64 --headless --verbose --path . --export-debug Android build/LastImpact_R04.apk 2>&1 | tee /tmp/export.log
-          test -s build/LastImpact_R04.apk
-          "$ANDROID_HOME/build-tools/35.0.1/apksigner" verify --verbose build/LastImpact_R04.apk
-          "$ANDROID_HOME/build-tools/35.0.1/aapt" dump badging build/LastImpact_R04.apk | head -n 20 || true
-          sha256sum build/LastImpact_R04.apk > build/SHA256SUMS.txt
+          Godot_v4.6-stable_linux.x86_64 --headless --verbose --path . --export-debug Android build/LastImpact_R05.apk 2>&1 | tee /tmp/export.log
+          test -s build/LastImpact_R05.apk
+          "$ANDROID_HOME/build-tools/35.0.1/apksigner" verify --verbose build/LastImpact_R05.apk
+          "$ANDROID_HOME/build-tools/35.0.1/aapt" dump badging build/LastImpact_R05.apk | head -n 20 || true
+          sha256sum build/LastImpact_R05.apk > build/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: LastImpact_R04_Android
+          name: LastImpact_R05_Android
           path: |
-            build/LastImpact_R04.apk
+            build/LastImpact_R05.apk
             build/SHA256SUMS.txt
           if-no-files-found: error
       - name: Upload diagnostic logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: LastImpact_R04_Diagnostico
+          name: LastImpact_R05_Diagnostico
           path: |
             /tmp/import.log
             /tmp/smoke.log

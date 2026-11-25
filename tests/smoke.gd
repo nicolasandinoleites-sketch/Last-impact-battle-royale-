@@ -43,6 +43,37 @@ func run() -> void:
 		return
 	if not check(scene.player.raze.animator != null and scene.player.raze.animator.get_animation_list().size() > 0, "RAZE animation library"):
 		return
+	var actor = scene.player.raze
+	if not check(actor.joints.size()==14 and actor.right_socket.bone_name=="R_Hand" and actor.left_socket.bone_name=="L_Hand", "locomotion joint map and sockets"):
+		return
+	var leg_id: int = actor.skeleton.find_bone("L_Thigh")
+	var initial: Quaternion = actor.skeleton.get_bone_pose_rotation(leg_id)
+	for i in range(12):
+		actor.locomotion(1.0/60.0,3.8,true,false,false)
+	if not check(actor.motion_state=="WALK" and absf(actor.skeleton.get_bone_pose_rotation(leg_id).dot(initial))<0.99999, "walk changes actual bone pose"):
+		return
+	actor.locomotion(0.1,6.2,true,false,false,true)
+	if not check(actor.motion_state=="SPRINT", "sprint animation state"):
+		return
+	actor.locomotion(0.1,3.0,false,false,false,false,4.0)
+	if not check(actor.motion_state=="JUMP", "jump animation state"):
+		return
+	actor.locomotion(0.1,3.0,false,false,false,false,-4.0)
+	if not check(actor.motion_state=="FALL", "fall animation state"):
+		return
+	actor.locomotion(0.016,3.0,true,false,false)
+	if not check(actor.motion_state=="LAND", "landing animation state"):
+		return
+	actor.locomotion(0.1,5.0,true,true,false)
+	if not check(actor.motion_state=="SLIDE", "slide animation state"):
+		return
+	actor.locomotion(0.3,0.0,true,false,true)
+	if not check(actor.motion_state=="AIM", "aim animation state"):
+		return
+	if not check(actor.dance() and actor.preview_dance, "original dance plays"):
+		return
+	if not check(actor.dance() and not actor.preview_dance, "dance returns to rest"):
+		return
 	var origin: Vector3 = scene.player.position
 	scene.mobile_move = Vector2(0,-1)
 	await frames(20)
@@ -75,5 +106,5 @@ func run() -> void:
 	scene.reset_round()
 	if not check(scene.eliminated==0 and scene.ammo==30 and scene.targets[0].active, "reset"):
 		return
-	print("LAST IMPACT R04 SMOKE PASS")
+	print("LAST IMPACT R05 SMOKE PASS")
 	quit(0)

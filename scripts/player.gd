@@ -190,7 +190,7 @@ func _physics_process(delta: float) -> void:
 	left_leg.rotation.x = stride
 	right_leg.rotation.x = -stride
 	if model_loaded:
-		raze.locomotion(phase,clampf(direction.length(),0.0,1.0),is_on_floor(),low_stance,aiming or combat_facing)
+		raze.locomotion(delta,Vector2(velocity.x,velocity.z).length(),is_on_floor(),low_stance,aiming or combat_facing,sprint,velocity.y)
 	else:
 		visual.scale.y = lerpf(visual.scale.y,0.55 if low_stance else 1.0,minf(1.0,delta*12.0))
 	if position.y < -8.0:

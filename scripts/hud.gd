@@ -44,9 +44,11 @@ func _draw() -> void:
 	var u := unit()
 	var font := int(15*u)
 	draw_rect(Rect2(at(0.025,0.025),Vector2(245,85)*u),DARK)
-	label_at(at(0.025,0.025)+Vector2(12,22)*u,"LAST IMPACT / R04",int(19*u),ACCENT)
+	label_at(at(0.025,0.025)+Vector2(12,22)*u,"LAST IMPACT / R05",int(19*u),ACCENT)
 	label_at(at(0.025,0.025)+Vector2(12,44)*u,"FPS %d   ·   MEM %.0f MB" % [Engine.get_frames_per_second(),Performance.get_monitor(Performance.MEMORY_STATIC)/1048576.0],font)
 	label_at(at(0.025,0.025)+Vector2(12,66)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
+	if game.player.model_loaded:
+		label_at(at(0.025,0.025)+Vector2(12,100)*u,"ANIM: "+game.player.raze.motion_state,font)
 	centered(at(0.5,0.07),game.message,int(17*u))
 	var center := size*0.5
 	var c := ACCENT if game.hit_left>0.0 else WHITE

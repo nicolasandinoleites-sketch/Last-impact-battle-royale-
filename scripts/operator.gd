@@ -17,9 +17,10 @@ func _ready() -> void:
 	world.environment = env
 	add_child(world)
 	var camera := Camera3D.new()
-	camera.position = Vector3(0,1.05,-3.5)
+	camera.position = Vector3(0,1.05,-2.65)
 	add_child(camera)
 	camera.look_at(Vector3(0,0.9,0))
+	camera.fov = 43.0
 	camera.current = true
 	actor = Raze.new()
 	add_child(actor)
@@ -36,18 +37,20 @@ func _ready() -> void:
 	ui.add_child(caption)
 	var hint := Label.new()
 	hint.position = Vector2(22,90)
-	hint.text = "Toca la mitad izquierda para bailar.\nMitad derecha: volver al lobby."
+	hint.text = "Toca la mitad izquierda: baile / reposo.\nMitad derecha: volver al lobby."
 	ui.add_child(hint)
 
 func _process(delta: float) -> void:
 	if loaded:
-		actor.rotate_y(delta*0.4)
+		actor.rotate_y(delta*0.30)
+		if not actor.preview_dance:
+			actor.locomotion(delta,0.0,true,false,false)
 
 func _input(event: InputEvent) -> void:
 	if (event is InputEventScreenTouch and event.pressed) or (event is InputEventMouseButton and event.pressed):
 		if event.position.x < get_viewport().get_visible_rect().size.x*0.5 and loaded:
 			if actor.dance():
-				caption.text = "RAZE / Animacion original Tripo"
+				caption.text = "RAZE / Animacion original Tripo" if actor.preview_dance else "RAZE / Reposo"
 			else:
 				caption.text = "RAZE / Animacion no disponible"
 		else:
