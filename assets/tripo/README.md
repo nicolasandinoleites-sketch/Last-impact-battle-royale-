@@ -1,0 +1,2 @@
+# Importación futura de Tripo AI
+Esta revisión usa geometría provisional. Colocar los GLB originales aquí. El próximo paso es crear una escena visual independiente del CharacterBody3D, con esqueleto humanoide, animaciones y LOD. No cambiar las colisiones al sustituir los modelos visuales. Para R02 se recomienda empezar con un personaje de 5–8 mil triángulos, un material y textura de 512–1024 px, como presupuesto sujeto a medición.
