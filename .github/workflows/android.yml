@@ -75,7 +75,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build
-          Godot_v4.6-stable_linux.x86_64 --headless --path . --export-debug Android build/LastImpact_R02.apk
+          Godot_v4.6-stable_linux.x86_64 --headless --verbose --path . --export-debug Android build/LastImpact_R02.apk 2>&1 | tee /tmp/export.log
           test -s build/LastImpact_R02.apk
           "$ANDROID_HOME/build-tools/35.0.1/apksigner" verify --verbose build/LastImpact_R02.apk
           "$ANDROID_HOME/build-tools/35.0.1/aapt" dump badging build/LastImpact_R02.apk | head -n 20 || true
@@ -96,4 +96,5 @@ jobs:
             /tmp/import.log
             /tmp/smoke.log
             /tmp/tests.log
+            /tmp/export.log
           if-no-files-found: ignore
