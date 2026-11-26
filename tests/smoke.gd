@@ -277,6 +277,32 @@ func run() -> void:
 	await frames(5)
 	if not check(survival.survival_mode and survival.targets.size()==6 and survival.zone.radius>30.0 and survival.round_result=="", "survival scene starts"):
 		return
+	if not check(survival.pickups.size()==9 and survival.inventory.medkits==0, "survival loot startup"):
+		return
+	var supply = survival.pickups[0]
+	survival.player.position = Vector3(0,0.1,24)
+	if not check(not survival.collect_nearby() and supply.active, "pickup distance gate"):
+		return
+	survival.player.position = supply.position+Vector3.UP*0.1
+	if not check(survival.collect_nearby() and survival.inventory.medkits==1 and not supply.active, "collect medical supply"):
+		return
+	if not check(not survival.collect_nearby() and not survival.use_medkit(), "no duplicate loot or full health waste"):
+		return
+	survival.health = 70
+	if not check(survival.use_medkit() and survival.health==100 and survival.inventory.medkits==0, "consume medkit with health cap"):
+		return
+	survival.inventory.add_item("SHIELD",1)
+	survival.armor = 90
+	if not check(survival.use_shield_cell() and survival.armor==100 and survival.inventory.shield_cells==0, "shield cap and consumption"):
+		return
+	var energy = survival.pickups[2]
+	survival.player.position = energy.position+Vector3.UP*0.1
+	survival.reserve = 175
+	if not check(survival.collect_nearby() and survival.reserve==180 and energy.quantity==35 and energy.active, "partial pickup respects reserve cap"):
+		return
+	survival.reset_round()
+	if not check(supply.active and energy.quantity==40 and survival.inventory.medkits==0 and survival.reserve==120, "loot reset"):
+		return
 	var drone_start: Vector3 = survival.targets[0].position
 	await frames(24)
 	if not check(survival.targets[0].position.distance_to(drone_start)>0.1, "arcade drone moves"):
@@ -307,5 +333,5 @@ func run() -> void:
 	survival.update_survival(0.0)
 	if not check(survival.round_result=="VICTORIA", "survival victory"):
 		return
-	print("LAST IMPACT R070 SMOKE PASS")
+	print("LAST IMPACT R071 SMOKE PASS")
 	quit(0)
