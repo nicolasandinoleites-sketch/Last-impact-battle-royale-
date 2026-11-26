@@ -15,6 +15,8 @@ var left_goal: Marker3D
 var aim_pitch := 0.0
 var pose_initialized := false
 var sprint_pose := 0.0
+var carry_sway := Vector3.ZERO
+var carry_roll := 0.0
 var right_error := 0.0
 var left_error := 0.0
 var energy_cell: Node3D
@@ -81,13 +83,28 @@ func update_pose(delta: float, aiming: bool, reload: float, low: bool = false, p
 	var lower := -0.48 if low else 0.0
 	if is_instance_valid(actor):
 		lower = actor.model.position.y if low else actor.model.position.y*0.55
-	var desired := body_origin + frame * Vector3(0.065,1.33+lower,-0.19+kick)
+	# Sway only during free locomotion; ADS, shots and reload use the stable pose.
+	var free_carry := is_instance_valid(actor) and not aiming and reload<=0.0 and not low and actor.clip_motion.available and actor.clip_motion.weight>0.05
+	var sway_target := Vector3.ZERO
+	var roll_target := 0.0
+	if free_carry:
+		var angle: float = actor.clip_motion.phase*TAU
+		var amount: float = actor.clip_motion.weight*clampf(actor.speed_blend,0.0,1.0)
+		sway_target = Vector3(sin(angle)*0.018,cos(angle*2.0)*0.015,sin(angle+PI*0.25)*0.012)*amount
+		roll_target = sin(angle)*0.035*amount
+	if aiming or reload>0.0 or low:
+		carry_sway = Vector3.ZERO
+		carry_roll = 0.0
+	else:
+		carry_sway = carry_sway.lerp(sway_target,1.0-exp(-delta*16.0))
+		carry_roll = lerpf(carry_roll,roll_target,1.0-exp(-delta*16.0))
+	var desired := body_origin + frame * (Vector3(0.065,1.33+lower,-0.19+kick)+carry_sway)
 	var tilt := sin(reload*PI) if reload>0.0 else 0.0
 	aim_pitch = lerpf(aim_pitch,clampf(pitch,-0.48,0.40) if aiming else -0.18,1.0-exp(-delta*16.0))
 	var sprint_target := 1.0 if is_instance_valid(actor) and actor.motion_state=="SPRINT" and not aiming and reload<=0.0 else 0.0
 	sprint_pose = lerpf(sprint_pose,sprint_target,1.0-exp(-delta*10.0))
 	var sprint_tilt := -0.24*sprint_pose
-	var local_basis := Basis.from_euler(Vector3(aim_pitch-tilt*0.15+sprint_tilt,0.0,tilt*0.50))
+	var local_basis := Basis.from_euler(Vector3(aim_pitch-tilt*0.15+sprint_tilt,0.0,tilt*0.50+carry_roll))
 	global_transform = Transform3D(frame*local_basis,desired)
 	flash.position = Vector3(0,0.045,-0.34)
 	if is_instance_valid(actor):
@@ -122,6 +139,8 @@ func clear_effects() -> void:
 	reload_phase = 0.0
 	aim_pitch = 0.0
 	sprint_pose = 0.0
+	carry_sway = Vector3.ZERO
+	carry_roll = 0.0
 	pose_initialized = false
 	right_error = 0.0
 	left_error = 0.0
