@@ -128,8 +128,7 @@ func _physics_process(delta: float) -> void:
 		visual.rotation.y = lerp_angle(visual.rotation.y,atan2(-difference.x,-difference.z),1.0-exp(-delta*7.0))
 	# Render-only guard. Keep active state, hitbox, navigation and contact damage.
 	var camera: Camera3D = game.player.camera
-	lens_hidden = CameraGuard.overlaps_lens(camera.global_position,global_position,lens_hidden)
-	visual.visible = not lens_hidden
+	update_lens_guard(camera.global_position)
 	# Use several conservative samples so a tall actor at the frustum edge is not
 	# treated as fully offscreen. Near actors retain the normal update rate.
 	var on_screen := camera.is_position_in_frustum(global_position+Vector3.UP*0.25) or camera.is_position_in_frustum(global_position+Vector3.UP*0.9) or camera.is_position_in_frustum(global_position+Vector3.UP*1.75)
@@ -151,6 +150,10 @@ func _physics_process(delta: float) -> void:
 		if get_world_3d().direct_space_state.intersect_ray(ray).is_empty():
 			contact_left = 1.5
 			game.damage_player(8)
+
+func update_lens_guard(camera_position: Vector3) -> void:
+	lens_hidden = CameraGuard.overlaps_lens(camera_position,global_position,lens_hidden)
+	visual.visible = not lens_hidden
 
 func take_hit(damage: int) -> void:
 	if not active:
