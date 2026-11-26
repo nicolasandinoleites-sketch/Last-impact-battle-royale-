@@ -106,7 +106,8 @@ line=open(sys.argv[1]).read().splitlines()[-1]
 d=json.loads(line.split("LAST IMPACT TELEMETRY ",1)[1])
 assert d["frames"]>0 and d["duration_ms"]>=10000 and d["mean_fps"]>0
 assert 0<d["median_ms"]<=d["p95_ms"]<=d["p99_ms"]
-assert d["one_percent_low_fps"]>0 and d["build"]=="0.7.6.2"
+assert d["one_percent_low_fps"]>0 and d["build"]=="0.7.6.3"
+assert isinstance(d["gait_calibrated"],bool)
 assert d["locomotion_clips"] is True
 assert d["static_blocks"]==49 and d["static_groups"]==19
 print("QA-03 TELEMETRY VALIDATED")
