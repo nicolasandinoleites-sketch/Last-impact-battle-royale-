@@ -177,6 +177,23 @@ func run() -> void:
 	for tick in range(30):
 		await physics_frame
 	await capture("17_survival_start")
+	var overview := Camera3D.new()
+	survival.add_child(overview)
+	overview.position = Vector3(0,102,0)
+	overview.rotation_degrees.x = -90.0
+	overview.projection = Camera3D.PROJECTION_ORTHOGONAL
+	overview.size = 140.0
+	overview.current = true
+	survival.hud.hide()
+	await capture("24_frontier_overview")
+	overview.projection = Camera3D.PROJECTION_PERSPECTIVE
+	overview.position = Vector3(-38,1.8,-28)
+	overview.look_at(Vector3(-38,1.5,-37))
+	await capture("25_frontier_interior")
+	overview.current = false
+	survival.player.camera.current = true
+	survival.hud.show()
+	overview.queue_free()
 	var rival = survival.targets[2]
 	var rival_camera := Camera3D.new()
 	survival.add_child(rival_camera)
