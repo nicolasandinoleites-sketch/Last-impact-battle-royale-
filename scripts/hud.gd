@@ -70,6 +70,11 @@ func _draw() -> void:
 	draw_rect(Rect2(ammo_pos-Vector2(85,20)*u,Vector2(170,48)*u),DARK)
 	centered(ammo_pos, "%02d / %03d" % [game.ammo,game.reserve],int(24*u))
 	centered(ammo_pos+Vector2(0,20)*u,"IGNIS X1",int(10*u),ACCENT)
+	if game.reload_left>0.0:
+		var progress := 1.0-clampf(float(game.reload_left)/1.4,0.0,1.0)
+		var track := Rect2(ammo_pos+Vector2(-72,-27)*u,Vector2(144,4)*u)
+		draw_rect(track,DARK)
+		draw_rect(Rect2(track.position,Vector2(track.size.x*progress,track.size.y)),ACCENT)
 	var bar := Rect2(at(0.45,0.81),Vector2(160,6)*u)
 	draw_rect(bar,DARK)
 	draw_rect(Rect2(bar.position,Vector2(bar.size.x*game.health/100.0,bar.size.y)),Color("68d9a4"))

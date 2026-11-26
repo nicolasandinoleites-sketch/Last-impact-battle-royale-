@@ -31,7 +31,9 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if is_instance_valid(preview):
-		preview.render_target_update_mode = SubViewport.UPDATE_ALWAYS if mode=="home" and not launching else SubViewport.UPDATE_DISABLED
+		preview.active_preview = mode=="home" and not launching
+		if not preview.active_preview:
+			preview.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	refresh_left -= delta
 	if refresh_left <= 0.0:
 		refresh_left = 0.25

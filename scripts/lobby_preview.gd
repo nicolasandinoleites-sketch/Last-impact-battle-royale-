@@ -4,12 +4,14 @@ const Ignis = preload("res://scripts/ignis.gd")
 var actor: Node3D
 var weapon: Node3D
 var loaded := false
+var tick_accumulator := 0.0
+var active_preview := true
 
 func _ready() -> void:
 	size = Vector2i(360,390)
 	own_world_3d = true
 	transparent_bg = true
-	render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	render_target_update_mode = SubViewport.UPDATE_ONCE
 	var env := WorldEnvironment.new()
 	env.environment = Environment.new()
 	env.environment.background_mode = Environment.BG_COLOR
@@ -35,7 +37,15 @@ func _ready() -> void:
 		actor.armed = loaded
 
 func _process(delta: float) -> void:
+	if not active_preview:
+		return
+	tick_accumulator += delta
+	if tick_accumulator < 1.0/15.0:
+		return
+	var step := minf(tick_accumulator,0.15)
+	tick_accumulator = 0.0
+	render_target_update_mode = SubViewport.UPDATE_ONCE
 	if loaded:
 		actor.rotation.y = 0.68 + sin(Time.get_ticks_msec()*0.0006)*0.12
-		actor.locomotion(delta,0.0,true,false,false)
-		weapon.update_pose(delta,false,0.0)
+		actor.locomotion(step,0.0,true,false,false)
+		weapon.update_pose(step,false,0.0)

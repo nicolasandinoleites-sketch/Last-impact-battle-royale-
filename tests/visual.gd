@@ -68,5 +68,22 @@ func run() -> void:
 	inspection.fov = 42.0
 	await wait_frames(20)
 	await capture("07_weapon_isolated")
+	scene.player.visual.show()
+	inspection.position = body+Vector3(-1.45,1.47,-0.8)
+	inspection.look_at(body+Vector3(0,1.30,-0.18))
+	inspection.fov = 39.0
+	scene.ammo = 12
+	scene.reserve = 50
+	scene.start_reload()
+	# Fixed physics checkpoints keep the capture independent of software-renderer FPS.
+	for i in range(30):
+		await physics_frame
+	await capture("08_reload_exchange")
+	for i in range(24):
+		await physics_frame
+	await capture("09_reload_insert")
+	for i in range(48):
+		await physics_frame
+	await capture("10_reload_complete")
 	print("VISUAL CAPTURE COMPLETE")
 	quit(0)

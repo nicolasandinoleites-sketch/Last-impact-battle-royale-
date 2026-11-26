@@ -51,6 +51,18 @@ func run() -> void:
 	scene.player.weapon.clear_effects()
 	if not check(not scene.player.weapon.flash.visible, "IGNIS effect reset"):
 		return
+	var weapon = scene.player.weapon
+	if not check(is_instance_valid(weapon.energy_cell) and weapon.cell_stage=="DOCKED", "separate fictional energy module"):
+		return
+	weapon.update_reload_cell(0.60)
+	if not check(weapon.cell_stage=="EXCHANGE" and weapon.energy_cell.position.distance_to(weapon.cell_dock)>0.04, "reload module travels"):
+		return
+	weapon.update_reload_cell(0.30)
+	if not check(weapon.cell_stage=="INSERT", "reload module return phase"):
+		return
+	weapon.clear_effects()
+	if not check(weapon.cell_stage=="DOCKED" and weapon.energy_cell.position.is_equal_approx(weapon.cell_dock), "reload module reset"):
+		return
 	var actor = scene.player.raze
 	scene.player.weapon.update_pose(0.1,true,0.0)
 	if not check(is_instance_valid(scene.player.weapon.right_goal) and is_instance_valid(scene.player.weapon.left_goal), "dual wrist targets"):

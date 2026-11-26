@@ -16,6 +16,11 @@ var aim_pitch := 0.0
 var pose_initialized := false
 var right_error := 0.0
 var left_error := 0.0
+var energy_cell: Node3D
+var cell_stage := "DOCKED"
+var cell_dock := Vector3(-0.055,-0.035,0.015)
+var cell_path := Vector3.ZERO
+var reload_progress := 0.0
 func equip(hand: Node3D, body_visual: Node3D) -> bool:
 	anchor = hand
 	facing = body_visual
@@ -44,6 +49,7 @@ func equip(hand: Node3D, body_visual: Node3D) -> bool:
 				if OS.has_feature("android"):
 					mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 				mesh.set_surface_override_material(i,mat)
+	build_energy_cell()
 	flash = MeshInstance3D.new()
 	var shape := SphereMesh.new()
 	shape.radius = 0.045
@@ -68,6 +74,7 @@ func update_pose(delta: float, aiming: bool, reload: float, low: bool = false, p
 	flash_left = maxf(0.0,flash_left-delta)
 	flash.visible = flash_left > 0.0
 	reload_phase = reload
+	update_reload_cell(reload)
 	var frame := facing.global_transform.basis.orthonormalized()
 	var body_origin := facing.global_position
 	var lower := -0.29 if low else 0.0
@@ -80,7 +87,9 @@ func update_pose(delta: float, aiming: bool, reload: float, low: bool = false, p
 	if is_instance_valid(actor):
 		var support := left_goal.global_position
 		if reload>0.0:
-			support += frame*Vector3(-0.045,-0.10*tilt,0.09*tilt)
+			var cell_goal := to_global(cell_path+Vector3(-0.025,-0.025,0.0))
+			var influence := smoothstep(0.0,0.16,reload_progress)*(1.0-smoothstep(0.83,1.0,reload_progress))
+			support = support.lerp(cell_goal,influence)
 		# Shift the shared cosmetic pose minimally toward reachable wrist targets.
 		for pass_index in range(2):
 			var correction: Vector3 = actor.arm_reach_correction("L",support)
@@ -104,5 +113,53 @@ func clear_effects() -> void:
 	kick = 0.0
 	flash_left = 0.0
 	reload_phase = 0.0
+	update_reload_cell(0.0)
 	if is_instance_valid(flash):
 		flash.hide()
+
+# Purely fictional visual energy module, distinct from the fused source mesh.
+func cell_piece(pos: Vector3,dimensions: Vector3,color: Color) -> void:
+	var part := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = dimensions
+	part.mesh = box
+	part.position = pos
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = color
+	part.material_override = mat
+	energy_cell.add_child(part)
+
+func build_energy_cell() -> void:
+	energy_cell = Node3D.new()
+	energy_cell.name = "IgnisVisualEnergyCell"
+	add_child(energy_cell)
+	cell_piece(Vector3.ZERO,Vector3(0.038,0.060,0.080),Color("28343b"))
+	cell_piece(Vector3(-0.021,0,0),Vector3(0.006,0.036,0.060),Color("ff9b43"))
+	cell_piece(Vector3(0,0.030,0),Vector3(0.040,0.007,0.083),Color("727d83"))
+	cell_piece(Vector3(0,-0.030,0),Vector3(0.040,0.007,0.083),Color("727d83"))
+	update_reload_cell(0.0)
+
+func update_reload_cell(remaining: float) -> void:
+	if not is_instance_valid(energy_cell):
+		return
+	reload_progress = 1.0-clampf(remaining,0.0,1.0) if remaining>0.0 else 0.0
+	var p := reload_progress
+	var out := cell_dock+Vector3(-0.052,-0.055,0.06)
+	var exchange := cell_dock+Vector3(-0.065,-0.095,0.14)
+	cell_stage = "DOCKED"
+	cell_path = cell_dock
+	if remaining>0.0:
+		if p<0.22:
+			cell_stage = "REMOVE"
+			cell_path = cell_dock.lerp(out,smoothstep(0.0,0.22,p))
+		elif p<0.52:
+			cell_stage = "EXCHANGE"
+			cell_path = out.lerp(exchange,smoothstep(0.22,0.52,p))
+		elif p<0.84:
+			cell_stage = "INSERT"
+			cell_path = exchange.lerp(cell_dock,smoothstep(0.52,0.84,p))
+		else:
+			cell_stage = "LOCK"
+	energy_cell.position = cell_path
+	energy_cell.rotation.z = -0.22*sin(p*PI) if remaining>0.0 else 0.0
