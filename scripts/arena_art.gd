@@ -75,6 +75,16 @@ func decorate(_arena: Node3D) -> void:
 			lines.append(piece(Vector3(x,0.017,z),Vector3(0.09,0.016,1.45)))
 	for x in range(-30,31,6):
 		lines.append(piece(Vector3(x,0.017,28),Vector3(2.3,0.016,0.09)))
+	# Distant industrial skyline outside the playable boundary, no new collisions.
+	for x in range(-36,37,12):
+		steel.append(piece(Vector3(x,3.2,-43),Vector3(8,6.4,3)))
+		trim.append(piece(Vector3(x,6.35,-43),Vector3(8.1,0.16,3.1)))
+		for dx in [-2.5,0.0,2.5]:
+			pale.append(piece(Vector3(x+dx,4.5,-41.48),Vector3(1.2,0.65,0.045)))
+	for z in range(-30,31,12):
+		for x in [-43,43]:
+			steel.append(piece(Vector3(x,2.8,z),Vector3(3,5.6,7)))
+			pale.append(piece(Vector3(x-signf(x)*1.52,3.6,z),Vector3(0.045,0.55,3.0)))
 	batch("34434c",steel)
 	batch("d78b41",trim)
 	batch("b4b7a6",lines)

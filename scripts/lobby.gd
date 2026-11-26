@@ -31,7 +31,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if is_instance_valid(preview):
-		preview.active_preview = mode=="home" and not launching
+		preview.active_preview = (mode=="home" or mode=="loadout") and not launching
 		if not preview.active_preview:
 			preview.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	refresh_left -= delta
@@ -62,11 +62,12 @@ func action(area: Rect2,caption: String,highlight: bool = false,disabled: bool =
 	draw_string(font,area.get_center()+Vector2(-width/2.0,px*0.34),caption,HORIZONTAL_ALIGNMENT_LEFT,-1,px,BG if highlight else (MUTED if disabled else WHITE))
 
 func operator_art() -> void:
-	draw_circle(point(480,264),size.y*0.26,Color("233641"))
-	draw_arc(point(480,264),size.y*0.26,0,TAU,48,EDGE,2.0,true)
-	draw_line(point(320,416),point(640,416),EDGE,2.0)
+	draw_stage()
 	if is_instance_valid(preview) and preview.loaded:
-		draw_texture_rect(preview.get_texture(),rect(300,102,360,330),false)
+		var area := rect(292,94,376,350)
+		var ratio := minf(area.size.x/float(preview.size.x),area.size.y/float(preview.size.y))
+		var dimensions := Vector2(preview.size)*ratio
+		draw_texture_rect(preview.get_texture(),Rect2(area.get_center()-dimensions*0.5,dimensions),false)
 		text_at(385,450,"RAZE / IGNIS X1",19,GOLD)
 		text_at(390,474,"OPERADOR DE ASALTO",13,MUTED)
 		return
@@ -102,7 +103,7 @@ func _draw() -> void:
 		text_at(40,143,"RECLUTA",23)
 		text_at(40,173,"Nivel 01  |  Perfil local",15,MUTED)
 		action(rect(24,211,248,54),"OPERADOR")
-		action(rect(24,276,248,54),"ARMAMENTO",false,true)
+		action(rect(24,276,248,54),"ARMAMENTO")
 		action(rect(24,341,248,54),"AJUSTES")
 		operator_art()
 		panel(rect(690,112,246,154))
@@ -121,6 +122,16 @@ func _draw() -> void:
 			action(rect(35,190+i*64,500,52),["BAJA SEGURA / 30 FPS","MEDIA / 45 FPS","ALTA / 60 FPS"][i],i==quality)
 		text_at(35,414,"Motor: Compatibility / OpenGL ES 3",17,MUTED)
 		text_at(35,440,info.left(85),13,MUTED)
+		action(rect(710,450,226,62),"VOLVER")
+	elif mode == "loadout":
+		operator_art()
+		panel(rect(24,112,248,210))
+		text_at(40,142,"EQUIPAMIENTO",17,GOLD)
+		text_at(40,178,"IGNIS X1",24)
+		text_at(40,207,"Rifle de energia",15,MUTED)
+		text_at(40,233,"Capacidad: 30",15,MUTED)
+		text_at(40,259,"Reserva inicial: 120",15,MUTED)
+		text_at(40,291,"Equipado",15,GOLD)
 		action(rect(710,450,226,62),"VOLVER")
 	elif mode == "operator":
 		text_at(35,128,"OPERADORES",29)
@@ -168,7 +179,7 @@ func activate(pos: Vector2) -> void:
 		elif rect(24,211,248,54).has_point(pos):
 			launch("res://operator.tscn")
 		elif rect(24,276,248,54).has_point(pos):
-			status = "Armamento disponible en una futura revision."
+			mode = "loadout"
 	else:
 		if rect(710,450,226,62).has_point(pos):
 			mode = "home"
@@ -191,3 +202,24 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
 		mode = "home"
 		queue_redraw()
+
+func draw_stage() -> void:
+	var area := rect(288,98,384,346)
+	draw_rect(area,Color("192730"))
+	draw_rect(rect(304,112,352,236),Color("253741"))
+	for i in range(5):
+		var x := 308.0+i*85.0
+		draw_rect(rect(x,114,5,235),Color("344954"))
+		draw_rect(rect(x+7,122,2,128),Color("536873"))
+	draw_rect(rect(305,120,350,6),Color("41525b"))
+	draw_rect(rect(305,132,350,3),Color("c87943"))
+	draw_colored_polygon(PackedVector2Array([point(304,349),point(656,349),point(672,443),point(288,443)]),Color("202c34"))
+	for i in range(7):
+		draw_line(point(480,349),point(288+i*64,443),Color("384952"),1.0,true)
+	for y in [368,392,420]:
+		draw_line(point(298,y),point(662,y),Color("384952"),1.0,true)
+	draw_set_transform(point(480,409),0.0,Vector2(size.x/960.0,size.y/540.0))
+	draw_circle(Vector2.ZERO,75.0,Color(0.08,0.12,0.15,0.55))
+	draw_arc(Vector2.ZERO,75.0,0.0,TAU,48,Color("91643f"),2.0,true)
+	draw_set_transform(Vector2.ZERO)
+	draw_rect(area,EDGE,false,1.0)

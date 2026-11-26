@@ -79,7 +79,9 @@ func _draw() -> void:
 	var bar := health_rect()
 	draw_rect(bar,DARK)
 	draw_rect(Rect2(bar.position,Vector2(bar.size.x*game.health/100.0,bar.size.y)),Color("68d9a4"))
-	centered(bar.get_center()+Vector2(0,-11*u),"VIDA %d / ESCUDO %d" % [game.health,game.armor],int(10*u))
+	draw_rect(Rect2(bar.position-Vector2(5,18)*u,Vector2(160,29)*u),Color(0.04,0.07,0.09,0.45))
+	draw_rect(Rect2(bar.position,Vector2(bar.size.x*game.health/100.0,bar.size.y)),Color("68d9a4"))
+	centered(bar.get_center()+Vector2(0,-9*u),"VIDA %d / ESCUDO %d" % [game.health,game.armor],int(10*u))
 
 func button_at(pos: Vector2) -> String:
 	for name in buttons():
@@ -231,4 +233,4 @@ func ammo_anchor() -> Vector2:
 
 func health_rect() -> Rect2:
 	var u := unit()
-	return Rect2(at(0.27,0.96)-Vector2(65,0)*u,Vector2(130,6)*u)
+	return Rect2(at(0.145,0.025)+Vector2(9,83)*u,Vector2(150,6)*u)

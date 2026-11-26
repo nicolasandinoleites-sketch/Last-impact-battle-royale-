@@ -21,6 +21,9 @@ func run() -> void:
 	await frames(5)
 	if not check(lobby.mode == "home" and lobby.size.x > 0, "lobby startup"):
 		return
+	lobby.activate(lobby.rect(24,276,248,54).get_center())
+	if not check(lobby.mode=="loadout", "functional armament menu"):
+		return
 	lobby.mode = "settings"
 	lobby.choose_profile(0)
 	if not check(lobby.quality == 0, "safe graphics settings"):
@@ -72,6 +75,33 @@ func run() -> void:
 	if not check(absf(angle_difference(scene.player.visual.rotation.y,old_yaw))<0.01, "strafe keeps camera orientation"):
 		return
 	scene.player.visual.rotation.y = old_yaw
+	var h: Rect2 = scene.hud.health_rect()
+	if not check(h.position.y < scene.hud.size.y*0.30 and h.end.x<scene.hud.size.x*0.45, "health outside avatar region"):
+		return
+	var touch := InputEventScreenTouch.new()
+	touch.index = 2
+	touch.pressed = true
+	touch.position = scene.hud.at(0.14,0.80)
+	scene.hud._input(touch)
+	var drag := InputEventScreenDrag.new()
+	drag.index = 2
+	drag.position = touch.position+Vector2(25,0)
+	scene.hud._input(drag)
+	if not check(scene.mobile_move.x>0.05, "touch joystick drag"):
+		return
+	var aim_touch := InputEventScreenTouch.new()
+	aim_touch.index = 3
+	aim_touch.pressed = true
+	aim_touch.position = scene.hud.buttons()["AIM"]
+	scene.hud._input(aim_touch)
+	if not check(scene.player.aiming and scene.mobile_move.x>0.05, "multitouch movement plus aim"):
+		return
+	touch.pressed = false
+	scene.hud._input(touch)
+	if not check(scene.mobile_move==Vector2.ZERO, "touch release clears movement"):
+		return
+	scene.player.aiming = false
+	scene.hud.clear_controls()
 	var actor = scene.player.raze
 	scene.player.weapon.update_pose(0.1,true,0.0)
 	if not check(is_instance_valid(scene.player.weapon.right_goal) and is_instance_valid(scene.player.weapon.left_goal), "dual wrist targets"):

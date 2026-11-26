@@ -23,6 +23,9 @@ func run() -> void:
 		quit(1)
 		return
 	await capture("01_lobby")
+	lobby.mode = "loadout"
+	await wait_frames(15)
+	await capture("14_loadout")
 	root.remove_child(lobby)
 	lobby.free()
 	var scene = load("res://main.tscn").instantiate()
@@ -133,6 +136,8 @@ func run() -> void:
 	scene.player.camera.current = true
 	scene.hud.show()
 	root.size = Vector2i(1280,570)
+	scene.profile = 0
+	scene.apply_profile()
 	scene.reset_round()
 	await wait_frames(30)
 	await capture("11_mobile_idle")

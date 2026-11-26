@@ -18,7 +18,7 @@ func _ready() -> void:
 	env.environment.background_color = Color("17252e")
 	env.environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.environment.ambient_light_color = Color.WHITE
-	env.environment.ambient_light_energy = 1.0
+	env.environment.ambient_light_energy = 0.85
 	add_child(env)
 	var cam := Camera3D.new()
 	add_child(cam)
