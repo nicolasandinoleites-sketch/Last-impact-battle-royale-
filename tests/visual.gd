@@ -36,5 +36,23 @@ func run() -> void:
 	scene.start_reload()
 	await wait_frames(15)
 	await capture("04_reload")
+	# Independent inspection camera, not the playable TPS camera.
+	scene.reload_left = 0.0
+	scene.player.aiming = true
+	var inspection := Camera3D.new()
+	scene.add_child(inspection)
+	inspection.fov = 38.0
+	inspection.current = true
+	var body: Vector3 = scene.player.global_position
+	inspection.position = body+Vector3(2.4,1.6,-1.4)
+	inspection.look_at(body+Vector3(0,1.2,-0.12))
+	scene.hud.hide()
+	await wait_frames(30)
+	await capture("05_grip_right")
+	inspection.position = body+Vector3(-2.4,1.6,-1.4)
+	inspection.look_at(body+Vector3(0,1.2,-0.12))
+	await wait_frames(20)
+	await capture("06_grip_left")
+	print("GRIP DIAGNOSTIC ",scene.player.weapon.right_error," / ",scene.player.weapon.left_error)
 	print("VISUAL CAPTURE COMPLETE")
 	quit(0)

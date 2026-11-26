@@ -64,7 +64,9 @@ const ids=Array.from({length:ia.count},(_,i)=>buffer.readUInt16LE(iv.byteOffset+
 if(ids.some(i=>i>=pos.count))throw Error('Invalid mesh index');
 for(let i=0;i<ids.length;i+=3){join(ids[i],ids[i+1]);join(ids[i],ids[i+2]);}
 const counts=new Map();for(let i=0;i<ids.length;i+=3){const k=root(ids[i]);counts.set(k,(counts.get(k)||0)+1);}
-console.log('IGNIS geometry audit',JSON.stringify({bounds:[min,max],componentTriangles:[...counts.values()].sort((a,b)=>b-a).slice(0,20),endA,endB}));
+const componentBounds=new Map();
+pts.forEach((p,i)=>{const k=root(i);if(!counts.has(k))return;const v=[(cross(p)-cx)*factor,(p[1]-cy)*factor,-(project(p)-mid)*factor];const b=componentBounds.get(k)||{min:[Infinity,Infinity,Infinity],max:[-Infinity,-Infinity,-Infinity]};v.forEach((x,j)=>{b.min[j]=Math.min(b.min[j],x);b.max[j]=Math.max(b.max[j],x);});componentBounds.set(k,b);});
+console.log('IGNIS geometry audit',JSON.stringify({bounds:[min,max],components:[...counts.entries()].map(([k,triangles])=>({triangles,...componentBounds.get(k)})).sort((a,b)=>b.triangles-a.triangles),endA,endB}));
 // A detached accessory may be intentional; report components without deleting meaningful geometry.
 doc.buffers=[{byteLength:buffer.length}];
 delete doc.extensionsRequired;delete doc.extensionsUsed;

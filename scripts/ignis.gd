@@ -14,6 +14,8 @@ var right_goal: Marker3D
 var left_goal: Marker3D
 var aim_pitch := 0.0
 var pose_initialized := false
+var right_error := 0.0
+var left_error := 0.0
 func equip(hand: Node3D, body_visual: Node3D) -> bool:
 	anchor = hand
 	facing = body_visual
@@ -79,8 +81,8 @@ func update_pose(delta: float, aiming: bool, reload: float, low: bool = false, p
 		var support := left_goal.global_position
 		if reload>0.0:
 			support += frame*Vector3(-0.045,-0.10*tilt,0.09*tilt)
-		actor.solve_arm("R",right_goal.global_position,frame*Vector3(0.65,-0.7,0.25))
-		actor.solve_arm("L",support,frame*Vector3(-0.65,-0.7,0.10))
+		right_error = actor.solve_arm("R",right_goal.global_position,frame*Vector3(0.65,-0.7,0.25))
+		left_error = actor.solve_arm("L",support,frame*Vector3(-0.65,-0.7,0.10))
 
 func pulse() -> void:
 	if not loaded:

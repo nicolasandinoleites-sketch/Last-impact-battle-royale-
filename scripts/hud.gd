@@ -26,7 +26,7 @@ func unit() -> float:
 	return clampf(size.y/540.0,0.7,1.4)
 
 func buttons() -> Dictionary:
-	return {"FIRE":at(0.91,0.59),"AIM":at(0.79,0.48),"JUMP":at(0.92,0.80),"SLIDE":at(0.80,0.82),"LOAD":at(0.68,0.82),"RUN":at(0.24,0.58),"SIDE":at(0.66,0.49),"FPS":at(0.92,0.10),"RESET":at(0.77,0.10),"LOBBY":at(0.65,0.10)}
+	return {"FIRE":at(0.91,0.59),"AIM":at(0.79,0.48),"JUMP":at(0.92,0.80),"SLIDE":at(0.80,0.82),"LOAD":at(0.68,0.82),"RUN":at(0.10,0.49),"SIDE":at(0.66,0.49),"FPS":at(0.92,0.10),"RESET":at(0.77,0.10),"LOBBY":at(0.65,0.10)}
 
 func radius(name: String) -> float:
 	return (42.0 if name == "FIRE" else 30.0)*unit()
@@ -42,15 +42,13 @@ func _draw() -> void:
 	if game == null:
 		return
 	var u := unit()
-	var font := int(15*u)
+	var font := int(12*u)
 	draw_minimap(u)
-	draw_rect(Rect2(at(0.025,0.23),Vector2(200,75)*u),DARK)
-	label_at(at(0.025,0.23)+Vector2(12,22)*u,"LAST IMPACT / R061",int(19*u),ACCENT)
-	label_at(at(0.025,0.23)+Vector2(12,44)*u,"FPS %d   ·   MEM %.0f MB" % [Engine.get_frames_per_second(),Performance.get_monitor(Performance.MEMORY_STATIC)/1048576.0],font)
-	label_at(at(0.025,0.23)+Vector2(12,66)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
-	if game.player.model_loaded:
-		label_at(at(0.025,0.23)+Vector2(12,90)*u,"ANIM: "+game.player.raze.motion_state,font)
-	centered(at(0.5,0.07),game.message,int(17*u))
+	draw_rect(Rect2(at(0.145,0.025),Vector2(180,62)*u),DARK)
+	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R061",int(14*u),ACCENT)
+	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d   ·   MEM %.0f MB" % [Engine.get_frames_per_second(),Performance.get_monitor(Performance.MEMORY_STATIC)/1048576.0],font)
+	label_at(at(0.145,0.025)+Vector2(9,50)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
+	centered(at(0.49,0.16),game.message,int(15*u))
 	var center := size*0.5
 	var c := ACCENT if game.hit_left>0.0 else WHITE
 	for v in [Vector2.LEFT,Vector2.RIGHT,Vector2.UP,Vector2.DOWN]:
@@ -68,11 +66,11 @@ func _draw() -> void:
 		draw_arc(p,r,0,TAU,32,Color(1,1,1,0.68),1.5*u,true)
 		draw_button_icon(name,p,u)
 		centered(p+Vector2(0,13*u),names[name],int(9*u))
-	var ammo_pos := at(0.50,0.89)
+	var ammo_pos := at(0.54,0.91)
 	draw_rect(Rect2(ammo_pos-Vector2(85,20)*u,Vector2(170,48)*u),DARK)
 	centered(ammo_pos, "%02d / %03d" % [game.ammo,game.reserve],int(24*u))
 	centered(ammo_pos+Vector2(0,20)*u,"IGNIS X1",int(10*u),ACCENT)
-	var bar := Rect2(at(0.39,0.78),Vector2(180,8)*u)
+	var bar := Rect2(at(0.45,0.81),Vector2(160,6)*u)
 	draw_rect(bar,DARK)
 	draw_rect(Rect2(bar.position,Vector2(bar.size.x*game.health/100.0,bar.size.y)),Color("68d9a4"))
 	centered(bar.get_center()+Vector2(0,-11*u),"VIDA %d / ESCUDO %d" % [game.health,game.armor],int(10*u))
@@ -187,6 +185,10 @@ func draw_minimap(u: float) -> void:
 	var area := Rect2(at(0.025,0.025),Vector2(95,95)*u)
 	draw_rect(area,DARK)
 	draw_rect(area,Color("607987"),false,1.0)
+	for fraction in [0.25,0.5,0.75]:
+		var d: float = area.size.x*fraction
+		draw_line(area.position+Vector2(d,0),area.position+Vector2(d,area.size.y),Color(0.5,0.65,0.72,0.18),1.0)
+		draw_line(area.position+Vector2(0,d),area.position+Vector2(area.size.x,d),Color(0.5,0.65,0.72,0.18),1.0)
 	var middle := area.get_center()
 	var k := 95.0*u/80.0
 	for target in game.targets:

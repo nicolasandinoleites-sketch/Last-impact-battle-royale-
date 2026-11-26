@@ -22,7 +22,7 @@ func _ready() -> void:
 	add_child(cam)
 	cam.position = Vector3(0.30,1.05,-3.0)
 	cam.look_at(Vector3(0,0.92,0))
-	cam.fov = 40.0
+	cam.fov = 39.0
 	cam.current = true
 	actor = Raze.new()
 	add_child(actor)
@@ -36,6 +36,6 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if loaded:
-		actor.rotation.y = sin(Time.get_ticks_msec()*0.0006)*0.20
+		actor.rotation.y = 0.68 + sin(Time.get_ticks_msec()*0.0006)*0.12
 		actor.locomotion(delta,0.0,true,false,false)
 		weapon.update_pose(delta,false,0.0)
