@@ -44,7 +44,7 @@ func _draw() -> void:
 	var u := unit()
 	var font := int(15*u)
 	draw_rect(Rect2(at(0.025,0.025),Vector2(245,85)*u),DARK)
-	label_at(at(0.025,0.025)+Vector2(12,22)*u,"LAST IMPACT / R05",int(19*u),ACCENT)
+	label_at(at(0.025,0.025)+Vector2(12,22)*u,"LAST IMPACT / R06",int(19*u),ACCENT)
 	label_at(at(0.025,0.025)+Vector2(12,44)*u,"FPS %d   ·   MEM %.0f MB" % [Engine.get_frames_per_second(),Performance.get_monitor(Performance.MEMORY_STATIC)/1048576.0],font)
 	label_at(at(0.025,0.025)+Vector2(12,66)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
 	if game.player.model_loaded:
@@ -69,7 +69,7 @@ func _draw() -> void:
 	var ammo_pos := at(0.50,0.89)
 	draw_rect(Rect2(ammo_pos-Vector2(85,20)*u,Vector2(170,48)*u),DARK)
 	centered(ammo_pos, "%02d / %03d" % [game.ammo,game.reserve],int(24*u))
-	centered(ammo_pos+Vector2(0,20)*u,"ENTRENAMIENTO",int(10*u),ACCENT)
+	centered(ammo_pos+Vector2(0,20)*u,"IGNIS X1",int(10*u),ACCENT)
 
 func button_at(pos: Vector2) -> String:
 	for name in buttons():

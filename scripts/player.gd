@@ -26,6 +26,10 @@ var combat_facing := false
 const Raze = preload("res://scripts/raze.gd")
 var raze: Node3D
 var model_loaded := false
+const Ignis = preload("res://scripts/ignis.gd")
+var weapon: Node3D
+var weapon_loaded := false
+var reload_visual := 0.0
 const STANDING_HEIGHT := 1.8
 const LOW_HEIGHT := 1.0
 
@@ -67,6 +71,11 @@ func _ready() -> void:
 		for child in placeholder:
 			if child is Node3D:
 				child.hide()
+	if model_loaded:
+		weapon = Ignis.new()
+		add_child(weapon)
+		weapon_loaded = weapon.equip(raze.right_socket,visual)
+		raze.armed = weapon_loaded
 	pivot = Node3D.new()
 	pivot.position = Vector3(0,1.52,0)
 	add_child(pivot)
@@ -148,6 +157,9 @@ func reset_movement() -> void:
 	aiming = false
 	combat_facing = false
 	set_stance(false)
+	reload_visual = 0.0
+	if weapon_loaded:
+		weapon.clear_effects()
 
 func _physics_process(delta: float) -> void:
 	slide_cooldown = maxf(0.0,slide_cooldown-delta)
@@ -193,6 +205,8 @@ func _physics_process(delta: float) -> void:
 		raze.locomotion(delta,Vector2(velocity.x,velocity.z).length(),is_on_floor(),low_stance,aiming or combat_facing,sprint,velocity.y)
 	else:
 		visual.scale.y = lerpf(visual.scale.y,0.55 if low_stance else 1.0,minf(1.0,delta*12.0))
+	if weapon_loaded:
+		weapon.update_pose(delta,aiming or combat_facing,reload_visual)
 	if position.y < -8.0:
 		position = Vector3(0,0.1,12)
 		reset_movement()

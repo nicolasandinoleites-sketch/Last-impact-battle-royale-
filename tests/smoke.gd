@@ -43,6 +43,14 @@ func run() -> void:
 		return
 	if not check(scene.player.raze.animator != null and scene.player.raze.animator.get_animation_list().size() > 0, "RAZE animation library"):
 		return
+	if not check(scene.player.weapon_loaded and is_instance_valid(scene.player.weapon.model), "IGNIS GLB imported and equipped"):
+		return
+	scene.player.weapon.pulse()
+	if not check(scene.player.weapon.flash.visible and scene.player.weapon.pulse_count==1, "IGNIS cosmetic flash"):
+		return
+	scene.player.weapon.clear_effects()
+	if not check(not scene.player.weapon.flash.visible, "IGNIS effect reset"):
+		return
 	var actor = scene.player.raze
 	if not check(actor.joints.size()==14 and actor.right_socket.bone_name=="R_Hand" and actor.left_socket.bone_name=="L_Hand", "locomotion joint map and sockets"):
 		return
@@ -106,5 +114,5 @@ func run() -> void:
 	scene.reset_round()
 	if not check(scene.eliminated==0 and scene.ammo==30 and scene.targets[0].active, "reset"):
 		return
-	print("LAST IMPACT R05 SMOKE PASS")
+	print("LAST IMPACT R06 SMOKE PASS")
 	quit(0)

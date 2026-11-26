@@ -111,6 +111,7 @@ func _physics_process(delta: float) -> void:
 	player.move_input = (mobile_move+keyboard).limit_length(1.0)
 	player.sprint = mobile_sprint or keys.get(KEY_SHIFT,false)
 	player.combat_facing = fire
+	player.reload_visual = clampf(reload_left/1.4,0.0,1.0)
 	cooldown = maxf(0.0,cooldown-delta)
 	hit_left = maxf(0.0,hit_left-delta)
 	if reload_left > 0.0:
@@ -129,6 +130,8 @@ func shoot() -> void:
 		return
 	ammo -= 1
 	cooldown = 0.15
+	if player.weapon_loaded:
+		player.weapon.pulse()
 	var cam: Camera3D = player.camera
 	var center := get_viewport().get_visible_rect().size*0.5
 	var origin := cam.project_ray_origin(center)

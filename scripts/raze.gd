@@ -7,6 +7,7 @@ var base: Dictionary = {}
 var ready_model := false
 var preview_dance := false
 var motion_state := "IDLE"
+var armed := false
 var cycle := 0.0
 var clock := 0.0
 var speed_blend := 0.0
@@ -161,6 +162,11 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 		elbow_l = -44.0
 		elbow_r = -40.0
 		yaw_twist *= 0.25
+	if armed and not combat and not low:
+		arm_l = -24.0
+		arm_r = -20.0
+		elbow_l = -30.0
+		elbow_r = -35.0
 	var blend := 1.0-exp(-delta*14.0)
 	var breathe := sin(clock*2.2)*1.4
 	bone_motion("L_Thigh",Vector3(left,0,0),blend)
