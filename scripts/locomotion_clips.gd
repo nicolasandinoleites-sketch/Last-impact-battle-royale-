@@ -32,6 +32,17 @@ var sprint_cadence_multiplier := 1.0
 var sprint_support_masks: Array = []
 var sprint_lock_enabled := false
 
+# Calibrated from CI 169, artifact 15149963736, trial 0.70/1.15.
+# Remains opt-in until visual and gameplay comparison are reviewed.
+func configure_sprint_candidate(enabled: bool) -> void:
+	sprint_amplitude = 0.7 if enabled else 1.0
+	sprint_cadence_multiplier = 1.15 if enabled else 1.0
+	sprint_lock_enabled = enabled
+	sprint_support_masks.clear()
+	if enabled:
+		sprint_support_masks.append(PackedFloat32Array([0.875,0.2857143,0.375,1,1,1,1,1,1,0.125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.125]))
+		sprint_support_masks.append(PackedFloat32Array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.85714287,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0]))
+
 func setup(rig: Skeleton3D) -> bool:
 	if not ResourceLoader.exists(LIBRARY):
 		return false
