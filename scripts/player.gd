@@ -77,6 +77,7 @@ func _ready() -> void:
 	visual.add_child(raze)
 	model_loaded = raze.load_model()
 	if model_loaded:
+		raze.enable_locomotion_clips()
 		for child in placeholder:
 			if child is Node3D:
 				child.hide()
