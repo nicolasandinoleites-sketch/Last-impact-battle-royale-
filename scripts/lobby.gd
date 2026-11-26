@@ -29,7 +29,7 @@ func _ready() -> void:
 	if config.load("user://lastimpact.cfg") == OK:
 		quality = clampi(int(config.get_value("graphics","profile",0)),0,2)
 	info = "%s | %s" % [RenderingServer.get_video_adapter_name(),RenderingServer.get_video_adapter_api_version()]
-	print("LAST IMPACT R062 LOBBY READY | ",info)
+	print("LAST IMPACT R063 LOBBY READY | ",info)
 	if DisplayServer.get_name() != "headless":
 		preview_pending = true
 		preview_started_ms = Time.get_ticks_msec()
@@ -106,7 +106,7 @@ func _draw() -> void:
 		draw_line(point(i*150-300,540),point(i*150+250,0),Color(0.25,0.36,0.43,0.14),1.0)
 	draw_texture_rect(LOGO,rect(24,18,58,58),false)
 	text_at(96,47,"LAST IMPACT",31)
-	text_at(98,69,"R062 / ALPHA TECNICA",13,MUTED)
+	text_at(98,69,"R063 / ALPHA TECNICA",13,MUTED)
 	text_at(768,40,"OFFLINE",15,GOLD)
 	text_at(768,64,"%d FPS" % Engine.get_frames_per_second(),15,MUTED)
 	draw_line(point(24,88),point(936,88),EDGE,1.0)
