@@ -334,8 +334,13 @@ func draw_minimap(u: float) -> void:
 			if pickup.active:
 				draw_rect(Rect2(middle+Vector2(pickup.position.x,pickup.position.z)*k-Vector2.ONE*2*u,Vector2.ONE*4*u),pickup.item_color())
 	for target in game.targets:
-		if target.active:
-			draw_circle(middle+Vector2(target.position.x,target.position.z)*k,3.0*u,ACCENT)
+		if target.active and target.visible:
+			var airborne: bool = is_instance_valid(game.rival_deployment) and game.rival_deployment.airborne(target)
+			var marker := middle+Vector2(target.position.x,target.position.z)*k
+			if airborne:
+				draw_arc(marker,4.0*u,0,TAU,12,Color("75c9ff"),1.5*u,true)
+			else:
+				draw_circle(marker,3.0*u,ACCENT)
 	var pos: Vector3 = game.player.position
 	var dot := middle+Vector2(pos.x,pos.z)*k
 	draw_circle(dot,4.0*u,WHITE)

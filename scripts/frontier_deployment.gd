@@ -102,9 +102,8 @@ func step(delta: float, stick: Vector2) -> void:
    # Match the existing flight controller exit exactly, including this frame of aircraft travel.
    flight.position = cinematic.timeline.exit_world(flight.plane_position)
    cinematic.release()
-   if pose_ready:
-    pose.restore(player.raze.skeleton)
-   player.raze.reset_locomotion()
+   # Preserve the last running pose; deployment pose blends from it over the first air frames.
+   # Full locomotion reset still occurs on landing.
    # Cut to a trailing camera facing the aircraft travel direction, away from the fused hull.
    player.yaw = -PI*0.5
    player.visual.rotation.y = player.yaw
@@ -139,6 +138,8 @@ func step(delta: float, stick: Vector2) -> void:
  var landing_progress := clampf(flight.time_in_phase/Flight.LAND_DURATION,0.0,1.0) if flight.phase==Flight.Phase.LAND else 0.0
  if pose_ready:
   pose.update(player.raze.skeleton,delta,flight.phase,stick,flight.elapsed,landing_progress)
+  if flight.phase in [Flight.Phase.FREEFALL,Flight.Phase.GLIDE]:
+   player.raze.model.position = player.raze.model.position.lerp(Vector3.ZERO,1.0-exp(-delta*12.0))
  var tilt_goal := Vector2.ZERO
  if flight.phase==Flight.Phase.FREEFALL:
   tilt_goal = Vector2(deg_to_rad(-33.0+stick.y*9.0),deg_to_rad(-stick.x*13.0))

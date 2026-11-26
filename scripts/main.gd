@@ -7,6 +7,8 @@ var player
 @export var experimental_deployment := false
 const Deployment = preload("res://scripts/frontier_deployment.gd")
 var deployment: Node3D
+const RivalDeployment = preload("res://scripts/rival_deployment.gd")
+var rival_deployment: Node3D
 const ZoneScript = preload("res://scripts/survival_zone.gd")
 const DroneScript = preload("res://scripts/survival_drone.gd")
 const OperatorScript = preload("res://scripts/survival_operator.gd")
@@ -209,16 +211,25 @@ func start_deployment() -> void:
 	for target in targets:
 		target.set_physics_process(false)
 	deployment.begin(player)
+	if not is_instance_valid(rival_deployment):
+		rival_deployment = RivalDeployment.new()
+		add_child(rival_deployment)
+		rival_deployment.configure(self)
+	rival_deployment.begin()
 
 func _physics_process(delta: float) -> void:
+	if is_instance_valid(rival_deployment) and not deployment_active() and round_result=="":
+		rival_deployment.step(delta,deployment.flight,false)
 	if deployment_active():
 		var air_keys := Vector2(float(keys.get(KEY_D,false))-float(keys.get(KEY_A,false)),float(keys.get(KEY_S,false))-float(keys.get(KEY_W,false)))
 		deployment.step(delta,(mobile_move+air_keys).limit_length(1.0))
+		rival_deployment.step(delta,deployment.flight,deployment_active())
 		fire = false
 		if not deployment_active():
 			hud.clear_controls()
 			for target in targets:
-				target.set_physics_process(true)
+				if not rival_deployment.airborne(target):
+					target.set_physics_process(true)
 			message = "Aterrizaje completado"
 		return
 	if survival_mode:
@@ -384,7 +395,7 @@ func update_survival(delta: float) -> void:
 		if round_result!="":
 			return
 		for target in targets:
-			if target.active and zone.outside(target.global_position):
+			if target.active and (not is_instance_valid(rival_deployment) or not rival_deployment.airborne(target)) and zone.outside(target.global_position):
 				target.take_hit(5 if zone.phase<2 else 10)
 	if eliminated>=targets.size():
 		finish_survival("VICTORIA")

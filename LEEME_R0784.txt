@@ -1,0 +1,2 @@
+LAST IMPACT R07.8.4 — Godot 4.6
+Abrir project.godot y ejecutar el lobby. Battle Royale incluye la salida del avión y dos rivales humanoides que descienden con mochilas articuladas. Los cuatro drones permanecen terrestres. Las apariencias diferenciadas son variantes de material de RAZE, no modelos nuevos. Entrenamiento sin cambios. Consulte docs/R0784.md. Sin APK ni validación Android real.
