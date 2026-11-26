@@ -28,6 +28,8 @@ var combat_facing := false
 var combat_hold := 0.0
 var local_motion := Vector2.ZERO
 var animation_speed := 0.0
+var animation_cost_us := 0.0
+var weapon_cost_us := 0.0
 const Raze = preload("res://scripts/raze.gd")
 const LocomotionController = preload("res://scripts/locomotion_controller.gd")
 var previous_horizontal := Vector2.ZERO
@@ -169,6 +171,8 @@ func set_stance(low: bool) -> void:
 func reset_movement() -> void:
 	velocity = Vector3.ZERO
 	animation_speed = 0.0
+	animation_cost_us = 0.0
+	weapon_cost_us = 0.0
 	previous_horizontal = Vector2.ZERO
 	body_acceleration = Vector2.ZERO
 	locomotion_state = "IDLE"
@@ -261,7 +265,9 @@ func _physics_process(delta: float) -> void:
 	left_leg.rotation.x = stride
 	right_leg.rotation.x = -stride
 	if model_loaded:
+		var anim_start_us := Time.get_ticks_usec()
 		raze.locomotion(delta,animation_speed,is_on_floor(),low_stance,combat_hold>0.0,sprint_forward,velocity.y,local_motion,body_acceleration,crouched)
+		animation_cost_us = lerpf(animation_cost_us,float(Time.get_ticks_usec()-anim_start_us),0.12)
 		if raze.clip_motion.weight>0.5 and get_parent().has_method("qa_control"):
 			get_parent().qa_control("CLIP_ACTIVE")
 		if raze.crouch_motion.weight>0.5 and get_parent().has_method("qa_control"):
@@ -269,7 +275,9 @@ func _physics_process(delta: float) -> void:
 	else:
 		visual.scale.y = lerpf(visual.scale.y,0.55 if low_stance else 1.0,minf(1.0,delta*12.0))
 	if weapon_loaded:
+		var weapon_start_us := Time.get_ticks_usec()
 		weapon.update_pose(delta,aiming or combat_facing,reload_visual,low_stance,pitch+view_recoil)
+		weapon_cost_us = lerpf(weapon_cost_us,float(Time.get_ticks_usec()-weapon_start_us),0.12)
 	if position.y < -8.0:
 		position = Vector3(0,0.1,12)
 		reset_movement()
