@@ -4,6 +4,9 @@ const TargetScript = preload("res://scripts/target.gd")
 const HudScript = preload("res://scripts/hud.gd")
 var player
 @export var survival_mode := false
+@export var experimental_deployment := false
+const Deployment = preload("res://scripts/frontier_deployment.gd")
+var deployment: Node3D
 const ZoneScript = preload("res://scripts/survival_zone.gd")
 const DroneScript = preload("res://scripts/survival_drone.gd")
 const OperatorScript = preload("res://scripts/survival_operator.gd")
@@ -98,6 +101,10 @@ func _ready() -> void:
 	hud.game = self
 	layer.add_child(hud)
 	hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	if survival_mode and experimental_deployment:
+		deployment = Deployment.new()
+		add_child(deployment)
+		start_deployment()
 	if survival_mode and OS.has_feature("android"):
 		print("ANDROID RAZE CLIPS READY ",player.raze.clip_motion.available)
 		print("ANDROID FRONTIER READY | player=",player.model_loaded," weapon=",player.weapon_loaded," rivals=",targets.size()," viewport=",get_tree().root.content_scale_size)
@@ -188,7 +195,32 @@ func qa_control(action: String) -> void:
 		qa_control_seen[action] = true
 		print("LAST IMPACT CONTROL ",action)
 
+func deployment_active() -> bool:
+	return is_instance_valid(deployment) and deployment.active
+
+func request_jump() -> void:
+	if deployment_active():
+		deployment.request_action()
+	else:
+		player.jump_requested = true
+
+func start_deployment() -> void:
+	hud.clear_controls()
+	for target in targets:
+		target.set_physics_process(false)
+	deployment.begin(player)
+
 func _physics_process(delta: float) -> void:
+	if deployment_active():
+		var air_keys := Vector2(float(keys.get(KEY_D,false))-float(keys.get(KEY_A,false)),float(keys.get(KEY_S,false))-float(keys.get(KEY_W,false)))
+		deployment.step(delta,(mobile_move+air_keys).limit_length(1.0))
+		fire = false
+		if not deployment_active():
+			hud.clear_controls()
+			for target in targets:
+				target.set_physics_process(true)
+			message = "Aterrizaje completado"
+		return
 	if survival_mode:
 		if OS.has_feature("android") and android_qa_ticks<120:
 			android_qa_ticks += 1
@@ -219,6 +251,8 @@ func _physics_process(delta: float) -> void:
 		shoot()
 
 func shoot() -> void:
+	if deployment_active():
+		return
 	if round_result!="":
 		return
 	if ammo <= 0:
@@ -251,6 +285,8 @@ func shoot() -> void:
 		game_audio.hit_player.play()
 
 func start_reload() -> void:
+	if deployment_active():
+		return
 	if round_result!="":
 		return
 	if ammo < 30 and reserve > 0 and reload_left <= 0.0:
@@ -259,6 +295,8 @@ func start_reload() -> void:
 		message = "Recargando..."
 
 func reset_round() -> void:
+	if deployment_active():
+		deployment.finish()
 	telemetry.reset()
 	telemetry.latest = {}
 	round_result = ""
@@ -274,6 +312,7 @@ func reset_round() -> void:
 			pickups[i].reset_pickup()
 	for t in targets:
 		t.reset_target()
+		t.set_physics_process(true)
 	eliminated = 0
 	health = 100
 	armor = 0
@@ -290,6 +329,8 @@ func reset_round() -> void:
 	player.reset_physics_interpolation()
 	hud.clear_controls()
 	message = "Supervivencia: permanece en la zona" if survival_mode else "Campo de entrenamiento"
+	if is_instance_valid(deployment):
+		start_deployment()
 	if OS.has_feature("android") and survival_mode:
 		print("ANDROID ROUND RESET | seed=",round_seed," health=",health," ammo=",ammo)
 
@@ -349,6 +390,8 @@ func update_survival(delta: float) -> void:
 		finish_survival("VICTORIA")
 
 func damage_player(amount: int) -> void:
+	if deployment_active():
+		return
 	if not survival_mode or round_result!="" or amount<=0:
 		return
 	var absorbed := mini(armor,amount)
@@ -382,6 +425,8 @@ func spawn_pickups() -> void:
 		pickups.append(pickup)
 
 func nearest_pickup():
+	if deployment_active():
+		return null
 	if not survival_mode or round_result!="":
 		return null
 	var closest = null
@@ -414,6 +459,8 @@ func collect_nearby() -> bool:
 	return true
 
 func use_medkit() -> bool:
+	if deployment_active():
+		return false
 	if not survival_mode or round_result!="":
 		return false
 	var next: int = inventory.use_med(health)
@@ -424,6 +471,8 @@ func use_medkit() -> bool:
 	return true
 
 func use_shield_cell() -> bool:
+	if deployment_active():
+		return false
 	if not survival_mode or round_result!="":
 		return false
 	var next: int = inventory.use_shield(armor)
@@ -444,6 +493,8 @@ func update_adaptive_resolution() -> void:
 		print("LAST IMPACT ADAPTIVE RESOLUTION ",adaptive_resolution.resolution())
 
 func _process(_delta: float) -> void:
+	if deployment_active():
+		return
 	update_adaptive_resolution()
 	if round_result=="" and reload_left<=0.0 and message_left>0.0:
 		message_left = maxf(0.0,message_left-_delta)

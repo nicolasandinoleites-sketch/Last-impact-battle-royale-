@@ -36,6 +36,8 @@ func unit() -> float:
 	return clampf(size.y/540.0,0.7,1.4)
 
 func buttons() -> Dictionary:
+	if game!=null and game.deployment_active():
+		return {"JUMP":at(0.92,0.80),"RESET":at(0.77,0.10),"LOBBY":at(0.65,0.10)}
 	var positions := {"FIRE":at(0.91,0.59),"AIM":at(0.79,0.48),"JUMP":at(0.92,0.80),"SLIDE":at(0.80,0.82),"LOAD":at(0.68,0.82),"RUN":at(0.10,0.49),"CROUCH":at(0.29,0.49),"SIDE":at(0.66,0.49),"FPS":at(0.92,0.10),"RESET":at(0.77,0.10),"LOBBY":at(0.65,0.10)}
 	if game!=null and game.survival_mode:
 		positions["PICKUP"] = at(0.60,0.70)
@@ -57,6 +59,20 @@ func _draw() -> void:
 	if game == null:
 		return
 	var u := unit()
+	if game.deployment_active():
+		draw_minimap(u)
+		centered(at(0.49,0.12),game.deployment.status_text(),int(18*u),ACCENT)
+		centered(at(0.49,0.19),"ALT %.0f m" % maxf(0.0,game.player.position.y-game.deployment.flight.ground_y),int(14*u))
+		var joystick := move_center if move_id>=0 else at(0.14,0.80)
+		draw_circle(joystick,58*u,DARK)
+		draw_circle(joystick+knob,25*u,WHITE)
+		var air_buttons := buttons()
+		for name in air_buttons:
+			var p: Vector2 = air_buttons[name]
+			draw_circle(p,radius(name),DARK)
+			var label := "SALIR / ALAS" if name=="JUMP" else str(name)
+			centered(p,label,int(10*u))
+		return
 	if game.survival_mode:
 		draw_storm_exposure()
 	var font := int(12*u)
@@ -135,6 +151,8 @@ func button_at(pos: Vector2) -> String:
 	return best
 
 func press_button(name: String, index: int) -> void:
+	if game.deployment_active() and name not in ["JUMP","RESET","LOBBY"]:
+		return
 	if game.round_result!="" and name not in ["RESET","LOBBY","FPS"]:
 		return
 	match name:
@@ -151,7 +169,7 @@ func press_button(name: String, index: int) -> void:
 		"SIDE":
 			game.player.shoulder *= -1.0
 			game.qa_control("SHOULDER")
-		"JUMP": game.player.jump_requested = true
+		"JUMP": game.request_jump()
 		"SLIDE": game.player.request_slide()
 		"LOAD": game.start_reload()
 		"PICKUP": game.collect_nearby()
@@ -243,8 +261,10 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventKey:
 		game.keys[event.physical_keycode] = event.pressed
 		if event.pressed and not event.echo:
+			if game.deployment_active() and event.physical_keycode not in [KEY_SPACE,KEY_F2,KEY_ESCAPE]:
+				return
 			match event.physical_keycode:
-				KEY_SPACE: game.player.jump_requested = true
+				KEY_SPACE: game.request_jump()
 				KEY_C: game.player.request_slide()
 				KEY_X: game.player.toggle_crouch()
 				KEY_R: game.start_reload()

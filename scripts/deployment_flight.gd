@@ -22,7 +22,7 @@ func reset() -> void:
 func transition(next: int) -> void:
  phase = next
  time_in_phase = 0.0
-func step(delta: float, input: Vector2, request_jump: bool, request_glide: bool, terrain_y: float = 0.0, surface_sampler: Callable = Callable()) -> void:
+func step(delta: float, input: Vector2, request_jump: bool, request_glide: bool, terrain_y: float = 0.0, surface_sampler: Callable = Callable(), horizontal_filter: Callable = Callable()) -> void:
  var dt := clampf(delta,0.0,0.05)
  elapsed += dt
  time_in_phase += dt
@@ -58,6 +58,8 @@ func step(delta: float, input: Vector2, request_jump: bool, request_glide: bool,
   var next := position+velocity*dt
   next.x = clampf(next.x,-EDGE,EDGE)
   next.z = clampf(next.z,-EDGE,EDGE)
+  if horizontal_filter.is_valid():
+   next = horizontal_filter.call(position,next)
   # Sample again at the proposed horizontal destination before touchdown.
   var touchdown_y := terrain_y
   if surface_sampler.is_valid():
