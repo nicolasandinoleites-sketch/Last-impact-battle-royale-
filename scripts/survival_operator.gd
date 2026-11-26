@@ -27,6 +27,14 @@ var route_index := 0
 var animation_interval := 1.0/20.0
 var full_animation_distance := 14.0
 # Tactical behavior is enabled only in the aircraft Battle Royale mode.
+const Ignis = preload("res://scripts/ignis.gd")
+const MAGAZINE := 6
+const RELOAD_TIME := 1.6
+var weapon: Ignis
+var enemy: CharacterBody3D
+var rounds := MAGAZINE
+var reload_left := 0.0
+var shot_left := 0.45
 var armor := 0
 var tactical_goal := Vector3.ZERO
 var tactical_pickup: Node3D
@@ -40,11 +48,53 @@ var tactical_ready := false
 func tactical_enabled() -> bool:
 	return is_instance_valid(game) and game.experimental_deployment
 
-func visible_player() -> bool:
-	var difference: Vector3 = game.player.global_position-global_position
-	if difference.length()>18.0 or absf(difference.y)>3.0:
-		return false
-	return clear_path(game.player.global_position)
+func choose_enemy() -> CharacterBody3D:
+	var best: CharacterBody3D
+	var best_distance := 18.0 * 18.0
+	var candidates: Array = [game.player]
+	for rival in game.targets:
+		if rival != self and rival.get_script() == get_script() and rival.active and rival.collision_layer != 0:
+			candidates.append(rival)
+	for candidate: CharacterBody3D in candidates:
+		var offset := candidate.global_position - global_position
+		if absf(offset.y) <= 3.0 and offset.length_squared() < best_distance and clear_path(candidate.global_position):
+			best = candidate
+			best_distance = offset.length_squared()
+	return best
+
+func cover_from(threat: Vector3) -> Vector3:
+	var away := global_position.direction_to(threat) * -1.0
+	away.y = 0
+	for turn in [0.0, 0.8, -0.8, 1.55, -1.55]:
+		var point := open_goal(global_position + away.rotated(Vector3.UP, turn) * 7.0)
+		if game.zone.outside(point): continue
+		var sight := PhysicsRayQueryParameters3D.create(threat + Vector3.UP, point + Vector3.UP, 1)
+		if not get_world_3d().direct_space_state.intersect_ray(sight).is_empty() and not game.frontier.route(global_position,point).is_empty():
+			return point
+	return Vector3.INF
+
+func update_combat(delta: float) -> void:
+	if weapon == null: return
+	weapon.show()
+	shot_left = maxf(0.0, shot_left - delta)
+	if reload_left > 0:
+		reload_left = maxf(0.0, reload_left - delta)
+		if reload_left == 0: rounds = MAGAZINE
+		return
+	if ai_state != "ENGAGE" or shot_left > 0 or not is_instance_valid(enemy) or enemy.collision_layer == 0: return
+	var offset := enemy.global_position - global_position
+	if offset.length_squared() > 324 or offset.length_squared() < 0.01: return
+	var forward := -visual.global_basis.z
+	if forward.dot(offset.normalized()) < 0.94: return
+	var ray := PhysicsRayQueryParameters3D.create(global_position + Vector3.UP, enemy.global_position + Vector3.UP, 7, [get_rid()])
+	var hit := get_world_3d().direct_space_state.intersect_ray(ray)
+	if hit.get("collider") != enemy: return
+	rounds -= 1
+	shot_left = 0.72
+	weapon.pulse()
+	if rounds == 0: reload_left = RELOAD_TIME
+	if enemy == game.player: game.damage_player(6)
+	else: enemy.take_hit(9)
 
 func clear_path(destination: Vector3) -> bool:
 	var ray := PhysicsRayQueryParameters3D.create(global_position+Vector3.UP*0.8,destination+Vector3.UP*0.8,1)
@@ -112,9 +162,10 @@ func decide_tactical(delta: float) -> Vector3:
 	if decision_left>0.0:
 		return tactical_goal
 	decision_left = 0.30
-	var seen := visible_player()
+	enemy = choose_enemy()
+	var seen := is_instance_valid(enemy)
 	if seen:
-		last_seen = game.player.global_position
+		last_seen = enemy.global_position
 		memory_left = 2.4
 	var center: Vector3 = game.zone.global_position
 	if game.zone.outside(global_position) or global_position.distance_to(center)>maxf(3.0,game.zone.radius-3.0):
@@ -127,15 +178,19 @@ func decide_tactical(delta: float) -> Vector3:
 		set_tactical_goal("LOOT",supply.global_position)
 		return tactical_goal
 	tactical_pickup = null
-	if seen and hp<35:
-		var away: Vector3 = global_position-game.player.global_position
+	if seen and (hp<35 or reload_left>0):
+		var cover := cover_from(last_seen)
+		if cover.is_finite():
+			set_tactical_goal("COVER",cover)
+			return tactical_goal
+		var away: Vector3 = global_position-last_seen
 		away.y = 0.0
 		if away.length_squared()<0.01: away = Vector3.RIGHT
 		var retreat: Vector3 = global_position+away.normalized()*8.0
 		if game.zone.outside(retreat): retreat = center.lerp(global_position,0.6)
 		set_tactical_goal("RETREAT",open_goal(retreat))
 	elif seen:
-		set_tactical_goal("ENGAGE",game.player.global_position)
+		set_tactical_goal("ENGAGE",last_seen)
 	elif memory_left>0.0 and global_position.distance_to(last_seen)>2.0:
 		set_tactical_goal("SEARCH",open_goal(last_seen))
 	elif ai_state!="PATROL" or global_position.distance_to(tactical_goal)<1.5:
@@ -163,6 +218,12 @@ func _ready() -> void:
 	visual.add_child(actor)
 	model_loaded = actor.load_model()
 	if model_loaded:
+		if tactical_enabled():
+			weapon = Ignis.new()
+			visual.add_child(weapon)
+			actor.armed = weapon.equip(actor.right_socket,visual)
+			weapon.actor = actor
+			weapon.hide()
 		for child in actor.model.find_children("*","MeshInstance3D",true,false):
 			var mesh_node := child as MeshInstance3D
 			if mesh_node.mesh==null:
@@ -229,7 +290,7 @@ func _physics_process(delta: float) -> void:
 		var offset := destination-global_position
 		offset.y = 0.0
 		direction = offset.normalized() if offset.length()>1.0 else Vector3.ZERO
-		if ai_state=="ENGAGE" and distance<1.3: direction = Vector3.ZERO
+		if ai_state=="ENGAGE" and offset.length()<10.0: direction = Vector3.ZERO
 		if ai_state=="LOOT": collect_supply()
 	if direction.length_squared()>0.01:
 		direction = navigation_direction(destination,delta,direction)
@@ -250,10 +311,14 @@ func _physics_process(delta: float) -> void:
 			break
 	var horizontal := get_real_velocity()
 	horizontal.y = 0.0
-	if horizontal.length()>0.18:
+	if ai_state=="ENGAGE" and is_instance_valid(enemy):
+		var aim := enemy.global_position-global_position
+		visual.rotation.y = lerp_angle(visual.rotation.y,atan2(-aim.x,-aim.z),1.0-exp(-delta*10.0))
+	elif horizontal.length()>0.18:
 		visual.rotation.y = lerp_angle(visual.rotation.y,atan2(-horizontal.x,-horizontal.z),1.0-exp(-delta*10.0))
 	elif distance>0.1:
 		visual.rotation.y = lerp_angle(visual.rotation.y,atan2(-difference.x,-difference.z),1.0-exp(-delta*7.0))
+	if tactical_enabled(): update_combat(delta)
 	# Render-only guard. Keep active state, hitbox, navigation and contact damage.
 	var camera: Camera3D = game.player.camera
 	update_lens_guard(camera.global_position)
@@ -268,12 +333,13 @@ func _physics_process(delta: float) -> void:
 	if model_loaded and anim_elapsed>=animation_interval:
 		var local := visual.global_transform.basis.orthonormalized().inverse()*horizontal
 		var start_us := Time.get_ticks_usec()
-		actor.locomotion(minf(anim_elapsed,0.20),horizontal.length(),is_on_floor(),false,false,false,velocity.y,Vector2(local.x,local.z) if distance<full_animation_distance else Vector2.ZERO)
+		actor.locomotion(minf(anim_elapsed,0.20),horizontal.length(),is_on_floor(),false,ai_state=="ENGAGE",false,velocity.y,Vector2(local.x,local.z) if distance<full_animation_distance else Vector2.ZERO)
+		if weapon != null: weapon.update_pose(anim_elapsed,ai_state=="ENGAGE",reload_left/RELOAD_TIME)
 		animation_cost_us = lerpf(animation_cost_us,float(Time.get_ticks_usec()-start_us),0.12)
 		anim_elapsed = 0.0
 		anim_updates += 1
 	# Arcade contact-only opponent, same damage rule as the prototype drone.
-	if distance<1.4 and height_gap<1.1 and contact_left<=0.0 and (not tactical_enabled() or ai_state=="ENGAGE"):
+	if distance<1.4 and height_gap<1.1 and contact_left<=0.0 and not tactical_enabled():
 		var ray := PhysicsRayQueryParameters3D.create(global_position+Vector3.UP*0.75,game.player.global_position+Vector3.UP*0.75,1)
 		if get_world_3d().direct_space_state.intersect_ray(ray).is_empty():
 			contact_left = 1.5
@@ -303,6 +369,13 @@ func take_hit(damage: int) -> void:
 		destroyed.emit()
 
 func reset_target() -> void:
+	enemy = null
+	rounds = MAGAZINE
+	reload_left = 0.0
+	shot_left = 0.45
+	if weapon != null:
+		weapon.clear_effects()
+		weapon.hide()
 	position = spawn_point
 	reset_physics_interpolation()
 	hp = 100
