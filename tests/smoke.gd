@@ -320,10 +320,10 @@ func run() -> void:
 		return
 	if not check(frontier.batched_blocks==49 and frontier.batch_draw_groups==19, "49 static blocks represented by 19 local render groups"):
 		return
-	var wall_hit := survival.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(-38,1.5,-34),Vector3(-44,1.5,-34),1))
+	var wall_hit: Dictionary = survival.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(-38,1.5,-34),Vector3(-44,1.5,-34),1))
 	if not check(not wall_hit.is_empty() and absf(wall_hit["position"].x+42.825)<0.1, "batched building wall retains collision"):
 		return
-	var door_hit := survival.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(-38,1.5,-34),Vector3(-38,1.5,-42),1))
+	var door_hit: Dictionary = survival.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(-38,1.5,-34),Vector3(-38,1.5,-42),1))
 	if not check(door_hit.is_empty(), "batched doorway remains open"):
 		return
 	var route: PackedVector3Array = frontier.route(Vector3(-38,0,-34),Vector3(-38,0,-44))
