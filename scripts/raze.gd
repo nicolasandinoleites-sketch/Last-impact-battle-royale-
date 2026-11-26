@@ -30,6 +30,8 @@ const ClipMotion = preload("res://scripts/locomotion_clips.gd")
 var clip_motion := ClipMotion.new()
 const CrouchMotion = preload("res://scripts/crouch_motion.gd")
 var crouch_motion := CrouchMotion.new()
+const AirMotion = preload("res://scripts/air_motion.gd")
+var air_motion := AirMotion.new()
 const FootContact = preload("res://scripts/foot_contact.gd")
 var foot_contact := FootContact.new()
 var contact_lock_enabled := true
@@ -120,6 +122,7 @@ func enable_locomotion_clips() -> bool:
 	if ok:
 		clip_motion.configure_sprint_candidate(clip_motion.calibrated)
 		crouch_motion.setup(skeleton,clip_motion.library)
+		air_motion.setup(skeleton,clip_motion.library)
 	return ok
 
 func reset_locomotion() -> void:
@@ -138,6 +141,7 @@ func reset_locomotion() -> void:
 	stride_amplitude = 0.0
 	clip_motion.reset()
 	crouch_motion.reset()
+	air_motion.reset()
 	foot_contact.reset()
 	foot_ik_active = false
 	foot_ik_error = 0.0
@@ -319,6 +323,11 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 		skeleton.force_update_all_bone_transforms()
 		var crouch_height := clampf(model.position.y+foot_rest_height-foot_height(),-0.64,0.12)
 		model.position.y = lerpf(model.position.y,crouch_height,1.0-exp(-delta*20.0))
+	air_motion.update(skeleton,delta,grounded,low,combat,vertical_speed)
+	if air_motion.state=="LAND":
+		skeleton.force_update_all_bone_transforms()
+		var land_height := clampf(model.position.y+foot_rest_height-foot_height(),-0.64,0.12)
+		model.position.y = lerpf(model.position.y,land_height,1.0-exp(-delta*24.0))
 	foot_contact.update(self,clip_motion,delta,contact_lock_enabled and grounded and moving and (speed<5.5 or (clip_motion.sprint_lock_enabled and speed>=5.9)) and not low and not combat and landing<=0.0 and local_motion.y< -0.75 and absf(local_motion.x)<absf(local_motion.y)*0.35)
 	visual_ground_error = absf(foot_height()-foot_rest_height) if grounded else 0.0
 
