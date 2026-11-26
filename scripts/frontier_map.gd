@@ -10,6 +10,7 @@ var buildings: Array[Rect2] = []
 var sectors: Array[Dictionary] = []
 var decor
 var routes_ready := false
+static var surface_cache: Dictionary = {}
 var loot_sites: Array[Vector3] = [
 	Vector3(-3,0,10),Vector3(3,0,10),Vector3(0,0,7),
 	Vector3(-38,0,-34),Vector3(38,0,-34),Vector3(-38,0,33),Vector3(38,0,33),
@@ -44,7 +45,7 @@ func build(owner_game) -> void:
 		var center := area.get_center()
 		var tile: StandardMaterial3D = game.mat("ffffff")
 		tile.albedo_color = sector["color"]
-		tile.albedo_texture = Art.floor_texture()
+		tile.albedo_texture = sector_texture(str(sector["name"]))
 		tile.uv1_scale = Vector3(16,16,16)
 		slab(Vector3(center.x,0.006,center.y),Vector3(area.size.x,0.012,area.size.y),tile)
 	for center in building_centers:
@@ -156,4 +157,31 @@ func loot_positions(seed_value: int) -> Array[Vector3]:
 	for i in range(6):
 		var index := rng.randi_range(0,available.size()-1)
 		result.append(available.pop_at(index))
+	return result
+
+static func sector_texture(kind: String) -> ImageTexture:
+	if surface_cache.has(kind):
+		return surface_cache[kind]
+	var img := Image.create(128,128,false,Image.FORMAT_RGB8)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = kind.hash()
+	for y in range(128):
+		for x in range(128):
+			var shade := 0.83+rng.randf_range(-0.045,0.045)
+			match kind:
+				"HELIX":
+					if x%32<2 or y%32<2:
+						shade *= 0.76
+				"NEXUS":
+					if posmod(x+y,24)<3:
+						shade *= 1.08
+				"FORGE":
+					shade += rng.randf_range(-0.12,0.07)
+				"HARBOR":
+					if y%16<2:
+						shade *= 0.77
+			img.set_pixel(x,y,Color(shade,shade,shade))
+	img.generate_mipmaps()
+	var result := ImageTexture.create_from_image(img)
+	surface_cache[kind] = result
 	return result
