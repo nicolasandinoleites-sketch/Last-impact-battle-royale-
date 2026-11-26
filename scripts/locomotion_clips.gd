@@ -71,6 +71,11 @@ func reset() -> void:
 	sample_count = 0
 	cadence_hz = 0.0
 
+func calibration_strength(speed: float) -> float:
+	# CI 122 found a sprint slip regression; preserve calibrated walk/jog,
+	# but return smoothly to the R0762 cadence and phase at sprint speed.
+	return 1.0-smoothstep(4.2,5.8,speed) if calibrated and calibration_enabled else 0.0
+
 func update(delta: float, speed: float, eligible: bool, local_motion: Vector2) -> void:
 	if not available:
 		return
@@ -90,7 +95,7 @@ func update(delta: float, speed: float, eligible: bool, local_motion: Vector2) -
 		var travel := lerpf(stride_travel[segment],stride_travel[segment+1],mix_amount)
 		# Clamp extreme cadence estimates; a calibrated stride still has a physical reach limit.
 		var measured := clampf(speed_blend/maxf(travel,0.35),0.35,2.8)
-		cadence = lerpf(cadence,measured,0.8)
+		cadence = lerpf(cadence,measured,0.8*calibration_strength(speed_blend))
 	cadence_hz = cadence if cadence_hz<=0.0 else lerpf(cadence_hz,cadence,1.0-exp(-delta*10.0))
 	phase = fposmod(phase+delta*cadence_hz,1.0)
 
@@ -100,7 +105,7 @@ func mask_at(clip_index: int, side_index: int) -> float:
 	var mask: PackedFloat32Array = support_masks[clip_index][side_index]
 	if mask.is_empty():
 		return 0.0
-	var p := fposmod(phase+phase_offsets[clip_index],1.0)*mask.size()
+	var p := fposmod(phase+phase_offsets[clip_index]*calibration_strength(speed_blend),1.0)*mask.size()
 	var i := floori(p)
 	return lerpf(mask[i%mask.size()],mask[(i+1)%mask.size()],p-float(i))
 
@@ -110,7 +115,7 @@ func support_confidence(side: String) -> float:
 	var segment := 0 if speed_blend<=3.8 else 1
 	var mix_amount := smoothstep(1.8,3.8,speed_blend) if segment==0 else smoothstep(3.8,6.2,speed_blend)
 	var side_index := 0 if side=="L" else 1
-	return lerpf(mask_at(segment,side_index),mask_at(segment+1,side_index),mix_amount)
+	return lerpf(mask_at(segment,side_index),mask_at(segment+1,side_index),mix_amount)*calibration_strength(speed_blend)
 
 func apply(rig: Skeleton3D) -> void:
 	if not available or weight<=0.0:
@@ -121,8 +126,8 @@ func apply(rig: Skeleton3D) -> void:
 	var b := library.get_animation(CLIPS[segment+1])
 	active_clip = CLIPS[segment] if mix_amount<0.5 else CLIPS[segment+1]
 	for i in range(ids.size()):
-		var pa := fposmod(phase+phase_offsets[segment],1.0) if calibrated and calibration_enabled else phase
-		var pb := fposmod(phase+phase_offsets[segment+1],1.0) if calibrated and calibration_enabled else phase
+		var pa := fposmod(phase+phase_offsets[segment]*calibration_strength(speed_blend),1.0) if calibrated and calibration_enabled else phase
+		var pb := fposmod(phase+phase_offsets[segment+1]*calibration_strength(speed_blend),1.0) if calibrated and calibration_enabled else phase
 		var qa := a.rotation_track_interpolate(tracks[segment][i],pa*a.length)
 		var qb := b.rotation_track_interpolate(tracks[segment+1][i],pb*b.length)
 		var goal := qa.slerp(qb,mix_amount).normalized()

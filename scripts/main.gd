@@ -48,7 +48,11 @@ var profile := 0
 var sun: DirectionalLight3D
 var world_environment: Environment
 var storm_exposure := 0.0
-var message := "Campo de entrenamiento"
+var message_left := 0.0
+var message := "Campo de entrenamiento":
+	set(value):
+		message = value
+		message_left = 2.4 if not value.is_empty() else 0.0
 const ArenaArt = preload("res://scripts/arena_art.gd")
 var arena_art: Node3D
 
@@ -423,6 +427,10 @@ func use_shield_cell() -> bool:
 	return true
 
 func _process(_delta: float) -> void:
+	if round_result=="" and reload_left<=0.0 and message_left>0.0:
+		message_left = maxf(0.0,message_left-_delta)
+		if message_left<=0.0:
+			message = ""
 	if survival_mode and is_instance_valid(zone) and is_instance_valid(player):
 		var body_exposure: float = zone.exposure(player.global_position)
 		var camera_exposure: float = zone.exposure(player.camera.global_position)
@@ -440,7 +448,7 @@ func _process(_delta: float) -> void:
 			report["seed"] = round_seed
 			report["zone_phase"] = zone.phase
 			report["storm_exposure"] = storm_exposure
-			report["build"] = "0.7.6.4"
+			report["build"] = "0.7.6.5"
 			report["locomotion_clips"] = player.raze.clip_motion.available
 			report["clip_samples"] = player.raze.clip_motion.sample_count
 			report["gait_calibrated"] = player.raze.clip_motion.calibrated

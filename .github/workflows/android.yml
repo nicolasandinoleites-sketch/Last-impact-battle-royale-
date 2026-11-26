@@ -7,9 +7,9 @@ on:
         type: boolean
         default: false
   push:
-    branches: [r0764-foot-contact]
+    branches: [r0765-tactical-gait]
   pull_request:
-    branches: [r0763-gait-sync]
+    branches: [r0764-foot-contact]
 permissions:
   contents: read
 jobs:
@@ -191,7 +191,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: LastImpact_R0764_StaticAB
+          name: LastImpact_R0765_StaticAB
           path: /tmp/lastimpact_batch_ab/
           if-no-files-found: ignore
       - name: Render Android-safe material path
@@ -206,13 +206,13 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: LastImpact_R0764_SafeVisual
+          name: LastImpact_R0765_SafeVisual
           path: /tmp/lastimpact_visual_safe/
           if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: LastImpact_R0764_Visual
+          name: LastImpact_R0765_Visual
           path: /tmp/lastimpact_visual/
           if-no-files-found: ignore
       - name: Prepare internal emulator APK (x86_64 only)
@@ -244,7 +244,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: LastImpact_R0764_AndroidQA
+          name: LastImpact_R0765_AndroidQA
           path: |
             /tmp/lastimpact_android_qa/
             /tmp/emulator_export.log
@@ -265,7 +265,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: ${{ success() }}
         with:
-          name: LastImpact_R0764_Android
+          name: LastImpact_R0765_Android
           path: |
             build/LastImpact_R076.apk
             build/SHA256SUMS.txt
@@ -274,7 +274,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: LastImpact_R0764_Diagnostico
+          name: LastImpact_R0765_Diagnostico
           path: |
             /tmp/import.log
             /tmp/smoke.log

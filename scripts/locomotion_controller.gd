@@ -25,7 +25,11 @@ static func facing_target(camera_yaw: float, current_yaw: float, direction: Vect
 	if combat:
 		return camera_yaw
 	if direction.length_squared()>0.015:
-		return atan2(-direction.x,-direction.z)
+		# Backpedal and strafe keep the weapon and hips in the forward camera hemisphere.
+		var forward := Basis(Vector3.UP,camera_yaw)*Vector3.FORWARD
+		var alignment := direction.normalized().dot(forward)
+		var travel_yaw := atan2(-direction.x,-direction.z)
+		return lerp_angle(camera_yaw,travel_yaw,smoothstep(0.05,0.65,alignment))
 	# Free look has a dead zone; turn the hips only after a large idle camera turn.
 	var difference := angle_difference(current_yaw,camera_yaw)
 	if absf(difference)>deg_to_rad(65.0):
