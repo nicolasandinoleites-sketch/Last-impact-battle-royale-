@@ -270,5 +270,42 @@ func run() -> void:
 	if not check(scene.player.animation_speed<0.18 and scene.player.raze.motion_state=="IDLE", "blocked movement does not walk in place"):
 		return
 	scene.mobile_move = Vector2.ZERO
-	print("LAST IMPACT R063 SMOKE PASS")
+	root.remove_child(scene)
+	scene.free()
+	var survival = load("res://survival.tscn").instantiate()
+	root.add_child(survival)
+	await frames(5)
+	if not check(survival.survival_mode and survival.targets.size()==6 and survival.zone.radius>30.0 and survival.round_result=="", "survival scene starts"):
+		return
+	var start: Vector3 = survival.targets[0].position
+	await frames(24)
+	if not check(survival.targets[0].position.distance_to(start)>0.1, "arcade drone moves"):
+		return
+	survival.zone.advance(84.0)
+	if not check(survival.zone.radius<34.0 and survival.zone.radius>6.0, "zone contracts"):
+		return
+	survival.zone.advance(200.0)
+	if not check(is_equal_approx(survival.zone.radius,6.0) and survival.zone.phase==2, "zone reaches final size"):
+		return
+	survival.player.position = Vector3(20,0.1,20)
+	var prior_health: int = survival.health
+	survival.update_survival(1.0)
+	if not check(survival.health<prior_health, "outside zone damages player"):
+		return
+	survival.armor = 10
+	survival.damage_player(5)
+	if not check(survival.armor==5, "shield absorbs arcade damage"):
+		return
+	survival.damage_player(200)
+	if not check(survival.round_result=="DERROTA" and survival.health==0 and not survival.fire, "defeat stops round"):
+		return
+	survival.reset_round()
+	if not check(survival.round_result=="" and survival.health==100 and survival.eliminated==0 and survival.zone.radius==34.0 and survival.targets[0].active, "survival reset"):
+		return
+	for drone in survival.targets:
+		drone.take_hit(100)
+	survival.update_survival(0.0)
+	if not check(survival.round_result=="VICTORIA", "survival victory"):
+		return
+	print("LAST IMPACT R070 SMOKE PASS")
 	quit(0)
