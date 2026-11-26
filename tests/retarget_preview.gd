@@ -1,5 +1,6 @@
 extends SceneTree
 const Transfer = preload("res://tools/rotation_retarget.gd")
+const GaitCalibration = preload("res://tools/gait_calibration.gd")
 const SOURCE := "/tmp/ual_source.glb"
 const OUT := "/tmp/lastimpact_retarget"
 const SOURCE_ROLES := {"hips":"pelvis","spine1":"spine_01","spine2":"spine_02","spine3":"spine_03","neck":"neck_01","head":"Head","left_upperarm":"upperarm_l","right_upperarm":"upperarm_r","left_forearm":"lowerarm_l","right_forearm":"lowerarm_r","left_hand":"hand_l","right_hand":"hand_r","left_shoulder":"clavicle_l","right_shoulder":"clavicle_r","left_thigh":"thigh_l","right_thigh":"thigh_r","left_calf":"calf_l","right_calf":"calf_r","left_foot":"foot_l","right_foot":"foot_r","left_toe":"ball_l","right_toe":"ball_r"}
@@ -86,6 +87,23 @@ func run() -> void:
 		source_player.stop()
 		library.add_animation(clip_name,result)
 		report.append({"clip":clip_name,"seconds":original.length,"rotation_tracks":tracks.size(),"samples":count+1})
+	# Align the clips using measured ankle trajectories on the actual retargeted rig.
+	var gait_report: Dictionary = {}
+	for clip_name in ["Walk_Loop","Jog_Fwd_Loop","Sprint_Loop"]:
+		var clip := library.get_animation(clip_name)
+		var data := GaitCalibration.sample(actor,clip)
+		gait_report[clip_name] = data
+		if data.get("valid",false):
+			clip.set_meta("gait_phase_offset",data["phase_offset"])
+			clip.set_meta("gait_travel_m",data["travel_m_per_cycle"])
+			clip.set_meta("gait_contact_samples",data["contact_samples"])
+		print("GAIT CALIBRATION ",clip_name," | ",JSON.stringify(data))
+	var gait_file := FileAccess.open(OUT+"/gait_calibration.json",FileAccess.WRITE)
+	if gait_file==null:
+		fail("gait calibration report")
+		return
+	gait_file.store_string(JSON.stringify(gait_report,"  "))
+	gait_file.close()
 	# Experimental library only. No imported asset or runtime code is overwritten.
 	if ResourceSaver.save(library,OUT+"/raze_experimental.tres")!=OK:
 		fail("cannot save library")
