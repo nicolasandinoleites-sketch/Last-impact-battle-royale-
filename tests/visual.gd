@@ -246,6 +246,13 @@ func run() -> void:
 	survival.player.reset_physics_interpolation()
 	await wait_frames(35)
 	await capture("27_storm_exposure")
+	for step in range(3):
+		survival.player.position = Vector3(0,0.1,survival.zone.radius+float(step-1)*2.0)
+		survival.player.yaw = PI
+		survival.player.reset_movement()
+		survival.player.reset_physics_interpolation()
+		await wait_frames(20)
+		await capture("storm_cross_%02d" % step)
 	survival.player.position = saved_position
 	survival.player.yaw = saved_yaw
 	survival.damage_player(200)
