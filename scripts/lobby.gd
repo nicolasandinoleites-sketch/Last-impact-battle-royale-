@@ -122,9 +122,10 @@ func _draw() -> void:
 		text_at(704,139,"MODO DE JUEGO",14,GOLD)
 		text_at(704,171,"ENTRENAMIENTO",20)
 		text_at(704,196,"6 objetivos / offline",14,MUTED)
-		text_at(704,226,"Battle Royale: en desarrollo",13,MUTED)
-		action(rect(690,280,246,54),"DIAGNOSTICO 3D")
-		action(rect(690,350,246,68),"JUGAR",true)
+		text_at(704,226,"Supervivencia: 6 drones",13,MUTED)
+		action(rect(690,270,246,48),"DIAGNOSTICO 3D")
+		action(rect(690,326,246,50),"ENTRENAR")
+		action(rect(690,384,246,54),"SUPERVIVENCIA",true)
 		text_at(26,500,"Build de prueba | Android",14,MUTED)
 		text_at(690,460,"Calidad: "+["Baja segura","Media","Alta"][quality],14,MUTED)
 	elif mode == "settings":
@@ -191,9 +192,11 @@ func activate(pos: Vector2) -> void:
 	if launching:
 		return
 	if mode == "home":
-		if rect(690,350,246,68).has_point(pos):
+		if rect(690,384,246,54).has_point(pos):
+			launch("res://survival.tscn")
+		elif rect(690,326,246,50).has_point(pos):
 			launch("res://main.tscn")
-		elif rect(690,280,246,54).has_point(pos):
+		elif rect(690,270,246,48).has_point(pos):
 			launch("res://diagnostic.tscn")
 		elif rect(24,341,248,54).has_point(pos):
 			mode = "settings"
@@ -211,7 +214,7 @@ func activate(pos: Vector2) -> void:
 	queue_redraw()
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventScreenTouch and event.pressed:
+	if event is InputEventScreenTouch and event.pressed and not event.canceled:
 		activate(event.position)
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and not OS.has_feature("android"):
 		activate(event.position)
