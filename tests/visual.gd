@@ -170,6 +170,19 @@ func run() -> void:
 	for tick in range(30):
 		await physics_frame
 	await capture("16_mobile_other_shoulder")
+	root.remove_child(scene)
+	scene.free()
+	var survival = load("res://survival.tscn").instantiate()
+	root.add_child(survival)
+	for tick in range(30):
+		await physics_frame
+	await capture("17_survival_start")
+	survival.zone.advance(100.0)
+	await wait_frames(10)
+	await capture("18_survival_zone")
+	survival.damage_player(200)
+	await wait_frames(10)
+	await capture("19_survival_result")
 	print("VISUAL MOTION COMPLETE")
 	print("VISUAL CAPTURE COMPLETE")
 	quit(0)
