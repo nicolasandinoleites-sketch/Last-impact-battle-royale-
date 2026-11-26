@@ -272,6 +272,8 @@ func _physics_process(delta: float) -> void:
 			get_parent().qa_control("CLIP_ACTIVE")
 		if raze.crouch_motion.weight>0.5 and get_parent().has_method("qa_control"):
 			get_parent().qa_control("CROUCH_CLIP_ACTIVE")
+		if raze.air_motion.weight>0.3 and get_parent().has_method("qa_control"):
+			get_parent().qa_control("AIR_CLIP_"+raze.air_motion.state)
 	else:
 		visual.scale.y = lerpf(visual.scale.y,0.55 if low_stance else 1.0,minf(1.0,delta*12.0))
 	if weapon_loaded:

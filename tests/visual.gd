@@ -197,6 +197,21 @@ func run() -> void:
 		inspection.look_at(crouch_view+Vector3(0,0.70,0))
 		await capture("motion_crouch_walk_%02d" % sample)
 	scene.reset_round()
+	# Matched fixed physics jump inspection. Actual body height follows physics.
+	for enabled in [false,true]:
+		scene.reset_round()
+		scene.player.raze.air_motion.enabled = enabled
+		for tick in range(12):
+			await physics_frame
+		scene.player.jump_requested = true
+		for sample in range(12):
+			for tick in range(4):
+				await physics_frame
+			var follow: Vector3 = scene.player.global_position
+			inspection.position = follow+Vector3(2.6,1.45,-1.2)
+			inspection.look_at(follow+Vector3(0,0.90,0))
+			await capture("air_%s_%02d" % ["candidate" if enabled else "reference",sample])
+	scene.reset_round()
 	# Real Android screen aspect ratio, without changing the safe graphics backend.
 	inspection.current = false
 	scene.player.camera.current = true
