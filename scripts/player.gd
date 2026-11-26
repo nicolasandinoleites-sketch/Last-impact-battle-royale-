@@ -25,6 +25,7 @@ var ground_grace := 0.0
 var combat_facing := false
 var combat_hold := 0.0
 var local_motion := Vector2.ZERO
+var animation_speed := 0.0
 const Raze = preload("res://scripts/raze.gd")
 var raze: Node3D
 var model_loaded := false
@@ -155,6 +156,8 @@ func set_stance(low: bool) -> void:
 
 func reset_movement() -> void:
 	velocity = Vector3.ZERO
+	animation_speed = 0.0
+	sprint = false
 	move_input = Vector2.ZERO
 	slide_time = 0.0
 	slide_cooldown = 0.0
@@ -206,14 +209,18 @@ func _physics_process(delta: float) -> void:
 	contact_shadow.visible = is_on_floor()
 	contact_shadow.position.y = 0.018
 	update_facing(direction,delta)
-	var local_velocity := visual.global_transform.basis.orthonormalized().inverse()*Vector3(velocity.x,0.0,velocity.z)
+	# Animate actual horizontal displacement, not requested movement against a wall.
+	var real_motion := get_real_velocity()
+	var horizontal := Vector3(real_motion.x,0.0,real_motion.z)
+	animation_speed = horizontal.length()
+	var local_velocity := visual.global_transform.basis.orthonormalized().inverse()*horizontal
 	local_motion = Vector2(local_velocity.x,local_velocity.z)
 	phase += delta * (12.0 if sprint else 9.0)
-	var stride := sin(phase)*0.45 if direction.length()>0.12 and is_on_floor() else 0.0
+	var stride := sin(phase)*0.45 if animation_speed>0.18 and is_on_floor() else 0.0
 	left_leg.rotation.x = stride
 	right_leg.rotation.x = -stride
 	if model_loaded:
-		raze.locomotion(delta,Vector2(velocity.x,velocity.z).length(),is_on_floor(),low_stance,combat_hold>0.0,sprint,velocity.y,local_motion)
+		raze.locomotion(delta,animation_speed,is_on_floor(),low_stance,combat_hold>0.0,sprint,velocity.y,local_motion)
 	else:
 		visual.scale.y = lerpf(visual.scale.y,0.55 if low_stance else 1.0,minf(1.0,delta*12.0))
 	if weapon_loaded:
