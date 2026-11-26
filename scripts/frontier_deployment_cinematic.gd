@@ -50,7 +50,9 @@ func show_aboard(phase: int, plane_position: Vector3, clock: float, delta: float
  actor.global_position = timeline.world_point(plane_position,timeline.actor_local)
  actor.visual.rotation = Vector3(0,PI*0.5,0)
  if actor.model_loaded:
-  actor.raze.locomotion(delta,timeline.actor_speed,true,false,false,false,0.0,Vector2(0,-timeline.actor_speed),Vector2.ZERO,false)
+  # Use the existing sprint blend above the terrestrial sprint threshold.
+  var sprinting: bool = timeline.actor_speed>4.2
+  actor.raze.locomotion(delta,timeline.actor_speed,true,false,false,sprinting,0.0,Vector2(0,-timeline.actor_speed),Vector2.ZERO,false)
  # Camera stays inside the cabin and follows the player until the intentional exterior cut.
  var z := clampf(timeline.actor_local.z-2.25,-4.4,2.6)
  shot.global_position = timeline.world_point(plane_position,Vector3(0.35,1.64,z))
