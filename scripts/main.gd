@@ -11,6 +11,7 @@ var zone
 const Frontier = preload("res://scripts/frontier_map.gd")
 var frontier
 var round_seed := 7300
+var android_qa_ticks := 0
 var round_result := ""
 var zone_tick := 0.0
 const InventoryScript = preload("res://scripts/survival_inventory.gd")
@@ -79,6 +80,8 @@ func _ready() -> void:
 	hud.game = self
 	layer.add_child(hud)
 	hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	if survival_mode and OS.has_feature("android"):
+		print("ANDROID FRONTIER READY | player=",player.model_loaded," weapon=",player.weapon_loaded," rivals=",targets.size())
 
 func mat(hex: String) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
@@ -162,6 +165,10 @@ func _on_target_destroyed() -> void:
 
 func _physics_process(delta: float) -> void:
 	if survival_mode:
+		if OS.has_feature("android") and android_qa_ticks<120:
+			android_qa_ticks += 1
+			if android_qa_ticks==120 and player.model_loaded and player.weapon_loaded:
+				print("ANDROID FRONTIER TICKS 120")
 		update_survival(delta)
 		if round_result!="":
 			return
