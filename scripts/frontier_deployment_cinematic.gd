@@ -9,14 +9,19 @@ var shot: Camera3D
 var actor
 var active := false
 var interior := false
+const Passengers = preload("res://scripts/deployment_passengers.gd")
+var passengers: Node3D
 
-func configure(player) -> void:
+func configure(player, profile: int = 0) -> void:
  actor = player
  cabin = Cabin.new()
  add_child(cabin)
  cabin.build()
  cabin.rotation.y = -PI*0.5
  cabin.hide()
+ passengers = Passengers.new()
+ cabin.add_child(passengers)
+ passengers.build(profile)
  shot = Camera3D.new()
  shot.far = 240.0
  shot.near = 0.05
@@ -37,6 +42,8 @@ func show_aboard(phase: int, plane_position: Vector3, clock: float, delta: float
  interior = phase==Flight.Phase.IN_PLANE
  cabin.global_position = plane_position+Vector3(0,Timeline.CABIN_FLOOR_OFFSET,0)
  cabin.visible = interior
+ passengers.set_active(interior)
+ passengers.step(delta)
  cabin.set_opening(timeline.opening)
  if not shot.current:
   shot.make_current()
@@ -63,6 +70,7 @@ func release() -> void:
  active = false
  interior = false
  cabin.hide()
+ passengers.set_active(false)
  actor.visual.show()
  actor.camera.make_current()
 

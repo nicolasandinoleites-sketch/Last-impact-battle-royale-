@@ -1,0 +1,4 @@
+LAST IMPACT R07.8.2 — proyecto completo Godot 4.6
+Abrir project.godot y ejecutar deployment_preview.tscn (F6). Mantiene survival.tscn y lobby normales.
+Recuperada biblioteca ANI02 de R0773 (artefacto 15154267718, raze_experimental.tres). Modelos GLB originales R0781 incluidos, textura importada a 2048. Alas +30% en eje local X solamente al desplegar. Estelas azules, FX por distancia, cabina más oscura y guías de luz, cámara más próxima.
+Pruebas headless y capturas GL Compatibility incluidas en qa_r0782. No se probó Android físico ni se exportó APK. El corte interior/exterior sigue siendo intencional por puerta fusionada. Las pruebas gráficas usaron llvmpipe, no representan FPS Android.

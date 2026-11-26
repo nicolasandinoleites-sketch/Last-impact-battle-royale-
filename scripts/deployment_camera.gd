@@ -31,13 +31,13 @@ func step(delta: float, phase: int, steer: Vector2, landing_progress: float) -> 
    goal_pitch = -0.06
   2:
    goal_fov = 78.0
-   goal_distance = 4.5
+   goal_distance = 3.65
    goal_shoulder = 0.0
    goal_pitch = -0.24
    goal_roll = -steer.x*0.055
   3:
    goal_fov = 72.0
-   goal_distance = 4.0
+   goal_distance = 3.40
    goal_shoulder = 0.0
    goal_pitch = -0.12
    goal_roll = -steer.x*0.035

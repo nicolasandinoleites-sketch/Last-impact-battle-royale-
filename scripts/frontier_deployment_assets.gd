@@ -9,6 +9,7 @@ var plane: Node3D
 var pack: Node3D
 var available := false
 var phase := -1
+var actor_ref: Node3D
 
 func load_model(path: String) -> Node3D:
  if not ResourceLoader.exists(path):
@@ -19,6 +20,7 @@ func load_model(path: String) -> Node3D:
  return scene.instantiate() as Node3D
 
 func configure(actor, profile: int) -> bool:
+ actor_ref = actor
  var plane_model := load_model(AIRCRAFT)
  var pack_model := load_model(JETPACK)
  if plane_model==null or pack_model==null or not actor.model_loaded:
@@ -64,11 +66,12 @@ func step(delta: float, state: int, plane_position: Vector3, steering: Vector2, 
  plane.global_position = plane_position
  plane.visible = state!=Flight.Phase.GROUND and not inside_cabin
  plane.set_aircraft_power(0.82,plane.visible)
- plane.step_aircraft(delta,plane.visible)
+ var near_aircraft := is_instance_valid(actor_ref) and actor_ref.global_position.distance_to(plane_position)<42.0
+ plane.step_aircraft(delta,plane.visible and near_aircraft)
  if phase!=state:
   pack.glider.set_phase(state)
   phase = state
- pack.glider.update_deployment(delta,clampf(0.64-steering.y*0.25,0.0,1.0))
+ pack.glider.update_deployment(delta,clampf(0.85-steering.y*0.15,0.0,1.0))
 
 func finish() -> void:
  if not available: return

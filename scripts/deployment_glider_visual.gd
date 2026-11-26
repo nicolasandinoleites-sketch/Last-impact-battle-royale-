@@ -11,6 +11,7 @@ var left_axis := Vector3.UP
 var right_axis := Vector3.UP
 var folded_angle := deg_to_rad(75.0)
 var deployment := 0.0
+var deployed_span_scale := 1.0
 var phase := Phase.GROUND
 var configured := false
 
@@ -44,8 +45,10 @@ func update_deployment(delta: float, throttle: float, within_fx_range: bool = tr
 	var open := phase==Phase.GLIDE
 	deployment = move_toward(deployment,1.0 if open else 0.0,maxf(delta,0.0)/(0.48 if open else 0.34))
 	var angle := folded_angle*(1.0-smoothstep(0.0,1.0,deployment))
-	wing_left.transform.basis = left_open*Basis(left_axis,angle)
-	wing_right.transform.basis = right_open*Basis(right_axis,-angle)
+	var extension := lerpf(1.0,deployed_span_scale,smoothstep(0.0,1.0,deployment))
+	var stretch := Basis.from_scale(Vector3(extension,1.0,1.0))
+	wing_left.transform.basis = left_open*Basis(left_axis,angle)*stretch
+	wing_right.transform.basis = right_open*Basis(right_axis,-angle)*stretch
 	for engine in engines:
 		if is_instance_valid(engine) and engine.has_method("set_power"):
 			engine.set_power(clampf(throttle,0.0,1.0)*deployment,open)

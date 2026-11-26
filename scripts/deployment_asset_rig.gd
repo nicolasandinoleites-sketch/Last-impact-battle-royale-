@@ -30,7 +30,7 @@ func attach_model(instance: Node3D, is_aircraft: bool, profile: int = 0) -> bool
 			var rotor := model.find_child("Rotor_"+suffix,true,false) as Node3D
 			var effect := FX.new()
 			marker.add_child(effect)
-			effect.configure(rotor,0.029,true,profile)
+			effect.configure(rotor,0.038,true,profile)
 			aircraft_engines.append(effect)
 	else:
 		glider = Glider.new()
@@ -41,13 +41,14 @@ func attach_model(instance: Node3D, is_aircraft: bool, profile: int = 0) -> bool
 			var marker := model.find_child("Exhaust_"+suffix,true,false) as Node3D
 			var effect := FX.new()
 			marker.add_child(effect)
-			effect.configure(null,0.047,false,profile)
+			effect.configure(null,0.058,false,profile)
 			engines.append(effect)
 		var left := model.find_child("Wing_L",true,false) as Node3D
 		var right := model.find_child("Wing_R",true,false) as Node3D
 		# Source Deploy/Retract GLB tracks use opposite local Z rotation, 65 degrees.
 		if not glider.configure(left,right,Vector3(0,0,1),Vector3(0,0,1),engines,65.0):
 			return false
+		glider.deployed_span_scale = 1.30
 	bound = true
 	return true
 

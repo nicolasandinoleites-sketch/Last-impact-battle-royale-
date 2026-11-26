@@ -60,9 +60,20 @@ func _draw() -> void:
 		return
 	var u := unit()
 	if game.deployment_active():
+		# Restrained peripheral streaks: cheap 2D lines, no full-screen blur.
+		var strength: float = game.deployment.speed_effect
+		if strength>0.08:
+			var center := size*0.5
+			var count := 8 if game.profile==0 else 14
+			for i in range(count):
+				var a := TAU*float(i)/float(count)+0.11
+				var direction := Vector2(cos(a),sin(a))
+				var extent := Vector2(size.x*0.46,size.y*0.46)
+				var p := center+direction*extent*(0.78+0.19*fposmod(game.deployment.flight.elapsed*1.7+i*0.37,1.0))
+				draw_line(p,p+direction*(18.0+25.0*strength)*u,Color(0.74,0.89,1.0,0.20*strength),1.0,true)
 		draw_minimap(u)
 		centered(at(0.49,0.12),game.deployment.status_text(),int(18*u),ACCENT)
-		centered(at(0.49,0.19),"ALT %.0f m" % maxf(0.0,game.player.position.y-game.deployment.flight.ground_y),int(14*u))
+		centered(at(0.49,0.19),"ALT %.0f m  ·  %.0f km/h" % [maxf(0.0,game.player.position.y-game.deployment.flight.ground_y),game.deployment.flight.velocity.length()*3.6],int(14*u))
 		var joystick := move_center if move_id>=0 else at(0.14,0.80)
 		draw_circle(joystick,58*u,DARK)
 		draw_circle(joystick+knob,25*u,WHITE)
@@ -78,7 +89,7 @@ func _draw() -> void:
 	var font := int(12*u)
 	draw_minimap(u)
 	draw_rect(Rect2(at(0.145,0.025),Vector2(190,78)*u),DARK)
-	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0773",int(14*u),ACCENT)
+	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0783",int(14*u),ACCENT)
 	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d · MEM EST %.0f MB" % [cached_fps,cached_mem],font)
 	label_at(at(0.145,0.025)+Vector2(9,50)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
 	if game.survival_mode and not game.telemetry.latest.is_empty():

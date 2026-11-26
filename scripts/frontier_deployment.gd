@@ -11,6 +11,9 @@ const DeploymentAssets = preload("res://scripts/frontier_deployment_assets.gd")
 var assets: Node3D
 const Cinematic = preload("res://scripts/frontier_deployment_cinematic.gd")
 var cinematic: Node3D
+const DeploymentAudio = preload("res://scripts/deployment_audio.gd")
+var audio: Node
+var speed_effect := 0.0
 var flight := Flight.new()
 var surface := Surface.new()
 var pose := Pose.new()
@@ -26,6 +29,11 @@ var last_phase := Flight.Phase.INTRO
 func begin(actor) -> void:
  player = actor
  camera_motion.reset()
+ speed_effect = 0.0
+ if not is_instance_valid(audio):
+  audio = DeploymentAudio.new()
+  add_child(audio)
+ audio.reset()
  body_tilt = Vector2.ZERO
  player.reset_movement()
  player.set_physics_process(false)
@@ -45,7 +53,7 @@ func begin(actor) -> void:
  if assets.available and not is_instance_valid(cinematic):
   cinematic = Cinematic.new()
   add_child(cinematic)
-  cinematic.configure(player)
+  cinematic.configure(player,int(get_parent().profile))
  if is_instance_valid(cinematic):
   cinematic.reset()
  flight.reset()
@@ -143,13 +151,19 @@ func step(delta: float, stick: Vector2) -> void:
  player.pivot.position.y = camera_motion.height
  player.boom.position.x = camera_motion.shoulder*player.shoulder
  player.boom.spring_length = camera_motion.distance
- player.camera.fov = camera_motion.fov
+ var speed: float = flight.velocity.length()
+ var speed_goal := clampf((speed-5.0)/18.0,0.0,1.0) if flight.phase==Flight.Phase.FREEFALL else 0.0
+ speed_effect = lerpf(speed_effect,speed_goal,1.0-exp(-delta*7.0))
+ player.camera.fov = camera_motion.fov+speed_effect*4.0
  if assets.available:
   var aboard: bool = flight.phase in [Flight.Phase.INTRO,Flight.Phase.IN_PLANE]
   var inside := aboard and is_instance_valid(cinematic) and flight.phase==Flight.Phase.IN_PLANE
   assets.step(delta,flight.phase,flight.plane_position,stick,inside)
   if aboard and is_instance_valid(cinematic):
    cinematic.show_aboard(flight.phase,flight.plane_position,flight.time_in_phase,delta)
+ var opening: float = cinematic.timeline.opening if is_instance_valid(cinematic) else 0.0
+ var requested: bool = cinematic.timeline.requested if is_instance_valid(cinematic) else false
+ audio.step(delta,flight.phase,speed,opening,requested)
  if previous!=flight.phase:
   print("LAST IMPACT DEPLOYMENT PHASE ",Flight.Phase.keys()[flight.phase])
  last_phase = flight.phase
@@ -162,6 +176,8 @@ func step(delta: float, stick: Vector2) -> void:
 func finish() -> void:
  active = false
  action_requested = false
+ speed_effect = 0.0
+ if is_instance_valid(audio): audio.reset()
  if is_instance_valid(assets):
   assets.finish()
  if is_instance_valid(cinematic):
@@ -182,7 +198,7 @@ func finish() -> void:
 
 func status_text() -> String:
  match flight.phase:
-  Flight.Phase.INTRO: return "DESPLIEGUE EXPERIMENTAL"
+  Flight.Phase.INTRO: return "DESPLIEGUE · FRONTIER"
   Flight.Phase.IN_PLANE:
    if is_instance_valid(cinematic): return cinematic.status_text()
    return "PULSA SALTAR"
