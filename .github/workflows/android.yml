@@ -7,9 +7,9 @@ on:
         type: boolean
         default: false
   push:
-    branches: [r0766-upper-body]
+    branches: [r0767-crouch]
   pull_request:
-    branches: [r0765-tactical-gait]
+    branches: [r0766-upper-body]
 permissions:
   contents: read
 jobs:
@@ -148,6 +148,7 @@ jobs:
           timeout 90s Godot_v4.6-stable_linux.x86_64 --headless --path . --script res://tests/clip_gameplay.gd 2>&1 | tee /tmp/clip_gameplay.log
           grep -F 'RAZE CLIP GAMEPLAY PASS' /tmp/clip_gameplay.log
           grep -F 'UPPER BODY PASS' /tmp/clip_gameplay.log
+          grep -F 'CROUCH GAMEPLAY PASS' /tmp/clip_gameplay.log
           timeout 90s Godot_v4.6-stable_linux.x86_64 --headless --path . --script res://tests/gait_ab.gd 2>&1 | tee /tmp/gait_ab.log
           grep -F 'GAIT AB COMPLETE' /tmp/gait_ab.log
           if grep -E 'SCRIPT ERROR|Parse Error|TEST FAILED' /tmp/gait_ab.log; then exit 1; fi
@@ -167,6 +168,8 @@ jobs:
           test -s /tmp/lastimpact_visual/motion_turn_11.png
           test -s /tmp/lastimpact_visual/motion_carry_sprint.png
           test -s /tmp/lastimpact_visual/motion_carry_ads.png
+          test -s /tmp/lastimpact_visual/motion_crouch_idle.png
+          test -s /tmp/lastimpact_visual/motion_crouch_walk_03.png
           test -s /tmp/lastimpact_visual/motion_reload_11.png
           test -s /tmp/lastimpact_visual/17_survival_start.png
           test -s /tmp/lastimpact_visual/19_survival_result.png
@@ -194,7 +197,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: LastImpact_R0766_StaticAB
+          name: LastImpact_R0767_StaticAB
           path: /tmp/lastimpact_batch_ab/
           if-no-files-found: ignore
       - name: Render Android-safe material path
@@ -209,13 +212,13 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: LastImpact_R0766_SafeVisual
+          name: LastImpact_R0767_SafeVisual
           path: /tmp/lastimpact_visual_safe/
           if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: LastImpact_R0766_Visual
+          name: LastImpact_R0767_Visual
           path: /tmp/lastimpact_visual/
           if-no-files-found: ignore
       - name: Prepare internal emulator APK (x86_64 only)
@@ -247,7 +250,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: LastImpact_R0766_AndroidQA
+          name: LastImpact_R0767_AndroidQA
           path: |
             /tmp/lastimpact_android_qa/
             /tmp/emulator_export.log
@@ -268,7 +271,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: ${{ success() }}
         with:
-          name: LastImpact_R0766_Android
+          name: LastImpact_R0767_Android
           path: |
             build/LastImpact_R076.apk
             build/SHA256SUMS.txt
@@ -277,7 +280,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: LastImpact_R0766_Diagnostico
+          name: LastImpact_R0767_Diagnostico
           path: |
             /tmp/import.log
             /tmp/smoke.log
