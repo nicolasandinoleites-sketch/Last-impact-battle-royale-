@@ -97,6 +97,8 @@ func run() -> void:
 			clip.set_meta("gait_phase_offset",data["phase_offset"])
 			clip.set_meta("gait_travel_m",data["travel_m_per_cycle"])
 			clip.set_meta("gait_contact_samples",data["contact_samples"])
+			clip.set_meta("gait_left_mask",data["left_mask"])
+			clip.set_meta("gait_right_mask",data["right_mask"])
 		print("GAIT CALIBRATION ",clip_name," | ",JSON.stringify(data))
 	var gait_file := FileAccess.open(OUT+"/gait_calibration.json",FileAccess.WRITE)
 	if gait_file==null:

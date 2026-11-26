@@ -18,6 +18,7 @@ var stride_travel := PackedFloat32Array()
 var calibrated := false
 var cadence_hz := 0.0
 var calibration_enabled := true
+var support_masks: Array = []
 
 func setup(rig: Skeleton3D) -> bool:
 	if not ResourceLoader.exists(LIBRARY):
@@ -29,6 +30,7 @@ func setup(rig: Skeleton3D) -> bool:
 	tracks.clear()
 	phase_offsets.clear()
 	stride_travel.clear()
+	support_masks.clear()
 	available = false
 	calibrated = true
 	for name in BONES:
@@ -55,6 +57,9 @@ func setup(rig: Skeleton3D) -> bool:
 			calibrated = false
 		phase_offsets.append(offset)
 		stride_travel.append(travel)
+		var left: PackedFloat32Array = clip.get_meta("gait_left_mask",PackedFloat32Array())
+		var right: PackedFloat32Array = clip.get_meta("gait_right_mask",PackedFloat32Array())
+		support_masks.append([left,right])
 	available = true
 	return true
 
@@ -88,6 +93,24 @@ func update(delta: float, speed: float, eligible: bool, local_motion: Vector2) -
 		cadence = lerpf(cadence,measured,0.8)
 	cadence_hz = cadence if cadence_hz<=0.0 else lerpf(cadence_hz,cadence,1.0-exp(-delta*10.0))
 	phase = fposmod(phase+delta*cadence_hz,1.0)
+
+func mask_at(clip_index: int, side_index: int) -> float:
+	if clip_index>=support_masks.size():
+		return 0.0
+	var mask: PackedFloat32Array = support_masks[clip_index][side_index]
+	if mask.is_empty():
+		return 0.0
+	var p := fposmod(phase+phase_offsets[clip_index],1.0)*mask.size()
+	var i := floori(p)
+	return lerpf(mask[i%mask.size()],mask[(i+1)%mask.size()],p-float(i))
+
+func support_confidence(side: String) -> float:
+	if not calibrated or not calibration_enabled or not available:
+		return 0.0
+	var segment := 0 if speed_blend<=3.8 else 1
+	var mix_amount := smoothstep(1.8,3.8,speed_blend) if segment==0 else smoothstep(3.8,6.2,speed_blend)
+	var side_index := 0 if side=="L" else 1
+	return lerpf(mask_at(segment,side_index),mask_at(segment+1,side_index),mix_amount)
 
 func apply(rig: Skeleton3D) -> void:
 	if not available or weight<=0.0:

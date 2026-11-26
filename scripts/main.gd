@@ -440,11 +440,13 @@ func _process(_delta: float) -> void:
 			report["seed"] = round_seed
 			report["zone_phase"] = zone.phase
 			report["storm_exposure"] = storm_exposure
-			report["build"] = "0.7.6.3"
+			report["build"] = "0.7.6.4"
 			report["locomotion_clips"] = player.raze.clip_motion.available
 			report["clip_samples"] = player.raze.clip_motion.sample_count
 			report["gait_calibrated"] = player.raze.clip_motion.calibrated
 			report["gait_cadence_hz"] = player.raze.clip_motion.cadence_hz
+			report["foot_contacts"] = player.raze.foot_contact.contact_count
+			report["foot_ik_residual_m"] = player.raze.foot_contact.max_error
 			report["static_blocks"] = frontier.batched_blocks
 			report["static_groups"] = frontier.batch_draw_groups
 			report["os"] = OS.get_name()
