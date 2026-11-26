@@ -277,9 +277,9 @@ func run() -> void:
 	await frames(5)
 	if not check(survival.survival_mode and survival.targets.size()==6 and survival.zone.radius>30.0 and survival.round_result=="", "survival scene starts"):
 		return
-	var start: Vector3 = survival.targets[0].position
+	var drone_start: Vector3 = survival.targets[0].position
 	await frames(24)
-	if not check(survival.targets[0].position.distance_to(start)>0.1, "arcade drone moves"):
+	if not check(survival.targets[0].position.distance_to(drone_start)>0.1, "arcade drone moves"):
 		return
 	survival.zone.advance(84.0)
 	if not check(survival.zone.radius<34.0 and survival.zone.radius>6.0, "zone contracts"):
