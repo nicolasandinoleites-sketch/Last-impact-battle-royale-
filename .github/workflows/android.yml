@@ -96,6 +96,8 @@ jobs:
           if grep -E 'SCRIPT ERROR|Parse Error|TEST FAILED' /tmp/touch_tests.log; then exit 1; fi
           if grep -E 'SCRIPT ERROR|Parse Error|TEST FAILED' /tmp/tests.log; then exit 1; fi
       - name: Audit verified CC0 animation source
+        id: animation_source_audit
+        continue-on-error: true
         run: |
           set -euo pipefail
           # Fetch only the pinned archive, never execute third-party repository scripts.
@@ -111,6 +113,9 @@ jobs:
             /tmp/raze_rig_audit.json
             /tmp/animation_source_audit.json
           if-no-files-found: ignore
+      - name: Report animation research status
+        if: always()
+        run: echo 'ANI-02 source audit outcome=${{ steps.animation_source_audit.outcome }} (not a gameplay acceptance test)'
       - name: Render desktop visual diagnostics
         run: |
           set -euo pipefail
