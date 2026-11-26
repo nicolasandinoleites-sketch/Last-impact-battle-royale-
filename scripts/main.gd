@@ -3,6 +3,12 @@ const PlayerScript = preload("res://scripts/player.gd")
 const TargetScript = preload("res://scripts/target.gd")
 const HudScript = preload("res://scripts/hud.gd")
 var player
+@export var survival_mode := false
+const ZoneScript = preload("res://scripts/survival_zone.gd")
+const DroneScript = preload("res://scripts/survival_drone.gd")
+var zone
+var round_result := ""
+var zone_tick := 0.0
 const GameAudio = preload("res://scripts/game_audio.gd")
 var game_audio: Node
 var health := 100
@@ -39,9 +45,15 @@ func _ready() -> void:
 	player = PlayerScript.new()
 	player.position = Vector3(0,0.1,12)
 	add_child(player)
+	if survival_mode:
+		zone = ZoneScript.new()
+		add_child(zone)
+		message = "Supervivencia: permanece en la zona"
 	for p in [Vector3(0,0,-4),Vector3(-8,0,-8),Vector3(9,0,-13),Vector3(-15,0,-20),Vector3(14,0,7),Vector3(-18,0,7)]:
-		var target = TargetScript.new()
+		var target = DroneScript.new() if survival_mode else TargetScript.new()
 		target.position = p
+		if survival_mode:
+			target.game = self
 		add_child(target)
 		target.destroyed.connect(_on_target_destroyed)
 		targets.append(target)
@@ -123,9 +135,15 @@ func build_arena() -> void:
 
 func _on_target_destroyed() -> void:
 	eliminated += 1
+	if survival_mode:
+		return
 	message = "Zona despejada · REINICIAR" if eliminated == targets.size() else "Objetivo neutralizado"
 
 func _physics_process(delta: float) -> void:
+	if survival_mode:
+		update_survival(delta)
+		if round_result!="":
+			return
 	var keyboard := Vector2(float(keys.get(KEY_D,false))-float(keys.get(KEY_A,false)),float(keys.get(KEY_S,false))-float(keys.get(KEY_W,false)))
 	player.move_input = (mobile_move+keyboard).limit_length(1.0)
 	player.sprint = mobile_sprint or keys.get(KEY_SHIFT,false)
@@ -144,6 +162,8 @@ func _physics_process(delta: float) -> void:
 		shoot()
 
 func shoot() -> void:
+	if round_result!="":
+		return
 	if ammo <= 0:
 		start_reload()
 		return
@@ -173,12 +193,18 @@ func shoot() -> void:
 		game_audio.hit_player.play()
 
 func start_reload() -> void:
+	if round_result!="":
+		return
 	if ammo < 30 and reserve > 0 and reload_left <= 0.0:
 		reload_left = 1.4
 		game_audio.reload_player.play()
 		message = "Recargando..."
 
 func reset_round() -> void:
+	round_result = ""
+	zone_tick = 0.0
+	if survival_mode:
+		zone.reset_zone()
 	for t in targets:
 		t.reset_target()
 	eliminated = 0
@@ -196,7 +222,7 @@ func reset_round() -> void:
 	player.reset_movement()
 	player.reset_physics_interpolation()
 	hud.clear_controls()
-	message = "Campo de entrenamiento"
+	message = "Supervivencia: permanece en la zona" if survival_mode else "Campo de entrenamiento"
 
 func apply_profile() -> void:
 	Engine.max_fps = [30,45,60][profile]
@@ -214,3 +240,38 @@ func next_profile() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
 		get_tree().change_scene_to_file("res://lobby.tscn")
+
+func update_survival(delta: float) -> void:
+	if round_result!="":
+		return
+	zone.advance(delta)
+	zone_tick += delta
+	while zone_tick>=1.0:
+		zone_tick -= 1.0
+		if zone.outside(player.global_position):
+			damage_player(5 if zone.phase<2 else 10)
+		if round_result!="":
+			return
+		for target in targets:
+			if target.active and zone.outside(target.global_position):
+				target.take_hit(5 if zone.phase<2 else 10)
+	if eliminated>=targets.size():
+		finish_survival("VICTORIA")
+
+func damage_player(amount: int) -> void:
+	if not survival_mode or round_result!="" or amount<=0:
+		return
+	var absorbed := mini(armor,amount)
+	armor -= absorbed
+	health = maxi(0,health-(amount-absorbed))
+	if health==0:
+		finish_survival("DERROTA")
+
+func finish_survival(result: String) -> void:
+	if round_result!="":
+		return
+	round_result = result
+	message = result+" · REINICIAR o LOBBY"
+	hud.clear_controls()
+	player.reset_movement()
+	reload_left = 0.0
