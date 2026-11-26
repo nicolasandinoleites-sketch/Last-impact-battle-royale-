@@ -18,7 +18,7 @@ var right_error := 0.0
 var left_error := 0.0
 var energy_cell: Node3D
 var cell_stage := "DOCKED"
-var cell_dock := Vector3(-0.055,-0.035,0.015)
+var cell_dock := Vector3(-0.075,-0.035,0.015)
 var cell_path := Vector3.ZERO
 var reload_progress := 0.0
 func equip(hand: Node3D, body_visual: Node3D) -> bool:
@@ -81,7 +81,7 @@ func update_pose(delta: float, aiming: bool, reload: float, low: bool = false, p
 	var desired := body_origin + frame * Vector3(0.065,1.33+lower,-0.19+kick)
 	var tilt := sin(reload*PI) if reload>0.0 else 0.0
 	aim_pitch = lerpf(aim_pitch,clampf(pitch,-0.48,0.40) if aiming else -0.18,1.0-exp(-delta*16.0))
-	var local_basis := Basis.from_euler(Vector3(aim_pitch,0.0,tilt*0.34))
+	var local_basis := Basis.from_euler(Vector3(aim_pitch-tilt*0.15,0.0,tilt*0.50))
 	global_transform = Transform3D(frame*local_basis,desired)
 	flash.position = Vector3(0,0.045,-0.34)
 	if is_instance_valid(actor):
@@ -134,10 +134,10 @@ func build_energy_cell() -> void:
 	energy_cell = Node3D.new()
 	energy_cell.name = "IgnisVisualEnergyCell"
 	add_child(energy_cell)
-	cell_piece(Vector3.ZERO,Vector3(0.038,0.060,0.080),Color("28343b"))
-	cell_piece(Vector3(-0.021,0,0),Vector3(0.006,0.036,0.060),Color("ff9b43"))
-	cell_piece(Vector3(0,0.030,0),Vector3(0.040,0.007,0.083),Color("727d83"))
-	cell_piece(Vector3(0,-0.030,0),Vector3(0.040,0.007,0.083),Color("727d83"))
+	cell_piece(Vector3.ZERO,Vector3(0.044,0.074,0.085),Color("28343b"))
+	cell_piece(Vector3(-0.024,0,0),Vector3(0.007,0.052,0.064),Color("ff9b43"))
+	cell_piece(Vector3(0,0.037,0),Vector3(0.046,0.008,0.088),Color("727d83"))
+	cell_piece(Vector3(0,-0.037,0),Vector3(0.046,0.008,0.088),Color("727d83"))
 	update_reload_cell(0.0)
 
 func update_reload_cell(remaining: float) -> void:
@@ -145,8 +145,8 @@ func update_reload_cell(remaining: float) -> void:
 		return
 	reload_progress = 1.0-clampf(remaining,0.0,1.0) if remaining>0.0 else 0.0
 	var p := reload_progress
-	var out := cell_dock+Vector3(-0.052,-0.055,0.06)
-	var exchange := cell_dock+Vector3(-0.065,-0.095,0.14)
+	var out := cell_dock+Vector3(-0.055,-0.060,-0.025)
+	var exchange := cell_dock+Vector3(-0.080,-0.12,-0.075)
 	cell_stage = "DOCKED"
 	cell_path = cell_dock
 	if remaining>0.0:

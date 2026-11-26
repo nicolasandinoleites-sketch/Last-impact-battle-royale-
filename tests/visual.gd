@@ -85,5 +85,48 @@ func run() -> void:
 	for i in range(48):
 		await physics_frame
 	await capture("10_reload_complete")
+	# Consecutive samples during actual physics simulation, using a tracking inspection camera.
+	scene.player.aiming = false
+	scene.mobile_move = Vector2(0,-1)
+	for sample in range(8):
+		for tick in range(5):
+			await physics_frame
+		var follow: Vector3 = scene.player.global_position
+		inspection.position = follow+Vector3(2.6,1.45,-1.2)
+		inspection.look_at(follow+Vector3(0,0.90,0))
+		inspection.fov = 45.0
+		await capture("motion_walk_%02d" % sample)
+	scene.mobile_sprint = true
+	for sample in range(8):
+		for tick in range(5):
+			await physics_frame
+		var follow: Vector3 = scene.player.global_position
+		inspection.position = follow+Vector3(2.6,1.45,-1.2)
+		inspection.look_at(follow+Vector3(0,0.90,0))
+		await capture("motion_sprint_%02d" % sample)
+	scene.player.request_slide()
+	for sample in range(5):
+		for tick in range(5):
+			await physics_frame
+		var follow: Vector3 = scene.player.global_position
+		inspection.position = follow+Vector3(2.6,1.45,-1.2)
+		inspection.look_at(follow+Vector3(0,0.90,0))
+		await capture("motion_slide_%02d" % sample)
+	scene.mobile_move = Vector2.ZERO
+	scene.mobile_sprint = false
+	for tick in range(60):
+		await physics_frame
+	scene.ammo = 12
+	scene.reserve = 50
+	scene.start_reload()
+	for sample in range(12):
+		for tick in range(7):
+			await physics_frame
+		var follow: Vector3 = scene.player.global_position
+		inspection.position = follow+Vector3(-1.60,1.45,-0.85)
+		inspection.look_at(follow+Vector3(0,1.28,-0.18))
+		inspection.fov = 42.0
+		await capture("motion_reload_%02d" % sample)
+	print("VISUAL MOTION COMPLETE")
 	print("VISUAL CAPTURE COMPLETE")
 	quit(0)
