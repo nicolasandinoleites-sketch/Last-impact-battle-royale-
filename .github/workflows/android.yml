@@ -224,6 +224,7 @@ jobs:
             /tmp/smoke.log
             /tmp/tests.log
             /tmp/rig_audit.log
+            /tmp/raze_rig_audit.json
             /tmp/touch_tests.log
             /tmp/export.log
             /tmp/visual.log
