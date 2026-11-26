@@ -16,6 +16,19 @@ func check(ok: bool, label: String) -> bool:
 	return true
 
 func run() -> void:
+	var motion = preload("res://scripts/locomotion_controller.gd")
+	var cardinal: Vector2 = motion.step(Vector2.ZERO,Vector2(3.8,0),true,false,1.0/60.0)
+	var diagonal: Vector2 = motion.step(Vector2.ZERO,Vector2(1,1).normalized()*3.8,true,false,1.0/60.0)
+	if not check(is_equal_approx(cardinal.length(),diagonal.length()), "equal cardinal and diagonal acceleration"):
+		return
+	var reversed: Vector2 = motion.step(Vector2(3.8,0),Vector2(-3.8,0),true,false,1.0/60.0)
+	if not check(reversed.x>0.0 and reversed.x<3.8, "reversal brakes before opposite acceleration"):
+		return
+	var air: Vector2 = motion.step(Vector2.ZERO,Vector2(3.8,0),false,false,1.0/60.0)
+	if not check(air.length()<cardinal.length(), "limited air steering"):
+		return
+	if not check(is_equal_approx(motion.facing_target(0.4,0.0,Vector3.ZERO,false,false),0.0), "idle free look does not rotate hips on small camera turns"):
+		return
 	var telemetry = preload("res://scripts/frame_telemetry.gd").new()
 	var values := PackedFloat64Array()
 	for i in range(99):
@@ -92,9 +105,16 @@ func run() -> void:
 	var old_yaw: float = scene.player.yaw
 	scene.player.visual.rotation.y = 0.8
 	scene.player.sprint = false
+	scene.player.aiming = false
+	scene.player.combat_hold = 0.0
 	scene.player.update_facing(Vector3.RIGHT,1.0)
-	if not check(absf(angle_difference(scene.player.visual.rotation.y,old_yaw))<0.01, "strafe keeps camera orientation"):
+	if not check(absf(angle_difference(scene.player.visual.rotation.y,-PI*0.5))<0.01, "free movement turns body toward travel"):
 		return
+	scene.player.aiming = true
+	scene.player.update_facing(Vector3.RIGHT,1.0)
+	if not check(absf(angle_difference(scene.player.visual.rotation.y,old_yaw))<0.01, "aimed strafe retains camera orientation"):
+		return
+	scene.player.aiming = false
 	scene.player.visual.rotation.y = old_yaw
 	var button_positions: Dictionary = scene.hud.buttons()
 	for button_name in button_positions:
