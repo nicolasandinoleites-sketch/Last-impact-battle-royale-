@@ -2,20 +2,33 @@ extends Node3D
 # Decorative, collision-free art on the existing arena. One shared material per batch.
 var batch_count := 0
 var decoration_count := 0
+# Shared deterministic tile textures, generated once per process.
+static var floor_cache: ImageTexture
+static var panel_cache: ImageTexture
+
 static func floor_texture() -> ImageTexture:
-	var img := Image.create(128,128,false,Image.FORMAT_RGB8)
+	if is_instance_valid(floor_cache):
+		return floor_cache
+	var img := Image.create(256,256,false,Image.FORMAT_RGB8)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 620
-	for y in range(128):
-		for x in range(128):
-			var shade := 0.84+rng.randf_range(-0.035,0.035)
-			if x<2 or y<2:
-				shade *= 0.80
-			elif x==2 or y==2:
+	for y in range(256):
+		for x in range(256):
+			var coarse := sin(float(x)*TAU/128.0)*cos(float(y)*TAU/128.0)*0.025
+			var shade := 0.84+coarse+rng.randf_range(-0.028,0.028)
+			if x<4 or y<4:
+				shade *= 0.72
+			elif x==4 or y==4:
 				shade *= 1.10
+			elif (x<18 or x>237) and (y<18 or y>237):
+				var dx := float(x-12 if x<18 else x-244)
+				var dy := float(y-12 if y<18 else y-244)
+				if dx*dx+dy*dy<12.0:
+					shade *= 0.72
 			img.set_pixel(x,y,Color(shade,shade,shade))
 	img.generate_mipmaps()
-	return ImageTexture.create_from_image(img)
+	floor_cache = ImageTexture.create_from_image(img)
+	return floor_cache
 
 func batch(color: String, transforms: Array[Transform3D]) -> void:
 	if transforms.is_empty():
@@ -93,18 +106,31 @@ func decorate(_arena: Node3D) -> void:
 	batch("728c97",pale)
 
 static func panel_texture() -> ImageTexture:
-	var img := Image.create(128,128,false,Image.FORMAT_RGB8)
+	if is_instance_valid(panel_cache):
+		return panel_cache
+	var img := Image.create(256,256,false,Image.FORMAT_RGB8)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 921
-	for y in range(128):
-		for x in range(128):
-			var value := 0.91+rng.randf_range(-0.028,0.028)
-			if x<3 or y<3:
-				value *= 0.73
-			elif x==3 or y==3:
-				value *= 1.04
-			if y>110:
-				value *= lerpf(1.0,0.83,float(y-110)/18.0)
+	for y in range(256):
+		for x in range(256):
+			var value := 0.91+rng.randf_range(-0.022,0.022)
+			var edge := mini(mini(x,255-x),mini(y,255-y))
+			if edge<4:
+				value *= 0.72
+			elif edge<7:
+				value *= 1.055
+			elif edge<10:
+				value *= 0.93
+			if y>220:
+				value *= lerpf(1.0,0.84,float(y-220)/35.0)
+			# Recessed decorative vents on the panel, not geometry.
+			if x>25 and x<231 and y>184 and y<212 and posmod(y-184,7)<2:
+				value *= 0.78
+			var bolt_x := mini(absi(x-15),absi(x-240))
+			var bolt_y := mini(absi(y-15),absi(y-240))
+			if bolt_x*bolt_x+bolt_y*bolt_y<16:
+				value *= 0.60
 			img.set_pixel(x,y,Color(value,value,value))
 	img.generate_mipmaps()
-	return ImageTexture.create_from_image(img)
+	panel_cache = ImageTexture.create_from_image(img)
+	return panel_cache
