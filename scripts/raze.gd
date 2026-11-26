@@ -106,6 +106,42 @@ func bone_motion(joint: String, degrees: Vector3, blend: float) -> void:
 	var qz := Quaternion((axis_map * Vector3.BACK).normalized(),deg_to_rad(current.z))
 	skeleton.set_bone_pose_rotation(id,(rest * qx * qy * qz).normalized())
 
+func reset_locomotion() -> void:
+	if not ready_model:
+		return
+	if preview_dance:
+		dance()
+	cycle = 0.0
+	clock = 0.0
+	speed_blend = 0.0
+	landing = 0.0
+	was_grounded = true
+	gait_heading = Vector3.FORWARD
+	gait_weight = 0.0
+	foot_ik_active = false
+	foot_ik_error = 0.0
+	visual_ground_error = 0.0
+	motion_state = "IDLE"
+	model.position = Vector3.ZERO
+	for joint in JOINTS:
+		offsets[joint] = Vector3.ZERO
+		var id: int = joints[joint]
+		skeleton.set_bone_pose_rotation(id,base[id])
+	skeleton.force_update_all_bone_transforms()
+
+# Re-enter leg IK gradually when movement reverses rather than dragging a planted
+# foot through the opposite stride. Ordinary directional changes stay continuous.
+func update_gait_heading(heading: Vector3, delta: float) -> void:
+	if heading.length_squared()<0.01:
+		return
+	var next := heading.normalized()
+	if gait_weight<=0.0 or gait_heading.dot(next)<-0.35:
+		gait_heading = next
+		gait_weight = 0.0
+	else:
+		var smoothed := gait_heading.lerp(next,1.0-exp(-delta*18.0))
+		gait_heading = smoothed.normalized() if smoothed.length_squared()>0.01 else next
+
 func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: bool, sprinting: bool = false, vertical_speed: float = 0.0, local_motion: Vector2 = Vector2.ZERO) -> void:
 	if not ready_model or preview_dance:
 		return
@@ -220,8 +256,7 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 	foot_ik_error = 0.0
 	if foot_ik_active:
 		var heading := Vector3(local_motion.x,0.0,local_motion.y).normalized()
-		var smoothed := gait_heading.lerp(heading,1.0-exp(-delta*18.0))
-		gait_heading = smoothed.normalized() if smoothed.length_squared()>0.01 else heading
+		update_gait_heading(heading,delta)
 		gait_weight = minf(1.0,gait_weight+delta*9.0)
 		var half_step := gait_half_step(speed,cadence,fast)
 		# Maintain a small knee reserve rather than asking both legs to fully extend.
