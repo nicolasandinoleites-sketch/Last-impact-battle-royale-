@@ -28,6 +28,9 @@ var support_masks: Array = []
 # Experimental parameters; neutral defaults preserve the approved gait.
 var sprint_amplitude := 1.0
 var sprint_cadence_multiplier := 1.0
+# Experimental support masks learned from replayed candidate poses, not the source clip.
+var sprint_support_masks: Array = []
+var sprint_lock_enabled := false
 
 func setup(rig: Skeleton3D) -> bool:
 	if not ResourceLoader.exists(LIBRARY):
@@ -139,6 +142,12 @@ func mask_at(clip_index: int, side_index: int) -> float:
 	return lerpf(mask[i%mask.size()],mask[(i+1)%mask.size()],p-float(i))
 
 func support_confidence(side: String) -> float:
+	if sprint_lock_enabled and speed_blend>=5.9 and sprint_support_masks.size()==2:
+		var mask: PackedFloat32Array = sprint_support_masks[0 if side=="L" else 1]
+		if not mask.is_empty():
+			var p := fposmod(phase,1.0)*mask.size()
+			var i := floori(p)
+			return lerpf(mask[i%mask.size()],mask[(i+1)%mask.size()],p-float(i))
 	if not calibrated or not calibration_enabled or not available:
 		return 0.0
 	var segment := 0 if speed_blend<=3.8 else 1
