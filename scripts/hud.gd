@@ -34,7 +34,12 @@ func unit() -> float:
 	return clampf(size.y/540.0,0.7,1.4)
 
 func buttons() -> Dictionary:
-	return {"FIRE":at(0.91,0.59),"AIM":at(0.79,0.48),"JUMP":at(0.92,0.80),"SLIDE":at(0.80,0.82),"LOAD":at(0.68,0.82),"RUN":at(0.10,0.49),"SIDE":at(0.66,0.49),"FPS":at(0.92,0.10),"RESET":at(0.77,0.10),"LOBBY":at(0.65,0.10)}
+	var positions := {"FIRE":at(0.91,0.59),"AIM":at(0.79,0.48),"JUMP":at(0.92,0.80),"SLIDE":at(0.80,0.82),"LOAD":at(0.68,0.82),"RUN":at(0.10,0.49),"SIDE":at(0.66,0.49),"FPS":at(0.92,0.10),"RESET":at(0.77,0.10),"LOBBY":at(0.65,0.10)}
+	if game!=null and game.survival_mode:
+		positions["PICKUP"] = at(0.52,0.76)
+		positions["MED"] = at(0.38,0.90)
+		positions["SHIELD"] = at(0.49,0.90)
+	return positions
 
 func radius(name: String) -> float:
 	return (42.0 if name == "FIRE" else 30.0)*unit()
@@ -53,7 +58,7 @@ func _draw() -> void:
 	var font := int(12*u)
 	draw_minimap(u)
 	draw_rect(Rect2(at(0.145,0.025),Vector2(180,62)*u),DARK)
-	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R070",int(14*u),ACCENT)
+	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R071",int(14*u),ACCENT)
 	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d   ·   MEM %.0f MB" % [cached_fps,cached_mem],font)
 	label_at(at(0.145,0.025)+Vector2(9,50)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
 	centered(at(0.49,0.16),game.message,int(15*u))
@@ -72,7 +77,13 @@ func _draw() -> void:
 	draw_arc(joystick,58*u,0,TAU,40,Color(1,1,1,0.55),2*u,true)
 	draw_circle(joystick+knob,25*u,Color(0.88,0.92,0.93,0.58))
 	var positions := buttons()
-	var names := {"FIRE":"FUEGO","AIM":"MIRA","JUMP":"SALTO","SLIDE":"SLIDE","LOAD":"REC.","RUN":"CORRER","SIDE":"LADO","FPS":"CALIDAD","RESET":"RESET","LOBBY":"LOBBY"}
+	var names := {"FIRE":"FUEGO","AIM":"MIRA","JUMP":"SALTO","SLIDE":"SLIDE","LOAD":"REC.","RUN":"CORRER","SIDE":"LADO","FPS":"CALIDAD","RESET":"RESET","LOBBY":"LOBBY","PICKUP":"RECOGER","MED":"CURAR","SHIELD":"ESCUDO"}
+	if game.survival_mode:
+		names["MED"] = "CURAR %d" % game.inventory.medkits
+		names["SHIELD"] = "ESCUDO %d" % game.inventory.shield_cells
+		var pickup = game.nearest_pickup()
+		if pickup!=null:
+			centered(at(0.49,0.70),"SUMINISTRO: "+str(pickup.kind),int(12*u),pickup.item_color())
 	for name in positions:
 		var p: Vector2 = positions[name]
 		var r := radius(name)
@@ -122,6 +133,9 @@ func press_button(name: String, index: int) -> void:
 		"JUMP": game.player.jump_requested = true
 		"SLIDE": game.player.request_slide()
 		"LOAD": game.start_reload()
+		"PICKUP": game.collect_nearby()
+		"MED": game.use_medkit()
+		"SHIELD": game.use_shield_cell()
 		"RESET": game.reset_round()
 		"FPS": game.next_profile()
 		"LOBBY": get_tree().change_scene_to_file("res://lobby.tscn")
@@ -206,6 +220,9 @@ func _input(event: InputEvent) -> void:
 				KEY_SPACE: game.player.jump_requested = true
 				KEY_C: game.player.request_slide()
 				KEY_R: game.start_reload()
+				KEY_F: game.collect_nearby()
+				KEY_H: game.use_medkit()
+				KEY_G: game.use_shield_cell()
 				KEY_Q: game.player.shoulder *= -1.0
 				KEY_E: game.player.aiming = not game.player.aiming
 				KEY_F1: game.next_profile()
@@ -243,6 +260,10 @@ func draw_minimap(u: float) -> void:
 	var k := 95.0*u/80.0
 	if game.survival_mode:
 		draw_arc(middle,float(game.zone.radius)*k,0,TAU,48,Color("5ecdf2"),1.5*u,true)
+	if game.survival_mode:
+		for pickup in game.pickups:
+			if pickup.active:
+				draw_rect(Rect2(middle+Vector2(pickup.position.x,pickup.position.z)*k-Vector2.ONE*2*u,Vector2.ONE*4*u),pickup.item_color())
 	for target in game.targets:
 		if target.active:
 			draw_circle(middle+Vector2(target.position.x,target.position.z)*k,3.0*u,ACCENT)
