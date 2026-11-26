@@ -117,7 +117,8 @@ line=open(sys.argv[1]).read().splitlines()[-1]
 d=json.loads(line.split("LAST IMPACT TELEMETRY ",1)[1])
 assert d["frames"]>0 and d["duration_ms"]>=10000 and d["mean_fps"]>0
 assert 0<d["median_ms"]<=d["p95_ms"]<=d["p99_ms"]
-assert d["one_percent_low_fps"]>0 and d["build"]=="0.7.7.2"
+assert d["one_percent_low_fps"]>0 and d["build"]=="0.7.7.3"
+assert d["air_clips"] is True
 assert d["sprint_tuned"] is True
 assert d["adaptive_level"] in (0,1,2) and (d["base_width"],d["base_height"]) in ((800,450),(720,405),(640,360))
 assert all(d[k]>=0 for k in ("player_animation_us_ema","weapon_ik_us_ema","operator_animation_us_ema_sum","operator_reduced_ticks"))
@@ -147,6 +148,9 @@ press_fraction 02_frontier 0.79 0.48
 wait_log "LAST IMPACT CONTROL AIM_OFF" 1
 press_fraction 02_frontier 0.92 0.80
 wait_log "LAST IMPACT CONTROL JUMP" 1
+wait_log "LAST IMPACT CONTROL AIR_CLIP_ASCEND" 1
+wait_log "LAST IMPACT CONTROL AIR_CLIP_FALL" 1
+wait_log "LAST IMPACT CONTROL AIR_CLIP_LAND" 1
 reset_verified
 swipe_fraction 02_frontier 0.14 0.80 0.14 0.66 2000
 wait_log "LAST IMPACT CONTROL MOVE_RELEASE" 1
