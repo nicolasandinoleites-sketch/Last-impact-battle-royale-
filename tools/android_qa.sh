@@ -47,6 +47,17 @@ PY
 )
   adb shell input swipe "$x1" "$y1" "$x2" "$y2" "$6"
 }
+dismiss_launcher_anr() {
+  adb shell uiautomator dump /sdcard/lastimpact_window.xml >/dev/null 2>&1 || return 0
+  adb pull /sdcard/lastimpact_window.xml "$OUT/launcher_window.xml" >/dev/null 2>&1 || return 0
+  if grep -Fq "Pixel Launcher isn't responding" "$OUT/launcher_window.xml"; then
+    echo "ANDROID QA: detected unrelated Pixel Launcher ANR; closing launcher only"
+    adb shell am force-stop com.google.android.apps.nexuslauncher
+    sleep 3
+    adb shell am start -n "$PKG/com.godot.game.GodotAppLauncher"
+    sleep 4
+  fi
+}
 dismiss_immersive() {
   adb shell uiautomator dump /sdcard/lastimpact_window.xml >/dev/null 2>&1 || return 0
   adb pull /sdcard/lastimpact_window.xml "$OUT/window.xml" >/dev/null 2>&1 || return 0
@@ -79,6 +90,7 @@ adb logcat -c
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1
 wait_log "LAST IMPACT R073 LOBBY READY" 1
 sleep 5
+dismiss_launcher_anr
 dismiss_immersive
 capture 01_lobby
 tap_fraction 01_lobby 0.847 0.761
