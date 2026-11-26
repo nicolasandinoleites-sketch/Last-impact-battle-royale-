@@ -7,15 +7,15 @@ on:
         type: boolean
         default: false
   push:
-    branches: [r073-frontier]
+    branches: [r073-android-qa]
   pull_request:
-    branches: [r072-operators]
+    branches: [r073-frontier]
 permissions:
   contents: read
 jobs:
   apk:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - name: Verify character asset
@@ -129,6 +129,40 @@ jobs:
         with:
           name: LastImpact_R073_Visual
           path: /tmp/lastimpact_visual/
+          if-no-files-found: ignore
+      - name: Prepare internal emulator APK (x86_64 only)
+        run: |
+          set -euo pipefail
+          cp export_presets.cfg /tmp/export_presets.original.cfg
+          trap 'cp /tmp/export_presets.original.cfg export_presets.cfg' EXIT
+          sed -i 's@architectures/armeabi-v7a=true@architectures/armeabi-v7a=false@;s@architectures/arm64-v8a=true@architectures/arm64-v8a=false@;s@architectures/x86_64=false@architectures/x86_64=true@' export_presets.cfg
+          Godot_v4.6-stable_linux.x86_64 --headless --path . --export-debug Android /tmp/lastimpact_android_qa.apk 2>&1 | tee /tmp/emulator_export.log
+          test -s /tmp/lastimpact_android_qa.apk
+          "$ANDROID_HOME/build-tools/35.0.1/apksigner" verify --verbose /tmp/lastimpact_android_qa.apk
+          unzip -l /tmp/lastimpact_android_qa.apk | grep 'lib/x86_64/libgodot_android.so'
+      - name: Enable emulator hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Test installation and gameplay on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2.35.0
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swangle -noaudio -no-boot-anim -no-snapshot
+          script: bash tools/android_qa.sh
+      - name: Upload emulator diagnostics (not APK)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LastImpact_R073_AndroidQA
+          path: |
+            /tmp/lastimpact_android_qa/
+            /tmp/emulator_export.log
           if-no-files-found: ignore
       - name: Export debug APK
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.export_apk }}
