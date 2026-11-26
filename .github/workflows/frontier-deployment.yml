@@ -52,3 +52,17 @@ jobs:
             /tmp/deployment_cabin_timeline.log
             /tmp/frontier_deployment.log
             /tmp/smoke.log
+
+      - name: Stage source overlay for preserving exact revision
+        if: always()
+        run: |
+          mkdir -p /tmp/r0781-overlay/scripts /tmp/r0781-overlay/tests /tmp/r0781-overlay/docs
+          cp scripts/deployment_*.gd scripts/frontier_deployment*.gd /tmp/r0781-overlay/scripts/
+          cp tests/deployment_*.gd tests/frontier_deployment.gd /tmp/r0781-overlay/tests/
+          cp deployment_preview.tscn /tmp/r0781-overlay/
+          cp docs/R0781.md /tmp/r0781-overlay/docs/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: LastImpact_R0781_SourceOverlay
+          path: /tmp/r0781-overlay/
