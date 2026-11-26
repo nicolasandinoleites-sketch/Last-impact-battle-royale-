@@ -191,10 +191,11 @@ func reset_round() -> void:
 	hit_left = 0.0
 	fire = false
 	player.position = Vector3(0,0.1,12)
-	player.reset_movement()
-	hud.clear_controls()
 	player.yaw = 0.0
 	player.pitch = -0.13
+	player.reset_movement()
+	player.reset_physics_interpolation()
+	hud.clear_controls()
 	message = "Campo de entrenamiento"
 
 func apply_profile() -> void:
