@@ -67,6 +67,22 @@ func build(owner_game) -> void:
 			lights.append(decor.piece(center+Vector3(side*2.15,2.55,5.06),Vector3(0.15,1.0,0.06)))
 			details.append(decor.piece(center+Vector3(side*5.1,3.92,0),Vector3(0.18,0.12,10.4)))
 		details.append(decor.piece(center+Vector3(0,4.1,0),Vector3(3.2,0.38,2.4)))
+	# Thin decorative facade and ceiling features; keep all doorways unobstructed.
+	for center in building_centers:
+		for side in [-1.0,1.0]:
+			for z in [-3.0,0.0,3.0]:
+				strips.append(decor.piece(center+Vector3(side*5.19,2.0,z),Vector3(0.05,1.9,0.16)))
+			strips.append(decor.piece(center+Vector3(side*5.19,3.15,0),Vector3(0.05,0.18,9.8)))
+			lights.append(decor.piece(center+Vector3(side*2.6,3.53,0),Vector3(0.15,0.04,7.4)))
+			for x in [-3.65,3.65]:
+				strips.append(decor.piece(center+Vector3(x,0.24,side*5.20),Vector3(2.4,0.12,0.06)))
+				details.append(decor.piece(center+Vector3(x,2.75,side*5.20),Vector3(1.6,0.25,0.06)))
+	for p in [Vector3(-6,0.75,1),Vector3(7,0.75,3),Vector3(4,0.75,-10),Vector3(-11,0.75,-14),Vector3(15,0.75,-4),Vector3(-25,0.75,0),Vector3(25,0.75,0),Vector3(-12,0.75,34),Vector3(12,0.75,-34)]:
+		for x in [-1.13,1.13]:
+			for z in [-0.66,0.66]:
+				strips.append(decor.piece(p+Vector3(x,0,z),Vector3(0.09,1.48,0.025)))
+		for z in [-0.66,0.66]:
+			details.append(decor.piece(p+Vector3(0,0.58,z),Vector3(2.4,0.09,0.025)))
 	decor.batch("8dadae",strips)
 	decor.batch("6fd2e5",lights)
 	decor.batch("b67c47",details)
