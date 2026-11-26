@@ -57,6 +57,11 @@ func _draw() -> void:
 	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d   ·   MEM %.0f MB" % [cached_fps,cached_mem],font)
 	label_at(at(0.145,0.025)+Vector2(9,50)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
 	centered(at(0.49,0.16),game.message,int(15*u))
+	if game.survival_mode:
+		var zone_label := "ZONA %d m · %ds · %d/%d drones" % [roundi(game.zone.radius),game.zone.seconds_remaining(),game.targets.size()-game.eliminated,game.targets.size()]
+		if game.zone.outside(game.player.global_position):
+			zone_label += " · FUERA"
+		centered(at(0.49,0.205),zone_label,int(12*u),Color("ffb26b") if game.zone.outside(game.player.global_position) else Color("5ecdf2"))
 	var center := size*0.5
 	var spread := 1.0 if game.player.aiming else 1.45
 	var c := ACCENT if game.hit_left>0.0 else WHITE
@@ -103,6 +108,8 @@ func button_at(pos: Vector2) -> String:
 	return best
 
 func press_button(name: String, index: int) -> void:
+	if game.round_result!="" and name not in ["RESET","LOBBY","FPS"]:
+		return
 	match name:
 		"FIRE":
 			if fire_id == -1:
@@ -149,6 +156,17 @@ func _notification(what: int) -> void:
 
 func _input(event: InputEvent) -> void:
 	if game == null:
+		return
+	if game.round_result!="":
+		if event is InputEventScreenTouch and event.pressed and not event.canceled:
+			press_button(button_at(event.position),event.index)
+		elif event is InputEventMouseButton and event.pressed and not OS.has_feature("android"):
+			press_button(button_at(event.position),-2)
+		elif event is InputEventKey and event.pressed and not event.echo:
+			if event.physical_keycode==KEY_F2:
+				game.reset_round()
+			elif event.physical_keycode==KEY_ESCAPE:
+				get_tree().change_scene_to_file("res://lobby.tscn")
 		return
 	if event is InputEventScreenTouch:
 		var id: int = event.index
@@ -223,6 +241,8 @@ func draw_minimap(u: float) -> void:
 		draw_line(area.position+Vector2(0,d),area.position+Vector2(area.size.x,d),Color(0.5,0.65,0.72,0.18),1.0)
 	var middle := area.get_center()
 	var k := 95.0*u/80.0
+	if game.survival_mode:
+		draw_arc(middle,float(game.zone.radius)*k,0,TAU,48,Color("5ecdf2"),1.5*u,true)
 	for target in game.targets:
 		if target.active:
 			draw_circle(middle+Vector2(target.position.x,target.position.z)*k,3.0*u,ACCENT)
