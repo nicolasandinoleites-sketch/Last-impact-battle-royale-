@@ -6,6 +6,7 @@ var player
 @export var survival_mode := false
 const ZoneScript = preload("res://scripts/survival_zone.gd")
 const DroneScript = preload("res://scripts/survival_drone.gd")
+const OperatorScript = preload("res://scripts/survival_operator.gd")
 var zone
 var round_result := ""
 var zone_tick := 0.0
@@ -57,7 +58,10 @@ func _ready() -> void:
 		message = "Supervivencia: permanece en la zona"
 		spawn_pickups()
 	for p in [Vector3(0,0,-4),Vector3(-8,0,-8),Vector3(9,0,-13),Vector3(-15,0,-20),Vector3(14,0,7),Vector3(-18,0,7)]:
-		var target = DroneScript.new() if survival_mode else TargetScript.new()
+		var target = TargetScript.new()
+		if survival_mode:
+			target.free()
+			target = OperatorScript.new() if targets.size() in [2,4] else DroneScript.new()
 		target.position = p
 		if survival_mode:
 			target.game = self
@@ -209,6 +213,7 @@ func start_reload() -> void:
 
 func reset_round() -> void:
 	round_result = ""
+	player.set_physics_process(true)
 	zone_tick = 0.0
 	if survival_mode:
 		zone.reset_zone()
@@ -285,6 +290,7 @@ func finish_survival(result: String) -> void:
 	message = result+" · REINICIAR o LOBBY"
 	hud.clear_controls()
 	player.reset_movement()
+	player.set_physics_process(false)
 	reload_left = 0.0
 
 func spawn_pickups() -> void:
