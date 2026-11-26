@@ -177,6 +177,12 @@ func run() -> void:
 	for tick in range(30):
 		await physics_frame
 	await capture("17_survival_start")
+	survival.player.position = survival.pickups[0].position+Vector3.UP*0.1
+	await wait_frames(10)
+	await capture("20_loot_nearby")
+	survival.collect_nearby()
+	await wait_frames(10)
+	await capture("21_inventory_collected")
 	survival.zone.advance(100.0)
 	await wait_frames(10)
 	await capture("18_survival_zone")
