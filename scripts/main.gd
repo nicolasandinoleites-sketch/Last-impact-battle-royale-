@@ -18,6 +18,8 @@ var qa_sample_frames := 0
 var qa_sample_done := false
 const FrameTelemetry = preload("res://scripts/frame_telemetry.gd")
 var telemetry := FrameTelemetry.new()
+const AdaptiveResolution = preload("res://scripts/adaptive_resolution.gd")
+var adaptive_resolution := AdaptiveResolution.new()
 var telemetry_paused := false
 var qa_control_seen: Dictionary = {}
 var round_result := ""
@@ -292,6 +294,9 @@ func reset_round() -> void:
 		print("ANDROID ROUND RESET | seed=",round_seed," health=",health," ammo=",ammo)
 
 func apply_profile() -> void:
+	adaptive_resolution.reset()
+	telemetry.reset()
+	telemetry.latest = {}
 	Engine.max_fps = [30,45,60][profile]
 	if OS.has_feature("android"):
 		MobileProfile.apply_android(get_tree().root,profile)
@@ -428,7 +433,18 @@ func use_shield_cell() -> bool:
 	message = "Escudo restaurado"
 	return true
 
+func update_adaptive_resolution() -> void:
+	if not OS.has_feature("android") or profile!=0 or not survival_mode or telemetry_paused or round_result!="" or not is_instance_valid(hud) or not is_instance_valid(player):
+		return
+	var safe: bool = hud.move_id<0 and hud.look_id<0 and hud.fire_id<0 and not fire and not player.aiming and reload_left<=0.0 and player.animation_speed<0.15 and player.is_on_floor() and player.slide_time<=0.0
+	if adaptive_resolution.commit_if_safe(safe):
+		get_tree().root.content_scale_size = adaptive_resolution.resolution()
+		telemetry.reset()
+		telemetry.latest = {}
+		print("LAST IMPACT ADAPTIVE RESOLUTION ",adaptive_resolution.resolution())
+
 func _process(_delta: float) -> void:
+	update_adaptive_resolution()
 	if round_result=="" and reload_left<=0.0 and message_left>0.0:
 		message_left = maxf(0.0,message_left-_delta)
 		if message_left<=0.0:
@@ -450,7 +466,11 @@ func _process(_delta: float) -> void:
 			report["seed"] = round_seed
 			report["zone_phase"] = zone.phase
 			report["storm_exposure"] = storm_exposure
-			report["build"] = "0.7.6.8"
+			report["build"] = "0.7.6.9"
+			report["adaptive_level"] = adaptive_resolution.level
+			var base_size: Vector2i = get_tree().root.content_scale_size
+			report["base_width"] = base_size.x
+			report["base_height"] = base_size.y
 			report["player_animation_us_ema"] = player.animation_cost_us
 			report["weapon_ik_us_ema"] = player.weapon_cost_us
 			var operator_cost := 0.0
@@ -478,6 +498,8 @@ func _process(_delta: float) -> void:
 			report["os"] = OS.get_name()
 			report["device"] = OS.get_model_name()
 			print("LAST IMPACT TELEMETRY ",JSON.stringify(report))
+			if OS.has_feature("android") and profile==0:
+				adaptive_resolution.observe(report)
 	if not OS.has_feature("android") or not survival_mode or qa_sample_done or qa_sample_start==0:
 		return
 	var elapsed := Time.get_ticks_msec()-qa_sample_start
