@@ -75,6 +75,10 @@ func run() -> void:
 	if not check(absf(angle_difference(scene.player.visual.rotation.y,old_yaw))<0.01, "strafe keeps camera orientation"):
 		return
 	scene.player.visual.rotation.y = old_yaw
+	var button_positions: Dictionary = scene.hud.buttons()
+	for button_name in button_positions:
+		if not check(scene.hud.button_at(button_positions[button_name])==button_name, "touch button center "+str(button_name)):
+			return
 	var h: Rect2 = scene.hud.health_rect()
 	if not check(h.position.y < scene.hud.size.y*0.30 and h.end.x<scene.hud.size.x*0.45, "health outside avatar region"):
 		return
@@ -163,6 +167,14 @@ func run() -> void:
 	if not check(is_finite(max_ik) and max_ik<0.35, "sustained eight-direction IK"):
 		return
 	print("MAX EIGHT DIRECTION IK ",max_ik)
+	actor.gait_heading = Vector3.FORWARD
+	actor.gait_weight = 1.0
+	actor.update_gait_heading(Vector3.BACK,1.0/60.0)
+	if not check(actor.gait_heading.dot(Vector3.BACK)>0.99 and actor.gait_weight==0.0, "reverse direction restarts IK blend"):
+		return
+	actor.reset_locomotion()
+	if not check(actor.motion_state=="IDLE" and actor.cycle==0.0 and actor.gait_weight==0.0 and not actor.foot_ik_active and actor.model.position.is_equal_approx(Vector3.ZERO), "reset clears procedural pose"):
+		return
 	var leg_id: int = actor.skeleton.find_bone("L_Thigh")
 	var initial: Quaternion = actor.skeleton.get_bone_pose_rotation(leg_id)
 	for i in range(12):
@@ -239,7 +251,7 @@ func run() -> void:
 	if not check(scene.eliminated==1, "target eliminated"):
 		return
 	scene.reset_round()
-	if not check(scene.eliminated==0 and scene.ammo==30 and scene.targets[0].active, "reset"):
+	if not check(scene.eliminated==0 and scene.ammo==30 and scene.targets[0].active and scene.player.raze.motion_state=="IDLE" and absf(scene.player.visual.rotation.y)<0.001, "reset"):
 		return
 	# Walk into the arena boundary, then verify actual locomotion speed settles.
 	scene.player.position = Vector3(38.9,0.1,0)
