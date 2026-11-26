@@ -36,11 +36,11 @@ func block(parent: Node3D, label: String, p: Vector3, size: Vector3, mat: Materi
 
 func build() -> void:
  if cabin_ready: return
- steel = material(Color(0.19,0.23,0.27))
- trim = material(Color(0.34,0.39,0.43))
+ steel = material(Color(0.13,0.17,0.21))
+ trim = material(Color(0.27,0.33,0.38))
  rubber = material(Color(0.075,0.09,0.105))
  amber = material(Color(0.80,0.44,0.075))
- strips = material(Color(0.78,0.86,0.95),true)
+ strips = material(Color(0.57,0.79,0.98),true)
  signal_material = material(Color(0.94,0.12,0.07),true)
  block(self,"Floor",Vector3(0,-0.11,-0.5),Vector3(3.8,0.22,9.0),steel)
  block(self,"Ceiling",Vector3(0,2.87,-0.5),Vector3(3.8,0.25,9.0),steel)
@@ -60,6 +60,7 @@ func build() -> void:
    block(self,"Harness",Vector3(side*1.66,0.98,z+0.22),Vector3(0.035,0.67,0.07),amber)
    block(self,"Harness",Vector3(side*1.66,0.98,z+0.58),Vector3(0.035,0.67,0.07),amber)
   block(self,"Rear_jamb",Vector3(side*1.79,1.4,3.93),Vector3(0.23,2.8,0.22),trim)
+  block(self,"Low_guide_strip",Vector3(side*1.78,0.22,-0.55),Vector3(0.035,0.06,8.3),strips)
   block(self,"Jump_signal",Vector3(side*1.51,2.36,3.77),Vector3(0.19,0.16,0.10),signal_material)
  for i in range(15):
   block(self,"Deck_seam",Vector3(0,0.009,-4.65+i*0.58),Vector3(3.55,0.017,0.018),rubber)
@@ -77,7 +78,7 @@ func build() -> void:
  var lamp := OmniLight3D.new()
  lamp.position=Vector3(0,2.25,-0.8)
  lamp.light_color=Color(0.72,0.83,1.0)
- lamp.light_energy=1.7
+ lamp.light_energy=2.1
  lamp.omni_range=7.0
  lamp.shadow_enabled=false
  add_child(lamp)
