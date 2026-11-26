@@ -35,7 +35,7 @@ func step(delta: float, input: Vector2, request_jump: bool, request_glide: bool,
   plane_position.x += dt*15.0
   if request_jump or plane_position.x>=50.0:
    jumped = true
-   position = plane_position+Vector3(-6,-2,0)
+   position = plane_position+Vector3(-6,-2.58,0)
    velocity = Vector3(9,-4,0)
    transition(Phase.FREEFALL)
   return
