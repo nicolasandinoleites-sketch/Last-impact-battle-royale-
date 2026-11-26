@@ -76,6 +76,7 @@ func _ready() -> void:
 		add_child(weapon)
 		weapon_loaded = weapon.equip(raze.right_socket,visual)
 		raze.armed = weapon_loaded
+		weapon.actor = raze
 	pivot = Node3D.new()
 	pivot.position = Vector3(0,1.52,0)
 	add_child(pivot)
@@ -118,9 +119,9 @@ func look_delta(relative: Vector2) -> void:
 func update_camera(delta: float) -> void:
 	pivot.rotation = Vector3(pitch,yaw,0)
 	pivot.position.y = lerpf(pivot.position.y, 0.95 if low_stance else 1.52, minf(1.0,delta*10.0))
-	boom.position.x = lerpf(boom.position.x, shoulder * (0.65 if aiming else 0.48), minf(1.0, delta * 12.0))
-	boom.spring_length = lerpf(boom.spring_length, 2.25 if aiming else 3.5, minf(1.0, delta * 12.0))
-	camera.fov = lerpf(camera.fov, 53.0 if aiming else 70.0, minf(1.0, delta * 12.0))
+	boom.position.x = lerpf(boom.position.x, shoulder * (0.58 if aiming else 0.48), minf(1.0, delta * 12.0))
+	boom.spring_length = lerpf(boom.spring_length, 1.95 if aiming else 2.75, minf(1.0, delta * 12.0))
+	camera.fov = lerpf(camera.fov, 48.0 if aiming else 65.0, minf(1.0, delta * 12.0))
 
 func request_slide() -> void:
 	if is_on_floor() and slide_time <= 0.0 and slide_cooldown <= 0.0 and not low_stance and move_input.length() > 0.4:
@@ -206,7 +207,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		visual.scale.y = lerpf(visual.scale.y,0.55 if low_stance else 1.0,minf(1.0,delta*12.0))
 	if weapon_loaded:
-		weapon.update_pose(delta,aiming or combat_facing,reload_visual)
+		weapon.update_pose(delta,aiming or combat_facing,reload_visual,low_stance,pitch)
 	if position.y < -8.0:
 		position = Vector3(0,0.1,12)
 		reset_movement()

@@ -37,6 +37,35 @@ if(normal.componentType===5120&&normal.normalized){
  doc.bufferViews.push({buffer:0,byteOffset:append(out),byteLength:out.length,target:34962});
 }
 buffer=Buffer.concat(chunks);
+// Normalize the fictional asset's long horizontal axis. Keep source geometry intact.
+const prim=doc.meshes[0].primitives[0], pos=doc.accessors[prim.attributes.POSITION], pv=doc.bufferViews[pos.bufferView];
+const pts=Array.from({length:pos.count},(_,i)=>[0,1,2].map(k=>buffer.readFloatLE(pv.byteOffset+(pos.byteOffset||0)+i*(pv.byteStride||12)+k*4)));
+if(pts.some(p=>p.some(v=>!Number.isFinite(v))))throw Error('Nonfinite vertex');
+let mx=0,mz=0;for(const p of pts){mx+=p[0]/pts.length;mz+=p[2]/pts.length;}
+let xx=0,xz=0,zz=0;for(const p of pts){const x=p[0]-mx,z=p[2]-mz;xx+=x*x;xz+=x*z;zz+=z*z;}
+const theta=.5*Math.atan2(2*xz,xx-zz);let ax=Math.cos(theta),az=Math.sin(theta);
+const project=p=>p[0]*ax+p[2]*az;
+let lo=Math.min(...pts.map(project)),hi=Math.max(...pts.map(project));
+const spread=(list)=>{if(!list.length)return Infinity;const ys=list.map(p=>p[1]),xs=list.map(p=>-az*p[0]+ax*p[2]);return (Math.max(...ys)-Math.min(...ys))*(Math.max(...xs)-Math.min(...xs));};
+const endA=spread(pts.filter(p=>project(p)<lo+(hi-lo)*.15)),endB=spread(pts.filter(p=>project(p)>hi-(hi-lo)*.15));
+if(endA<endB){ax=-ax;az=-az;[lo,hi]=[-hi,-lo];}
+const mid=(lo+hi)/2, factor=.68/(hi-lo);
+const cross=p=>az*p[0]-ax*p[2];
+const cx=(Math.min(...pts.map(cross))+Math.max(...pts.map(cross)))/2;
+const cy=(Math.min(...pts.map(p=>p[1]))+Math.max(...pts.map(p=>p[1])))/2;
+const min=[Infinity,Infinity,Infinity],max=[-Infinity,-Infinity,-Infinity];
+pts.forEach((p,i)=>{const a=[(cross(p)-cx)*factor,(p[1]-cy)*factor,-(project(p)-mid)*factor];a.forEach((v,k)=>{buffer.writeFloatLE(v,pv.byteOffset+(pos.byteOffset||0)+i*(pv.byteStride||12)+k*4);min[k]=Math.min(min[k],v);max[k]=Math.max(max[k],v);});});
+pos.min=min;pos.max=max;
+const nv=doc.bufferViews[normal.bufferView];if(normal.componentType===5126){for(let i=0;i<normal.count;i++){const off=nv.byteOffset+(normal.byteOffset||0)+i*(nv.byteStride||12),x=buffer.readFloatLE(off),z=buffer.readFloatLE(off+8);buffer.writeFloatLE(az*x-ax*z,off);buffer.writeFloatLE(-ax*x-az*z,off+8);}}
+const ia=doc.accessors[prim.indices],iv=doc.bufferViews[ia.bufferView],parent=Array.from({length:pos.count},(_,i)=>i);
+const root=i=>{while(parent[i]!==i){parent[i]=parent[parent[i]];i=parent[i];}return i;};const join=(a,b)=>{parent[root(a)]=root(b);};
+const weld=new Map();pts.forEach((p,i)=>{const key=p.map(x=>Math.round(x*10000)).join(',');if(weld.has(key))join(i,weld.get(key));else weld.set(key,i);});
+const ids=Array.from({length:ia.count},(_,i)=>buffer.readUInt16LE(iv.byteOffset+(ia.byteOffset||0)+i*2));
+if(ids.some(i=>i>=pos.count))throw Error('Invalid mesh index');
+for(let i=0;i<ids.length;i+=3){join(ids[i],ids[i+1]);join(ids[i],ids[i+2]);}
+const counts=new Map();for(let i=0;i<ids.length;i+=3){const k=root(ids[i]);counts.set(k,(counts.get(k)||0)+1);}
+console.log('IGNIS geometry audit',JSON.stringify({bounds:[min,max],componentTriangles:[...counts.values()].sort((a,b)=>b-a).slice(0,20),endA,endB}));
+// A detached accessory may be intentional; report components without deleting meaningful geometry.
 doc.buffers=[{byteLength:buffer.length}];
 delete doc.extensionsRequired;delete doc.extensionsUsed;
 const json=Buffer.from(JSON.stringify(doc));const padded=Buffer.concat([json,Buffer.alloc((4-json.length%4)%4,32)]);

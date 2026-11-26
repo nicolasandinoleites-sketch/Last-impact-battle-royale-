@@ -52,6 +52,15 @@ func run() -> void:
 	if not check(not scene.player.weapon.flash.visible, "IGNIS effect reset"):
 		return
 	var actor = scene.player.raze
+	scene.player.weapon.update_pose(0.1,true,0.0)
+	if not check(is_instance_valid(scene.player.weapon.right_goal) and is_instance_valid(scene.player.weapon.left_goal), "dual wrist targets"):
+		return
+	var right_error: float = actor.solve_arm("R",scene.player.weapon.right_goal.global_position,Vector3(1,-1,0))
+	var left_error: float = actor.solve_arm("L",scene.player.weapon.left_goal.global_position,Vector3(-1,-1,0))
+	if not check(is_finite(right_error) and is_finite(left_error) and right_error<0.18 and left_error<0.18, "two arm IK bounded error"):
+		return
+	if not check(scene.game_audio.fire_player.stream != null and scene.game_audio.reload_player.stream != null, "synthetic game audio"):
+		return
 	if not check(actor.joints.size()==14 and actor.right_socket.bone_name=="R_Hand" and actor.left_socket.bone_name=="L_Hand", "locomotion joint map and sockets"):
 		return
 	var leg_id: int = actor.skeleton.find_bone("L_Thigh")
@@ -114,5 +123,5 @@ func run() -> void:
 	scene.reset_round()
 	if not check(scene.eliminated==0 and scene.ammo==30 and scene.targets[0].active, "reset"):
 		return
-	print("LAST IMPACT R06 SMOKE PASS")
+	print("LAST IMPACT R061 SMOKE PASS")
 	quit(0)

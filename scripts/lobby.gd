@@ -7,6 +7,8 @@ const WHITE := Color("f2f5f5")
 const MUTED := Color("a2b6c2")
 const GOLD := Color("ffae58")
 const LOGO = preload("res://icon.svg")
+const Preview = preload("res://scripts/lobby_preview.gd")
+var preview: SubViewport
 var mode := "home"
 var quality := 0
 var status := ""
@@ -21,10 +23,15 @@ func _ready() -> void:
 	if config.load("user://lastimpact.cfg") == OK:
 		quality = clampi(int(config.get_value("graphics","profile",0)),0,2)
 	info = "%s | %s" % [RenderingServer.get_video_adapter_name(),RenderingServer.get_video_adapter_api_version()]
-	print("LAST IMPACT R06 LOBBY READY | ",info)
+	print("LAST IMPACT R061 LOBBY READY | ",info)
+	if DisplayServer.get_name() != "headless":
+		preview = Preview.new()
+		add_child(preview)
 	queue_redraw()
 
 func _process(delta: float) -> void:
+	if is_instance_valid(preview):
+		preview.render_target_update_mode = SubViewport.UPDATE_ALWAYS if mode=="home" and not launching else SubViewport.UPDATE_DISABLED
 	refresh_left -= delta
 	if refresh_left <= 0.0:
 		refresh_left = 0.25
@@ -56,6 +63,11 @@ func operator_art() -> void:
 	draw_circle(point(480,264),size.y*0.26,Color("233641"))
 	draw_arc(point(480,264),size.y*0.26,0,TAU,48,EDGE,2.0,true)
 	draw_line(point(320,416),point(640,416),EDGE,2.0)
+	if is_instance_valid(preview) and preview.loaded:
+		draw_texture_rect(preview.get_texture(),rect(300,102,360,330),false)
+		text_at(385,450,"RAZE / IGNIS X1",19,GOLD)
+		text_at(390,474,"OPERADOR DE ASALTO",13,MUTED)
+		return
 	var parts := [
 		[442,185,76,72,Color("536975")],
 		[451,127,58,64,Color("41525a")],
@@ -71,7 +83,7 @@ func operator_art() -> void:
 	for p in parts:
 		draw_rect(rect(p[0],p[1],p[2],p[3]),p[4])
 	text_at(421,439,"RAZE / OPERADOR 01",17)
-	text_at(405,459,"Vista previa 3D en OPERADOR",13,MUTED)
+	text_at(405,459,"Vista previa segura",13,MUTED)
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO,size),BG)
@@ -79,7 +91,7 @@ func _draw() -> void:
 		draw_line(point(i*150-300,540),point(i*150+250,0),Color(0.25,0.36,0.43,0.14),1.0)
 	draw_texture_rect(LOGO,rect(24,18,58,58),false)
 	text_at(96,47,"LAST IMPACT",31)
-	text_at(98,69,"R06 / ALPHA TECNICA",13,MUTED)
+	text_at(98,69,"R061 / ALPHA TECNICA",13,MUTED)
 	text_at(768,40,"OFFLINE",15,GOLD)
 	text_at(768,64,"%d FPS" % Engine.get_frames_per_second(),15,MUTED)
 	draw_line(point(24,88),point(936,88),EDGE,1.0)

@@ -43,12 +43,13 @@ func _draw() -> void:
 		return
 	var u := unit()
 	var font := int(15*u)
-	draw_rect(Rect2(at(0.025,0.025),Vector2(245,85)*u),DARK)
-	label_at(at(0.025,0.025)+Vector2(12,22)*u,"LAST IMPACT / R06",int(19*u),ACCENT)
-	label_at(at(0.025,0.025)+Vector2(12,44)*u,"FPS %d   ·   MEM %.0f MB" % [Engine.get_frames_per_second(),Performance.get_monitor(Performance.MEMORY_STATIC)/1048576.0],font)
-	label_at(at(0.025,0.025)+Vector2(12,66)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
+	draw_minimap(u)
+	draw_rect(Rect2(at(0.025,0.23),Vector2(200,75)*u),DARK)
+	label_at(at(0.025,0.23)+Vector2(12,22)*u,"LAST IMPACT / R061",int(19*u),ACCENT)
+	label_at(at(0.025,0.23)+Vector2(12,44)*u,"FPS %d   ·   MEM %.0f MB" % [Engine.get_frames_per_second(),Performance.get_monitor(Performance.MEMORY_STATIC)/1048576.0],font)
+	label_at(at(0.025,0.23)+Vector2(12,66)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
 	if game.player.model_loaded:
-		label_at(at(0.025,0.025)+Vector2(12,100)*u,"ANIM: "+game.player.raze.motion_state,font)
+		label_at(at(0.025,0.23)+Vector2(12,90)*u,"ANIM: "+game.player.raze.motion_state,font)
 	centered(at(0.5,0.07),game.message,int(17*u))
 	var center := size*0.5
 	var c := ACCENT if game.hit_left>0.0 else WHITE
@@ -65,11 +66,16 @@ func _draw() -> void:
 		var active: bool = (name == "FIRE" and game.fire) or (name == "AIM" and game.player.aiming) or (name == "RUN" and game.mobile_sprint)
 		draw_circle(p,r,Color(0.70,0.29,0.11,0.68) if active else DARK)
 		draw_arc(p,r,0,TAU,32,Color(1,1,1,0.68),1.5*u,true)
-		centered(p,names[name],int(11*u))
+		draw_button_icon(name,p,u)
+		centered(p+Vector2(0,13*u),names[name],int(9*u))
 	var ammo_pos := at(0.50,0.89)
 	draw_rect(Rect2(ammo_pos-Vector2(85,20)*u,Vector2(170,48)*u),DARK)
 	centered(ammo_pos, "%02d / %03d" % [game.ammo,game.reserve],int(24*u))
 	centered(ammo_pos+Vector2(0,20)*u,"IGNIS X1",int(10*u),ACCENT)
+	var bar := Rect2(at(0.39,0.78),Vector2(180,8)*u)
+	draw_rect(bar,DARK)
+	draw_rect(Rect2(bar.position,Vector2(bar.size.x*game.health/100.0,bar.size.y)),Color("68d9a4"))
+	centered(bar.get_center()+Vector2(0,-11*u),"VIDA %d / ESCUDO %d" % [game.health,game.armor],int(10*u))
 
 func button_at(pos: Vector2) -> String:
 	for name in buttons():
@@ -176,3 +182,36 @@ func _input(event: InputEvent) -> void:
 			mouse_look = event.pressed
 	elif event is InputEventMouseMotion and (mouse_look or mouse_fire):
 		game.player.look_delta(event.relative/unit())
+
+func draw_minimap(u: float) -> void:
+	var area := Rect2(at(0.025,0.025),Vector2(95,95)*u)
+	draw_rect(area,DARK)
+	draw_rect(area,Color("607987"),false,1.0)
+	var middle := area.get_center()
+	var k := 95.0*u/80.0
+	for target in game.targets:
+		if target.active:
+			draw_circle(middle+Vector2(target.position.x,target.position.z)*k,3.0*u,ACCENT)
+	var pos: Vector3 = game.player.position
+	var dot := middle+Vector2(pos.x,pos.z)*k
+	draw_circle(dot,4.0*u,WHITE)
+	draw_line(dot,dot+Vector2(-sin(game.player.yaw),-cos(game.player.yaw))*10*u,WHITE,2.0,true)
+
+func draw_button_icon(name: String,p: Vector2,u: float) -> void:
+	var q := p-Vector2(0,7*u)
+	var s := 9.0*u
+	match name:
+		"FIRE","AIM":
+			draw_arc(q,s,0,TAU,16,WHITE,1.5*u,true)
+			draw_line(q-Vector2(s+3*u,0),q+Vector2(s+3*u,0),WHITE,1.2*u,true)
+			draw_line(q-Vector2(0,s+3*u),q+Vector2(0,s+3*u),WHITE,1.2*u,true)
+		"JUMP","RUN":
+			draw_polyline(PackedVector2Array([q+Vector2(-s,3*u),q+Vector2(0,-s),q+Vector2(s,3*u)]),WHITE,2*u,true)
+		"SLIDE":
+			draw_line(q-Vector2(s,0),q+Vector2(s,0),WHITE,2*u,true)
+			draw_line(q+Vector2(-s,5*u),q+Vector2(s,5*u),WHITE,2*u,true)
+		"LOAD","RESET":
+			draw_arc(q,s,0.25,TAU-0.6,20,WHITE,2*u,true)
+			draw_line(q+Vector2(s,-s*0.65),q+Vector2(s,0),WHITE,2*u,true)
+		_:
+			draw_rect(Rect2(q-Vector2(s,s)*0.65,Vector2(s,s)*1.3),WHITE,false,1.5*u)

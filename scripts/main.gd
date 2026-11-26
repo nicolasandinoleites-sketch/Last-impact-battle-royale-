@@ -3,6 +3,11 @@ const PlayerScript = preload("res://scripts/player.gd")
 const TargetScript = preload("res://scripts/target.gd")
 const HudScript = preload("res://scripts/hud.gd")
 var player
+const GameAudio = preload("res://scripts/game_audio.gd")
+var game_audio: Node
+var camera_kick := 0.0
+var health := 100
+var armor := 0
 var hud
 var targets: Array = []
 var ammo := 30
@@ -23,6 +28,8 @@ func _ready() -> void:
 	var config := ConfigFile.new()
 	if config.load("user://lastimpact.cfg") == OK:
 		profile = clampi(int(config.get_value("graphics","profile",0)),0,2)
+	game_audio = GameAudio.new()
+	add_child(game_audio)
 	build_arena()
 	apply_profile()
 	player = PlayerScript.new()
@@ -110,6 +117,7 @@ func _physics_process(delta: float) -> void:
 	var keyboard := Vector2(float(keys.get(KEY_D,false))-float(keys.get(KEY_A,false)),float(keys.get(KEY_S,false))-float(keys.get(KEY_W,false)))
 	player.move_input = (mobile_move+keyboard).limit_length(1.0)
 	player.sprint = mobile_sprint or keys.get(KEY_SHIFT,false)
+	camera_kick = move_toward(camera_kick,0.0,delta*0.22)
 	player.combat_facing = fire
 	player.reload_visual = clampf(reload_left/1.4,0.0,1.0)
 	cooldown = maxf(0.0,cooldown-delta)
@@ -132,6 +140,8 @@ func shoot() -> void:
 	cooldown = 0.15
 	if player.weapon_loaded:
 		player.weapon.pulse()
+	game_audio.fire_player.play()
+	player.pitch = clampf(player.pitch+0.009,-0.85,0.48)
 	var cam: Camera3D = player.camera
 	var center := get_viewport().get_visible_rect().size*0.5
 	var origin := cam.project_ray_origin(center)
@@ -147,16 +157,20 @@ func shoot() -> void:
 	if not attack.is_empty() and attack["collider"].has_method("take_hit"):
 		attack["collider"].take_hit(34)
 		hit_left = 0.15
+		game_audio.hit_player.play()
 
 func start_reload() -> void:
 	if ammo < 30 and reserve > 0 and reload_left <= 0.0:
 		reload_left = 1.4
+		game_audio.reload_player.play()
 		message = "Recargando..."
 
 func reset_round() -> void:
 	for t in targets:
 		t.reset_target()
 	eliminated = 0
+	health = 100
+	armor = 0
 	ammo = 30
 	reserve = 120
 	reload_left = 0.0

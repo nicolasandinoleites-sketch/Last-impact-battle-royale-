@@ -9,6 +9,11 @@ var loaded := false
 var pulse_count := 0
 var reload_phase := 0.0
 var facing: Node3D
+var actor: Node3D
+var right_goal: Marker3D
+var left_goal: Marker3D
+var aim_pitch := 0.0
+var pose_initialized := false
 func equip(hand: Node3D, body_visual: Node3D) -> bool:
 	anchor = hand
 	facing = body_visual
@@ -21,7 +26,13 @@ func equip(hand: Node3D, body_visual: Node3D) -> bool:
 	if model == null:
 		return false
 	add_child(model)
-	model.scale = Vector3.ONE*0.78
+	model.scale = Vector3.ONE
+	right_goal = Marker3D.new()
+	right_goal.position = Vector3(0,-0.075,0.12)
+	model.add_child(right_goal)
+	left_goal = Marker3D.new()
+	left_goal.position = Vector3(-0.025,-0.045,-0.065)
+	model.add_child(left_goal)
 	for child in model.find_children("*","MeshInstance3D",true,false):
 		var mesh := child as MeshInstance3D
 		for i in range(mesh.mesh.get_surface_count()):
@@ -42,13 +53,13 @@ func equip(hand: Node3D, body_visual: Node3D) -> bool:
 	glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	glow.albedo_color = Color("ffd38b")
 	flash.material_override = glow
-	flash.position = Vector3(0,0.05,-0.44)
+	flash.position = Vector3(0,0.045,-0.34)
 	add_child(flash)
 	flash.hide()
 	loaded = true
 	return true
 
-func update_pose(delta: float, aiming: bool, reload: float) -> void:
+func update_pose(delta: float, aiming: bool, reload: float, low: bool = false, pitch: float = 0.0) -> void:
 	if not loaded:
 		return
 	kick = move_toward(kick,0.0,delta*1.4)
@@ -56,11 +67,20 @@ func update_pose(delta: float, aiming: bool, reload: float) -> void:
 	flash.visible = flash_left > 0.0
 	reload_phase = reload
 	var frame := facing.global_transform.basis.orthonormalized()
-	global_transform = Transform3D(frame, anchor.global_position)
-	# Cosmetic placement follows the animated right hand; final offsets need a visual test.
-	model.position = Vector3(0,0.09,-0.13+kick)
-	model.rotation = Vector3(-0.12 if aiming else -0.28,0,0.35*sin(reload*PI) if reload>0.0 else 0.0)
-	flash.position = model.position + model.basis.orthonormalized()*Vector3(0,0.06,-0.39)
+	var body_origin := facing.global_position
+	var lower := -0.29 if low else 0.0
+	var desired := body_origin + frame * Vector3(0.10,1.31+lower,-0.24+kick)
+	var tilt := sin(reload*PI) if reload>0.0 else 0.0
+	aim_pitch = lerpf(aim_pitch,clampf(pitch,-0.48,0.40) if aiming else -0.18,1.0-exp(-delta*16.0))
+	var local_basis := Basis.from_euler(Vector3(aim_pitch,0.0,tilt*0.34))
+	global_transform = Transform3D(frame*local_basis,desired)
+	flash.position = Vector3(0,0.045,-0.34)
+	if is_instance_valid(actor):
+		var support := left_goal.global_position
+		if reload>0.0:
+			support += frame*Vector3(-0.045,-0.10*tilt,0.09*tilt)
+		actor.solve_arm("R",right_goal.global_position,frame*Vector3(0.65,-0.7,0.25))
+		actor.solve_arm("L",support,frame*Vector3(-0.65,-0.7,0.10))
 
 func pulse() -> void:
 	if not loaded:

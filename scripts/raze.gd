@@ -205,3 +205,50 @@ func dance() -> bool:
 			animator.play(name)
 			return true
 	return false
+
+# Analytical two-bone positional IK in skeleton coordinates, preserving segment lengths.
+func rotate_bone_toward(id: int, from: Vector3, to: Vector3) -> void:
+	if from.length_squared()<0.000001 or to.length_squared()<0.000001:
+		return
+	var change := Quaternion(from.normalized(),to.normalized())
+	var parent_id := skeleton.get_bone_parent(id)
+	var parent_rot := Quaternion.IDENTITY
+	if parent_id>=0:
+		parent_rot = skeleton.get_bone_global_pose(parent_id).basis.orthonormalized().get_rotation_quaternion()
+	var current := skeleton.get_bone_pose_rotation(id)
+	skeleton.set_bone_pose_rotation(id,(parent_rot.inverse()*change*parent_rot*current).normalized())
+	skeleton.force_update_all_bone_transforms()
+
+func solve_arm(side: String, world_goal: Vector3, world_pole: Vector3) -> float:
+	if not ready_model:
+		return 0.0
+	var upper := skeleton.find_bone(side+"_Upperarm")
+	var fore := skeleton.find_bone(side+"_Forearm")
+	var hand := skeleton.find_bone(side+"_Hand")
+	if mini(upper,mini(fore,hand))<0:
+		return 999.0
+	skeleton.force_update_all_bone_transforms()
+	var goal := skeleton.to_local(world_goal)
+	var a := skeleton.get_bone_global_pose(upper).origin
+	var b := skeleton.get_bone_global_pose(fore).origin
+	var c := skeleton.get_bone_global_pose(hand).origin
+	var l1 := a.distance_to(b)
+	var l2 := b.distance_to(c)
+	var dir := (goal-a).normalized()
+	if dir.length_squared()<0.5 or minf(l1,l2)<0.001:
+		return 999.0
+	var d := clampf(a.distance_to(goal),absf(l1-l2)+0.001,l1+l2-0.001)
+	var pole := skeleton.global_transform.basis.inverse()*world_pole
+	pole = pole-dir*dir.dot(pole)
+	if pole.length_squared()<0.0001:
+		pole = dir.cross(Vector3.RIGHT)
+	if pole.length_squared()<0.0001:
+		pole = dir.cross(Vector3.UP)
+	pole = pole.normalized()
+	var along := (l1*l1+d*d-l2*l2)/(2.0*d)
+	var elbow := a+dir*along+pole*sqrt(maxf(0.0,l1*l1-along*along))
+	rotate_bone_toward(upper,b-a,elbow-a)
+	b = skeleton.get_bone_global_pose(fore).origin
+	c = skeleton.get_bone_global_pose(hand).origin
+	rotate_bone_toward(fore,c-b,a+dir*d-b)
+	return skeleton.to_global(skeleton.get_bone_global_pose(hand).origin).distance_to(world_goal)
