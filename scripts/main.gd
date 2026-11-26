@@ -33,6 +33,10 @@ const InventoryScript = preload("res://scripts/survival_inventory.gd")
 const PickupScript = preload("res://scripts/survival_pickup.gd")
 var inventory = InventoryScript.new()
 var pickups: Array = []
+var corpse_pickups: Array = []
+const CombatFX = preload("res://scripts/combat_impact_fx.gd")
+const DropTable = preload("res://scripts/operator_drop_table.gd")
+var combat_fx: Node3D
 const PICKUP_RANGE := 1.8
 
 const GameAudio = preload("res://scripts/game_audio.gd")
@@ -75,6 +79,10 @@ func _ready() -> void:
 		add_child(arena_art)
 		arena_art.decorate(self)
 	apply_profile()
+	if experimental_deployment:
+		combat_fx = CombatFX.new()
+		add_child(combat_fx)
+		combat_fx.configure(profile)
 	player = PlayerScript.new()
 	player.position = Vector3(0,0.1,12)
 	add_child(player)
@@ -290,10 +298,46 @@ func shoot() -> void:
 	if player.weapon_loaded:
 		muzzle = player.weapon.flash.global_position
 	var attack := state.intersect_ray(PhysicsRayQueryParameters3D.create(muzzle,endpoint+(endpoint-muzzle).normalized()*0.08,3))
+	if is_instance_valid(combat_fx):
+		var hit_kind := ""
+		var impact: Vector3 = endpoint
+		var normal := Vector3.UP
+		if not attack.is_empty():
+			impact = attack.position
+			normal = attack.normal
+			hit_kind = impact_kind(attack.collider)
+		combat_fx.emit_shot(muzzle,impact,normal,hit_kind,player.global_position)
 	if not attack.is_empty() and attack["collider"].has_method("take_hit"):
 		attack["collider"].take_hit(34)
 		hit_left = 0.15
 		game_audio.hit_player.play()
+
+func impact_kind(collider: Object) -> String:
+	if collider==player: return "SHIELD" if armor>0 else "BODY"
+	if collider.get_script()==OperatorScript: return "SHIELD" if collider.armor>0 else "BODY"
+	return "WORLD"
+
+func spawn_operator_drop(operator: Node3D) -> void:
+	if not experimental_deployment or not is_instance_valid(operator): return
+	if operator.global_position.y>5.0: return
+	var items: Array = DropTable.operator_drop(operator.rounds,operator.armor,round_seed+targets.find(operator))
+	for i in range(items.size()):
+		var pickup = PickupScript.new()
+		pickup.kind = items[i][0]
+		pickup.quantity = items[i][1]
+		add_child(pickup)
+		pickup.global_position = operator.global_position+Vector3((i*2-1)*0.42,0,0)
+		pickups.append(pickup)
+		corpse_pickups.append(pickup)
+
+func clear_operator_drops() -> void:
+	for pickup in corpse_pickups:
+		pickups.erase(pickup)
+		if is_instance_valid(pickup):
+			pickup.hide()
+			pickup.active = false
+			pickup.queue_free()
+	corpse_pickups.clear()
 
 func start_reload() -> void:
 	if deployment_active():
@@ -308,6 +352,8 @@ func start_reload() -> void:
 func reset_round() -> void:
 	if deployment_active():
 		deployment.finish()
+	clear_operator_drops()
+	if is_instance_valid(combat_fx): combat_fx.reset()
 	telemetry.reset()
 	telemetry.latest = {}
 	round_result = ""

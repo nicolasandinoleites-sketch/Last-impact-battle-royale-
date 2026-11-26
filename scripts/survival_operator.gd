@@ -44,6 +44,9 @@ var last_seen := Vector3.ZERO
 var memory_left := 0.0
 var loot_count := 0
 var tactical_ready := false
+var death_left := 0.0
+var death_yaw := 0.0
+const DEATH_SECONDS := 0.62
 
 func tactical_enabled() -> bool:
 	return is_instance_valid(game) and game.experimental_deployment
@@ -92,6 +95,8 @@ func update_combat(delta: float) -> void:
 	rounds -= 1
 	shot_left = 0.72
 	weapon.pulse()
+	if is_instance_valid(game.combat_fx):
+		game.combat_fx.emit_shot(weapon.flash.global_position,hit.position,hit.normal,game.impact_kind(enemy),game.player.global_position)
 	if rounds == 0: reload_left = RELOAD_TIME
 	if enemy == game.player: game.damage_player(6)
 	else: enemy.take_hit(9)
@@ -267,6 +272,9 @@ func flat_material(color: Color) -> StandardMaterial3D:
 	return mat
 
 func _physics_process(delta: float) -> void:
+	if death_left>0.0:
+		step_death(delta)
+		return
 	if not active or not is_instance_valid(game) or game.round_result!="" or not is_instance_valid(game.player):
 		return
 	contact_left = maxf(0.0,contact_left-delta)
@@ -370,14 +378,34 @@ func take_hit(damage: int) -> void:
 	hp = maxi(0,hp-incoming)
 	if hp==0:
 		active = false
-		visible = false
 		collision_layer = 0
 		velocity = Vector3.ZERO
 		tactical_pickup = null
+		if tactical_enabled() and model_loaded:
+			death_left = DEATH_SECONDS
+			death_yaw = visual.rotation.y
+			visual.show()
+			badge_mesh.hide()
+			if weapon!=null: weapon.clear_effects()
+			game.spawn_operator_drop(self)
+		else:
+			visible = false
 		ai_state = "INACTIVE"
 		destroyed.emit()
 
+func step_death(delta: float) -> void:
+	death_left = maxf(0.0,death_left-delta)
+	var p := smoothstep(0.0,1.0,1.0-death_left/DEATH_SECONDS)
+	visual.rotation = Vector3(-PI*0.46*p,death_yaw,0.15*p)
+	visual.position.y = 0.08*p
+	if death_left==0.0:
+		visible = false
+
 func reset_target() -> void:
+	death_left = 0.0
+	visual.position = Vector3.ZERO
+	visual.rotation = Vector3.ZERO
+	badge_mesh.show()
 	enemy = null
 	rounds = MAGAZINE
 	reload_left = 0.0
