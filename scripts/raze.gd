@@ -372,14 +372,16 @@ func prepare_fingers() -> void:
 			for id in [one,two,three]:
 				finger_axes[id] = skeleton.get_bone_global_rest(id).basis.orthonormalized().inverse()*bend.normalized()
 
-func close_fingers(strength: float) -> void:
+func close_fingers(strength: float, left_strength: float = -1.0) -> void:
 	if preview_dance:
 		return
 	for id in finger_axes:
 		var axis: Vector3 = finger_axes[id]
 		var rest: Quaternion = base[id]
-		var angle := 0.14 if skeleton.get_bone_name(id).ends_with("3") else 0.20
-		skeleton.set_bone_pose_rotation(id,(rest*Quaternion(axis.normalized(),angle*strength)).normalized())
+		var name := skeleton.get_bone_name(id)
+		var angle := 0.14 if name.ends_with("3") else 0.20
+		var grip := left_strength if name.begins_with("L_") and left_strength>=0.0 else strength
+		skeleton.set_bone_pose_rotation(id,(rest*Quaternion(axis.normalized(),angle*clampf(grip,0.0,1.0))).normalized())
 
 func foot_height() -> float:
 	if foot_ids.is_empty():
