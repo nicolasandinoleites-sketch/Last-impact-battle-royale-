@@ -16,7 +16,7 @@ func run() -> void:
   done = t.step(1.0/60.0,-30.0,i==0)
   cabin.set_opening(t.opening)
   if t.opening<1.0:
-   assert(t.actor_local.z==-0.8)
+   assert(is_equal_approx(t.actor_local.z,-0.8))
   if done: break
  assert(done and absf(t.elapsed-2.45)<0.001)
  assert(absf(cabin.ramp.rotation.x-deg_to_rad(15.8))<0.001)
