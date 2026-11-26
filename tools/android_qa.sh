@@ -133,6 +133,7 @@ tap_fraction 02_frontier 0.77 0.10
 sleep 2
 swipe_fraction 02_frontier 0.14 0.80 0.14 0.66 2000
 wait_log "LAST IMPACT CONTROL MOVE_RELEASE" 1
+wait_log "LAST IMPACT CONTROL CLIP_ACTIVE" 1
 swipe_fraction 02_frontier 0.52 0.45 0.62 0.45 1000
 wait_log "LAST IMPACT CONTROL LOOK_RELEASE" 1
 tap_fraction 02_frontier 0.66 0.49
