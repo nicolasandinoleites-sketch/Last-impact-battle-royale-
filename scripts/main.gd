@@ -19,6 +19,7 @@ var qa_sample_done := false
 const FrameTelemetry = preload("res://scripts/frame_telemetry.gd")
 var telemetry := FrameTelemetry.new()
 var telemetry_paused := false
+var qa_control_seen: Dictionary = {}
 var round_result := ""
 var zone_tick := 0.0
 const InventoryScript = preload("res://scripts/survival_inventory.gd")
@@ -175,6 +176,11 @@ func _on_target_destroyed() -> void:
 		return
 	message = "Zona despejada · REINICIAR" if eliminated == targets.size() else "Objetivo neutralizado"
 
+func qa_control(action: String) -> void:
+	if OS.has_feature("android") and not qa_control_seen.has(action):
+		qa_control_seen[action] = true
+		print("LAST IMPACT CONTROL ",action)
+
 func _physics_process(delta: float) -> void:
 	if survival_mode:
 		if OS.has_feature("android") and android_qa_ticks<120:
@@ -200,6 +206,8 @@ func _physics_process(delta: float) -> void:
 			ammo += amount
 			reserve -= amount
 			message = "Listo"
+			if amount>0:
+				qa_control("RELOAD_COMPLETE")
 	if fire and cooldown <= 0.0 and reload_left <= 0.0:
 		shoot()
 
@@ -210,6 +218,7 @@ func shoot() -> void:
 		start_reload()
 		return
 	ammo -= 1
+	qa_control("SHOT")
 	cooldown = 0.15
 	if player.weapon_loaded:
 		player.weapon.pulse()
@@ -291,6 +300,7 @@ func apply_profile() -> void:
 
 func next_profile() -> void:
 	profile = (profile+1)%3
+	qa_control("PROFILE_%d" % profile)
 	apply_profile()
 	var config := ConfigFile.new()
 	config.set_value("graphics","profile",profile)
@@ -387,6 +397,7 @@ func collect_nearby() -> bool:
 		message = "Capacidad completa"
 		return false
 	pickup.collect(taken)
+	qa_control("PICKUP")
 	message = "Suministro recogido: +%d" % taken
 	return true
 
@@ -428,7 +439,7 @@ func _process(_delta: float) -> void:
 			report["seed"] = round_seed
 			report["zone_phase"] = zone.phase
 			report["storm_exposure"] = storm_exposure
-			report["build"] = "0.7.5.5"
+			report["build"] = "0.7.5.6"
 			report["os"] = OS.get_name()
 			report["device"] = OS.get_model_name()
 			print("LAST IMPACT TELEMETRY ",JSON.stringify(report))
