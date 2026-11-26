@@ -60,7 +60,7 @@ func _draw() -> void:
 	var font := int(12*u)
 	draw_minimap(u)
 	draw_rect(Rect2(at(0.145,0.025),Vector2(180,62)*u),DARK)
-	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0752",int(14*u),ACCENT)
+	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0753",int(14*u),ACCENT)
 	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d   ·   MEM %.0f MB" % [cached_fps,cached_mem],font)
 	label_at(at(0.145,0.025)+Vector2(9,50)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
 	if game.survival_mode:
@@ -69,10 +69,10 @@ func _draw() -> void:
 	if game.survival_mode:
 		var zone_label := "ZONA %d m · %ds · %d/%d rivales" % [roundi(game.zone.radius),game.zone.seconds_remaining(),game.targets.size()-game.eliminated,game.targets.size()]
 		if game.zone.outside(game.player.global_position):
-			zone_label += " · TORMENTA: SAL DE AHI"
+			zone_label += " · ¡SAL DE LA TORMENTA!"
 		elif game.zone.signed_distance(game.player.global_position)>-7.0:
-			zone_label += " · FRENTE PROXIMO"
-		centered(at(0.49,0.205),zone_label,int(12*u),Color("ffb26b") if game.zone.outside(game.player.global_position) else Color("5ecdf2"))
+			zone_label += " · BORDE CERCA"
+		centered(at(0.49,0.205),zone_label,int(11*u),Color("ffb26b") if game.zone.outside(game.player.global_position) else Color("5ecdf2"))
 	var center := size*0.5
 	var spread := 1.0 if game.player.aiming else 1.45
 	var c := ACCENT if game.hit_left>0.0 else WHITE

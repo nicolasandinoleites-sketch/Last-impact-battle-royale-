@@ -400,12 +400,15 @@ func use_shield_cell() -> bool:
 
 func _process(_delta: float) -> void:
 	if survival_mode and is_instance_valid(zone) and is_instance_valid(player):
-		storm_exposure = lerpf(storm_exposure,zone.exposure(player.global_position),1.0-exp(-_delta*3.0))
+		var body_exposure: float = zone.exposure(player.global_position)
+		var camera_exposure: float = zone.exposure(player.camera.global_position)
+		var exposure_target := maxf(body_exposure,camera_exposure*0.78)
+		storm_exposure = lerpf(storm_exposure,exposure_target,1.0-exp(-_delta*2.6))
 		world_environment.background_color = Color("8cabb8").lerp(Color("7f5937"),storm_exposure)
 		world_environment.ambient_light_color = Color("c9d2d0").lerp(Color("b28e71"),storm_exposure)
 		world_environment.fog_enabled = storm_exposure>0.015
 		world_environment.fog_light_color = Color("a07850")
-		world_environment.fog_density = pow(storm_exposure,1.25)*0.105
+		world_environment.fog_density = pow(storm_exposure,1.15)*0.085
 		game_audio.set_storm_exposure(storm_exposure)
 	if not OS.has_feature("android") or not survival_mode or qa_sample_done or qa_sample_start==0:
 		return
