@@ -7,9 +7,9 @@ on:
         type: boolean
         default: false
   push:
-    branches: [r076-locomotion]
+    branches: [r0761-animation-pipeline]
   pull_request:
-    branches: [r0757-static-batching]
+    branches: [r076-locomotion]
 permissions:
   contents: read
 jobs:
@@ -95,6 +95,22 @@ jobs:
           grep -F 'LAST IMPACT TOUCH FIXTURES PASS' /tmp/touch_tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|TEST FAILED' /tmp/touch_tests.log; then exit 1; fi
           if grep -E 'SCRIPT ERROR|Parse Error|TEST FAILED' /tmp/tests.log; then exit 1; fi
+      - name: Audit verified CC0 animation source
+        run: |
+          set -euo pipefail
+          # Fetch only the pinned archive, never execute third-party repository scripts.
+          GIT_LFS_SKIP_SMUDGE=1 git clone --no-checkout https://github.com/MightyBubble/Ludots-Assets.git /tmp/animation-source
+          git -C /tmp/animation-source checkout fab331eff1cb9c552c60399ea10186ef675cd460
+          git -C /tmp/animation-source lfs pull --include="animations/Quaternius-Universal-Animation-Library-Standard.zip" --exclude=""
+          python3 tools/audit_animation_source.py /tmp/animation-source/animations/Quaternius-Universal-Animation-Library-Standard.zip /tmp/raze_rig_audit.json /tmp/animation_source_audit.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: LastImpact_ANI02_SourceAudit
+          path: |
+            /tmp/raze_rig_audit.json
+            /tmp/animation_source_audit.json
+          if-no-files-found: ignore
       - name: Render desktop visual diagnostics
         run: |
           set -euo pipefail
