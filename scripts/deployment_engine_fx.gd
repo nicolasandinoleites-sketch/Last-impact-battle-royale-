@@ -6,6 +6,8 @@ var rotor: Node3D
 var particles: CPUParticles3D
 var glow: MeshInstance3D
 var glow_mat: StandardMaterial3D
+var plume: MeshInstance3D
+var plume_mat: ShaderMaterial
 var intensity := 0.0
 var requested := 0.0
 var phase := 0.0
@@ -43,13 +45,46 @@ func configure(rotor_pivot: Node3D, nozzle_radius: float, is_aircraft: bool, pro
 	glow_mat.albedo_color = Color(1.0,0.42,0.09)
 	glow.material_override = glow_mat
 	add_child(glow)
+	# Two intersecting tapered ribbons: constant-size, low-overdraw exhaust core.
+	plume = MeshInstance3D.new()
+	var geometry := SurfaceTool.new()
+	geometry.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for axis in [Vector3.RIGHT,Vector3.UP]:
+		var base: Vector3 = axis*radius*0.62
+		var tip: Vector3 = axis*radius*0.22
+		var length := radius*(8.0 if aircraft else 10.0)
+		var corners := [-base,base,Vector3(0,0,length)+tip,Vector3(0,0,length)-tip]
+		var uv := [Vector2(0,0),Vector2(1,0),Vector2(1,1),Vector2(0,1)]
+		for index in [0,1,2,0,2,3]:
+			geometry.set_uv(uv[index])
+			geometry.add_vertex(corners[index])
+	plume.mesh = geometry.commit()
+	plume.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var shader := Shader.new()
+	shader.code = """shader_type spatial;
+render_mode unshaded, blend_add, cull_disabled, depth_draw_never, shadows_disabled, fog_disabled;
+uniform float power = 0.0;
+uniform vec4 exhaust_color : source_color = vec4(1.0,0.45,0.08,1.0);
+void fragment(){
+ float side = pow(max(0.0,1.0-abs(UV.x*2.0-1.0)),1.4);
+ float tail = pow(max(0.0,1.0-UV.y),1.65);
+ float pulse = 0.92+0.08*sin(TIME*25.0-UV.y*13.0);
+ ALBEDO = mix(exhaust_color.rgb,vec3(1.0,0.94,0.72),pow(tail,3.0)*0.85);
+ ALPHA = power*side*tail*pulse*0.85;
+}"""
+	plume_mat = ShaderMaterial.new()
+	plume_mat.shader = shader
+	plume_mat.set_shader_parameter("exhaust_color",Color(0.72,0.81,0.95) if aircraft else Color(1.0,0.40,0.065))
+	plume.material_override = plume_mat
+	add_child(plume)
 	particles = CPUParticles3D.new()
 	particles.emitting = false
 	particles.amount = [10,18,26][quality] if aircraft else [8,14,20][quality]
 	particles.lifetime = 0.85 if aircraft else 0.42
 	particles.local_coords = false
 	particles.direction = Vector3(0,0,1)
-	particles.spread = 9.0 if aircraft else 4.0
+	particles.spread = 6.0 if aircraft else 3.0
+	particles.particle_flag_align_y = true
 	particles.gravity = Vector3.ZERO
 	particles.initial_velocity_min = exhaust_speed*0.8
 	particles.initial_velocity_max = exhaust_speed*1.2
@@ -57,8 +92,8 @@ func configure(rotor_pivot: Node3D, nozzle_radius: float, is_aircraft: bool, pro
 	particles.scale_amount_max = 1.0
 	particles.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var puff := SphereMesh.new()
-	puff.radius = radius*0.45
-	puff.height = radius*0.9
+	puff.radius = radius*0.23
+	puff.height = radius*1.9
 	puff.radial_segments = 6
 	puff.rings = 3
 	particles.mesh = puff
@@ -90,6 +125,9 @@ func update_effect(delta: float, within_fx_range: bool = true) -> void:
 		rotor.transform.basis = base_rotor_basis*Basis(Vector3(0,0,1),phase)
 	var active_fx := live and within_fx_range and intensity>0.03
 	glow.visible = active_fx
+	plume.visible = active_fx
+	plume.scale = Vector3(1.0,1.0,0.30+0.70*intensity)
+	plume_mat.set_shader_parameter("power",intensity)
 	glow.scale = Vector3.ONE*(0.75+0.25*intensity)
 	glow_mat.albedo_color = Color(1.0,0.35+0.47*intensity,0.06+0.19*intensity)
 	if active_fx and not particles.visible:
@@ -109,6 +147,9 @@ func reset_effect() -> void:
 		rotor.transform.basis = base_rotor_basis
 	if is_instance_valid(glow):
 		glow.hide()
+	if is_instance_valid(plume):
+		plume.hide()
+		plume_mat.set_shader_parameter("power",0.0)
 	if is_instance_valid(particles):
 		particles.emitting = false
 		particles.restart()
