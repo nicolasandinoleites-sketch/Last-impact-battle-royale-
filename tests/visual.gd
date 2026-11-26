@@ -111,6 +111,19 @@ func run() -> void:
 		inspection.position = follow+Vector3(2.6,1.45,-1.2)
 		inspection.look_at(follow+Vector3(0,0.90,0))
 		await capture("motion_sprint_%02d" % sample)
+	# Verify carry profile from front-quarter, then transition from sprint into ADS.
+	var front: Vector3 = scene.player.global_position
+	inspection.position = front+Vector3(1.8,1.55,-2.1)
+	inspection.look_at(front+Vector3(0,1.14,0))
+	await capture("motion_carry_sprint")
+	scene.player.aiming = true
+	for tick in range(30):
+		await physics_frame
+	front = scene.player.global_position
+	inspection.position = front+Vector3(1.8,1.55,-2.1)
+	inspection.look_at(front+Vector3(0,1.14,0))
+	await capture("motion_carry_ads")
+	scene.player.aiming = false
 	scene.player.request_slide()
 	for sample in range(5):
 		for tick in range(5):

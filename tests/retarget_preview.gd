@@ -55,6 +55,19 @@ func run() -> void:
 		if absf(target.get_bone_pose_rotation(i).dot(target.get_bone_rest(i).basis.orthonormalized().get_rotation_quaternion()))<0.999:
 			fail("neutral pose "+target.get_bone_name(i))
 			return
+	# Record original vertical hip displacement and target sole-height estimate.
+	# This is research data only; never translate the live collider or activate a clip.
+	var source_hip := source.find_bone(SOURCE_ROLES["hips"])
+	var source_head := source.find_bone(SOURCE_ROLES["head"])
+	var target_hip := target.find_bone(TARGET_ROLES["hips"])
+	var target_head := target.find_bone(TARGET_ROLES["head"])
+	var source_axis := Transfer.rig_basis(source,SOURCE_ROLES).y
+	var source_rest_hip := source.get_bone_global_rest(source_hip).origin
+	var source_torso := source_rest_hip.distance_to(source.get_bone_global_rest(source_head).origin)
+	var target_rest_hip: Vector3 = actor.to_local(target.to_global(target.get_bone_global_rest(target_hip).origin))
+	var target_rest_head: Vector3 = actor.to_local(target.to_global(target.get_bone_global_rest(target_head).origin))
+	var torso_ratio := target_rest_hip.distance_to(target_rest_head)/maxf(source_torso,0.0001)
+	var pelvis_report: Dictionary = {}
 	var library := AnimationLibrary.new()
 	var report: Array[Dictionary] = []
 	for clip_name in CLIPS:
@@ -71,6 +84,7 @@ func run() -> void:
 			result.track_set_path(track,NodePath(".:"+target.get_bone_name(i)))
 			tracks[i] = track
 		var count := maxi(2,ceili(original.length*30.0))
+		var pelvis_samples: Array[Dictionary] = []
 		source_player.play(clip_name)
 		for tick in range(count+1):
 			var t := original.length*float(tick)/float(count)
@@ -78,6 +92,12 @@ func run() -> void:
 			if not Transfer.apply_rotations(source,target,calibration):
 				fail("sample "+clip_name)
 				return
+			var hip_offset := (source.get_bone_global_pose(source_hip).origin-source_rest_hip).dot(source_axis)*torso_ratio
+			var toe_offset: float = actor.foot_height()-actor.foot_rest_height
+			if not is_finite(hip_offset) or not is_finite(toe_offset):
+				fail("nonfinite pelvis audit "+clip_name)
+				return
+			pelvis_samples.append({"seconds":t,"source_vertical_scaled_m":hip_offset,"rotation_only_toe_offset_m":toe_offset,"hypothetical_translated_toe_offset_m":toe_offset+hip_offset})
 			for i in tracks:
 				var q := target.get_bone_pose_rotation(i)
 				if not q.is_finite():
@@ -85,6 +105,7 @@ func run() -> void:
 					return
 				result.rotation_track_insert_key(tracks[i],t,q)
 		source_player.stop()
+		pelvis_report[clip_name] = pelvis_samples
 		library.add_animation(clip_name,result)
 		report.append({"clip":clip_name,"seconds":original.length,"rotation_tracks":tracks.size(),"samples":count+1})
 	# Align the clips using measured ankle trajectories on the actual retargeted rig.
@@ -106,6 +127,13 @@ func run() -> void:
 		return
 	gait_file.store_string(JSON.stringify(gait_report,"  "))
 	gait_file.close()
+	var pelvis_file := FileAccess.open(OUT+"/pelvis_audit.json",FileAccess.WRITE)
+	if pelvis_file==null:
+		fail("pelvis audit report")
+		return
+	pelvis_file.store_string(JSON.stringify({"source_to_target_torso_ratio":torso_ratio,"sample_rate_hz":30,"clips":pelvis_report},"  "))
+	pelvis_file.close()
+	print("PELVIS AUDIT COMPLETE | clips=",pelvis_report.size()," ratio=",torso_ratio)
 	# Experimental library only. No imported asset or runtime code is overwritten.
 	if ResourceSaver.save(library,OUT+"/raze_experimental.tres")!=OK:
 		fail("cannot save library")
@@ -145,5 +173,42 @@ func run() -> void:
 			if image==null or image.is_empty() or image.save_png(OUT+"/"+clip_name+"_%d.png" % frame)!=OK:
 				fail("capture "+clip_name)
 				return
+	# Offline only: pose compression with measured lowest toe correction.
+	# Do not apply this grounded correction to airborne clips.
+	var grounded_report: Array[Dictionary] = []
+	for clip_name in ["Idle_Loop","Crouch_Idle_Loop","Crouch_Fwd_Loop","Jump_Land"]:
+		preview_player.play(clip_name)
+		preview_player.pause()
+		var original: Animation = library.get_animation(clip_name)
+		var rows: Array = pelvis_report[clip_name]
+		var peak_residual := 0.0
+		for i in range(rows.size()):
+			var row: Dictionary = rows[i]
+			actor.model.position.y = 0.0
+			preview_player.seek(minf(float(row["seconds"]),maxf(0.0,original.length-0.0001)),true)
+			target.force_update_all_bone_transforms()
+			var uncorrected: float = actor.foot_height()-actor.foot_rest_height
+			var source_shift := float(row["source_vertical_scaled_m"])
+			var residual_correction := clampf(-uncorrected-source_shift,-0.20,0.20)
+			var shift := clampf(source_shift+residual_correction,-0.64,0.12)
+			actor.model.position.y = shift
+			target.force_update_all_bone_transforms()
+			var residual: float = absf(actor.foot_height()-actor.foot_rest_height)
+			peak_residual = maxf(peak_residual,residual)
+			if i%maxi(1,floori(float(rows.size())/4.0))==0:
+				await RenderingServer.frame_post_draw
+				var image := root.get_texture().get_image()
+				if image==null or image.is_empty() or image.save_png(OUT+"/grounded_"+clip_name+"_%03d.png" % i)!=OK:
+					fail("corrected grounded capture "+clip_name)
+					return
+		grounded_report.append({"clip":clip_name,"samples":rows.size(),"max_toe_residual_m":peak_residual,"acceptance_m":0.025,"pass":peak_residual<=0.025})
+	actor.model.position.y = 0.0
+	var corrected_file := FileAccess.open(OUT+"/grounded_pose_report.json",FileAccess.WRITE)
+	if corrected_file==null:
+		fail("grounded pose report")
+		return
+	corrected_file.store_string(JSON.stringify(grounded_report,"  "))
+	corrected_file.close()
+	print("GROUNDED POSE AUDIT ",JSON.stringify(grounded_report))
 	print("RAZE RETARGET PREVIEW COMPLETE | clips=",report.size()," mapped=",calibration["pairs"].size())
 	quit(0)

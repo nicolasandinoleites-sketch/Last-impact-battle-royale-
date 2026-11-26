@@ -288,6 +288,8 @@ func reset_round() -> void:
 	player.reset_physics_interpolation()
 	hud.clear_controls()
 	message = "Supervivencia: permanece en la zona" if survival_mode else "Campo de entrenamiento"
+	if OS.has_feature("android") and survival_mode:
+		print("ANDROID ROUND RESET | seed=",round_seed," health=",health," ammo=",ammo)
 
 func apply_profile() -> void:
 	Engine.max_fps = [30,45,60][profile]
@@ -448,9 +450,10 @@ func _process(_delta: float) -> void:
 			report["seed"] = round_seed
 			report["zone_phase"] = zone.phase
 			report["storm_exposure"] = storm_exposure
-			report["build"] = "0.7.6.5"
+			report["build"] = "0.7.6.6"
 			report["locomotion_clips"] = player.raze.clip_motion.available
 			report["clip_samples"] = player.raze.clip_motion.sample_count
+			report["torso_clip_weight"] = player.raze.clip_motion.torso_weight
 			report["gait_calibrated"] = player.raze.clip_motion.calibrated
 			report["gait_cadence_hz"] = player.raze.clip_motion.cadence_hz
 			report["foot_contacts"] = player.raze.foot_contact.contact_count

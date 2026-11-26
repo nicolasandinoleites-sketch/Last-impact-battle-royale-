@@ -4,6 +4,12 @@ extends RefCounted
 const LIBRARY := "res://assets/animations/raze_locomotion.tres"
 const CLIPS := ["Walk_Loop","Jog_Fwd_Loop","Sprint_Loop"]
 const BONES := ["L_Thigh","R_Thigh","L_Calf","R_Calf","L_Foot","R_Foot"]
+# Spine descendants only: do not rotate Hip or Pelvis and disturb foot calibration.
+const TORSO_BONES := ["Spine01","Spine02","Head"]
+var torso_ids: Array[int] = []
+var torso_tracks: Array[PackedInt32Array] = []
+var torso_weight := 0.0
+var torso_enabled := true
 var library: AnimationLibrary
 var ids: Array[int] = []
 var tracks: Array[PackedInt32Array] = []
@@ -28,6 +34,8 @@ func setup(rig: Skeleton3D) -> bool:
 		return false
 	ids.clear()
 	tracks.clear()
+	torso_ids.clear()
+	torso_tracks.clear()
 	phase_offsets.clear()
 	stride_travel.clear()
 	support_masks.clear()
@@ -38,6 +46,11 @@ func setup(rig: Skeleton3D) -> bool:
 		if id<0:
 			return false
 		ids.append(id)
+	for bone in TORSO_BONES:
+		var id := rig.find_bone(bone)
+		if id<0:
+			return false
+		torso_ids.append(id)
 	for name in CLIPS:
 		if not library.has_animation(name):
 			return false
@@ -51,6 +64,13 @@ func setup(rig: Skeleton3D) -> bool:
 				return false
 			row.append(track)
 		tracks.append(row)
+		var torso_row := PackedInt32Array()
+		for bone in TORSO_BONES:
+			var track := clip.find_track(NodePath(".:"+bone),Animation.TYPE_ROTATION_3D)
+			if track<0 or clip.track_get_key_count(track)<2:
+				return false
+			torso_row.append(track)
+		torso_tracks.append(torso_row)
 		var offset := float(clip.get_meta("gait_phase_offset",0.0))
 		var travel := float(clip.get_meta("gait_travel_m",0.0))
 		if not is_finite(offset) or not is_finite(travel) or offset<0.0 or offset>=1.0 or travel<=0.35 or travel>=8.0:
@@ -66,6 +86,7 @@ func setup(rig: Skeleton3D) -> bool:
 func reset() -> void:
 	phase = 0.0
 	weight = 0.0
+	torso_weight = 0.0
 	speed_blend = 0.0
 	active_clip = ""
 	sample_count = 0
@@ -83,6 +104,10 @@ func update(delta: float, speed: float, eligible: bool, local_motion: Vector2) -
 	var alignment := -local_motion.y/maxf(local_motion.length(),0.001)
 	var desired := smoothstep(0.55,0.9,alignment)*smoothstep(0.25,1.0,speed) if eligible else 0.0
 	weight = lerpf(weight,desired,1.0-exp(-delta*(10.0 if desired>weight else 18.0)))
+	var torso_target := desired*lerpf(0.25,0.40,smoothstep(3.8,6.2,speed)) if torso_enabled else 0.0
+	torso_weight = lerpf(torso_weight,torso_target,1.0-exp(-delta*16.0))
+	if torso_weight<0.005:
+		torso_weight = 0.0
 	if weight<0.005:
 		weight = 0.0
 		active_clip = ""
@@ -133,4 +158,14 @@ func apply(rig: Skeleton3D) -> void:
 		var goal := qa.slerp(qb,mix_amount).normalized()
 		var current := rig.get_bone_pose_rotation(ids[i])
 		rig.set_bone_pose_rotation(ids[i],current.slerp(goal,weight).normalized())
+	if torso_weight>0.0:
+		var pa := fposmod(phase+phase_offsets[segment]*calibration_strength(speed_blend),1.0)
+		var pb := fposmod(phase+phase_offsets[segment+1]*calibration_strength(speed_blend),1.0)
+		for i in range(torso_ids.size()):
+			var qa := a.rotation_track_interpolate(torso_tracks[segment][i],pa*a.length)
+			var qb := b.rotation_track_interpolate(torso_tracks[segment+1][i],pb*b.length)
+			var goal := qa.slerp(qb,mix_amount).normalized()
+			var current := rig.get_bone_pose_rotation(torso_ids[i])
+			var influence := torso_weight*0.5 if i==2 else torso_weight
+			rig.set_bone_pose_rotation(torso_ids[i],current.slerp(goal,influence).normalized())
 	sample_count += 1
