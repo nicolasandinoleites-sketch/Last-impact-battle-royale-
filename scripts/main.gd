@@ -288,6 +288,8 @@ func reset_round() -> void:
 	player.reset_physics_interpolation()
 	hud.clear_controls()
 	message = "Supervivencia: permanece en la zona" if survival_mode else "Campo de entrenamiento"
+	if OS.has_feature("android") and survival_mode:
+		print("ANDROID ROUND RESET | seed=",round_seed," health=",health," ammo=",ammo)
 
 func apply_profile() -> void:
 	Engine.max_fps = [30,45,60][profile]
