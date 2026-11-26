@@ -47,5 +47,27 @@ func run() -> void:
 		return
 	if not check(maxf(game.player.weapon.right_error,game.player.weapon.left_error)<0.08,"weapon grip remains within 8 cm during walk"):
 		return
+	if not check(clips.torso_weight>0.20 and clips.torso_weight<=0.40,"imported spine layer active during walk"):
+		return
+	var weapon = game.player.weapon
+	var min_y := INF
+	var max_y := -INF
+	var max_grip := 0.0
+	for i in range(60):
+		await physics_frame
+		min_y = minf(min_y,weapon.carry_sway.y)
+		max_y = maxf(max_y,weapon.carry_sway.y)
+		max_grip = maxf(max_grip,maxf(weapon.left_error,weapon.right_error))
+	if not check(max_y-min_y>0.002 and max_grip<0.08,"phase-linked carry motion with bounded grip error"):
+		return
+	game.player.aiming = true
+	for i in range(45):
+		await physics_frame
+	if not check(clips.torso_weight==0.0 and weapon.carry_sway==Vector3.ZERO and is_zero_approx(weapon.carry_roll),"ADS disables imported torso and cosmetic carry sway"):
+		return
+	game.reset_round()
+	if not check(clips.torso_weight==0.0 and weapon.carry_sway==Vector3.ZERO,"reset clears torso and carry"):
+		return
+	print("UPPER BODY PASS | carry_y_range=",max_y-min_y," max_grip=",max_grip)
 	print("RAZE CLIP GAMEPLAY PASS | max_toe_error=",max_error," grip=",game.player.weapon.right_error,"/",game.player.weapon.left_error)
 	quit(0)
