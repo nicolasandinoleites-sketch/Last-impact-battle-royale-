@@ -171,8 +171,14 @@ func reset_movement() -> void:
 	set_stance(false)
 	reload_visual = 0.0
 	view_recoil = 0.0
+	if model_loaded:
+		raze.reset_locomotion()
 	if weapon_loaded:
 		weapon.clear_effects()
+	if is_instance_valid(visual):
+		visual.rotation.y = yaw
+	if is_instance_valid(camera):
+		update_camera(1.0)
 
 func _physics_process(delta: float) -> void:
 	slide_cooldown = maxf(0.0,slide_cooldown-delta)
@@ -228,6 +234,7 @@ func _physics_process(delta: float) -> void:
 	if position.y < -8.0:
 		position = Vector3(0,0.1,12)
 		reset_movement()
+		reset_physics_interpolation()
 
 # Low-cost contact cue independent of dynamic shadow support.
 func create_contact_shadow() -> void:
