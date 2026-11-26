@@ -131,6 +131,21 @@ func run() -> void:
 		actor.locomotion(0.016,2.8,true,false,true,false,0.0,direction*2.8)
 		if not check(actor.foot_ik_active and is_finite(actor.foot_ik_error) and actor.foot_ik_error<0.35, "directional leg IK "+str(direction)):
 			return
+	if not check(actor.ankle_basis.size()==2, "calibrated ankle orientations"):
+		return
+	var test_cadence: float = actor.gait_cadence(1.5,false)
+	var test_step: float = actor.gait_half_step(1.5,test_cadence,false)
+	if not check(absf(2.0*test_step*test_cadence/0.62-1.5)<0.001, "stance travel matches nominal speed"):
+		return
+	var max_ik := 0.0
+	for i in range(8):
+		var dir := Vector2.from_angle(float(i)*TAU/8.0)*2.8
+		for tick in range(24):
+			actor.locomotion(1.0/60.0,2.8,true,false,true,false,0.0,dir)
+			max_ik = maxf(max_ik,actor.foot_ik_error)
+	if not check(is_finite(max_ik) and max_ik<0.35, "sustained eight-direction IK"):
+		return
+	print("MAX EIGHT DIRECTION IK ",max_ik)
 	var leg_id: int = actor.skeleton.find_bone("L_Thigh")
 	var initial: Quaternion = actor.skeleton.get_bone_pose_rotation(leg_id)
 	for i in range(12):
@@ -168,6 +183,15 @@ func run() -> void:
 	scene.player.update_camera(0.2)
 	if not check(is_equal_approx(scene.player.pitch,initial_pitch) and scene.player.view_recoil<0.001, "camera recoil returns without aim drift"):
 		return
+	scene.player.aiming = false
+	scene.player.update_camera(1.0)
+	if not check(is_equal_approx(scene.player.camera.fov,60.0) and is_equal_approx(scene.player.boom.spring_length,2.85), "normal TPS framing"):
+		return
+	scene.player.aiming = true
+	scene.player.update_camera(1.0)
+	if not check(is_equal_approx(scene.player.camera.fov,52.0) and is_equal_approx(scene.player.boom.spring_length,2.40), "aim TPS framing"):
+		return
+	scene.player.aiming = false
 	var origin: Vector3 = scene.player.position
 	scene.mobile_move = Vector2(0,-1)
 	await frames(20)

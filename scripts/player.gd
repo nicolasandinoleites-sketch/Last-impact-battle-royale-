@@ -124,10 +124,10 @@ func look_delta(relative: Vector2) -> void:
 func update_camera(delta: float) -> void:
 	view_recoil = move_toward(view_recoil,0.0,delta*0.45)
 	pivot.rotation = Vector3(clampf(pitch+view_recoil,-0.85,0.48),yaw,0)
-	pivot.position.y = lerpf(pivot.position.y, 0.98 if low_stance else 1.48, minf(1.0,delta*10.0))
-	boom.position.x = lerpf(boom.position.x, shoulder * (0.86 if aiming else 0.72), minf(1.0, delta * 12.0))
-	boom.spring_length = lerpf(boom.spring_length, 2.15 if aiming else 3.0, minf(1.0, delta * 12.0))
-	camera.fov = lerpf(camera.fov, 51.0 if aiming else 65.0, minf(1.0, delta * 12.0))
+	pivot.position.y = lerpf(pivot.position.y, 0.98 if low_stance else (1.52 if aiming else 1.36), minf(1.0,delta*10.0))
+	boom.position.x = lerpf(boom.position.x, shoulder * (0.78 if aiming else 0.64), minf(1.0, delta * 12.0))
+	boom.spring_length = lerpf(boom.spring_length, 2.40 if aiming else 2.85, minf(1.0, delta * 12.0))
+	camera.fov = lerpf(camera.fov, 52.0 if aiming else 60.0, minf(1.0, delta * 12.0))
 
 func request_slide() -> void:
 	if is_on_floor() and slide_time <= 0.0 and slide_cooldown <= 0.0 and not low_stance and move_input.length() > 0.4:

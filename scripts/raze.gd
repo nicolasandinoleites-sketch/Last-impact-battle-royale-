@@ -22,6 +22,9 @@ var foot_rest_height := 0.0
 var ankle_rest: Dictionary = {}
 var foot_ik_active := false
 var foot_ik_error := 0.0
+var gait_heading := Vector3.FORWARD
+var gait_weight := 0.0
+var ankle_basis: Dictionary = {}
 var visual_ground_error := 0.0
 var right_socket: BoneAttachment3D
 var left_socket: BoneAttachment3D
@@ -87,6 +90,7 @@ func load_model() -> bool:
 		var id := skeleton.find_bone(side+"_Foot")
 		if id>=0:
 			ankle_rest[side] = to_local(skeleton.to_global(skeleton.get_bone_global_pose(id).origin))
+			ankle_basis[side] = global_transform.basis.orthonormalized().inverse()*skeleton.global_transform.basis.orthonormalized()*skeleton.get_bone_global_pose(id).basis.orthonormalized()
 	ready_model = true
 	return true
 
@@ -113,7 +117,7 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 	speed_blend = lerpf(speed_blend,clampf(speed/6.2,0.0,1.0),1.0-exp(-delta*10.0))
 	var moving := speed > 0.18
 	var fast := sprinting and speed > 4.2 and not combat
-	var cadence := lerpf(1.25,2.25,speed_blend)
+	var cadence := gait_cadence(speed,fast)
 	if moving and grounded and not low:
 		cycle = fposmod(cycle+delta*TAU*cadence,TAU)
 	var stride := sin(cycle)
@@ -216,11 +220,22 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 	foot_ik_error = 0.0
 	if foot_ik_active:
 		var heading := Vector3(local_motion.x,0.0,local_motion.y).normalized()
-		var half_step := clampf(speed*0.52/cadence*0.5,0.06,0.34)
+		var smoothed := gait_heading.lerp(heading,1.0-exp(-delta*18.0))
+		gait_heading = smoothed.normalized() if smoothed.length_squared()>0.01 else heading
+		gait_weight = minf(1.0,gait_weight+delta*9.0)
+		var half_step := gait_half_step(speed,cadence,fast)
+		# Maintain a small knee reserve rather than asking both legs to fully extend.
+		model.position.y = lerpf(model.position.y,minf(model.position.y,-0.035),blend)
 		for side in ["L","R"]:
 			var p := fposmod(cycle/TAU+(0.5 if side=="R" else 0.0),1.0)
-			var goal := gait_goal(side,p,heading,half_step,fast)
-			foot_ik_error = maxf(foot_ik_error,solve_leg(side,to_global(goal),global_transform.basis*Vector3.FORWARD))
+			var goal := gait_goal(side,p,gait_heading,half_step,fast)
+			var id := skeleton.find_bone(side+"_Foot")
+			var current := skeleton.to_global(skeleton.get_bone_global_pose(id).origin)
+			var blended_goal := current.lerp(to_global(goal),gait_weight)
+			foot_ik_error = maxf(foot_ik_error,solve_leg(side,blended_goal,global_transform.basis*Vector3.FORWARD))
+			align_ankle(side,gait_weight*(1.0 if p<(0.54 if fast else 0.62) else 0.65))
+	else:
+		gait_weight = 0.0
 	visual_ground_error = absf(foot_height()-foot_rest_height) if grounded else 0.0
 
 func dance() -> bool:
@@ -384,3 +399,26 @@ func solve_leg(side: String,world_goal: Vector3,world_pole: Vector3) -> float:
 	c = skeleton.get_bone_global_pose(foot).origin
 	rotate_bone_toward(calf,c-b,a+dir*d-b)
 	return skeleton.to_global(skeleton.get_bone_global_pose(foot).origin).distance_to(world_goal)
+
+# For unclamped strides, the stance trajectory cancels the actor's nominal travel.
+func gait_cadence(speed: float,fast: bool) -> float:
+	return clampf(speed/2.1,1.15,3.2) if fast else clampf(speed/1.9,0.85,2.1)
+
+func gait_half_step(speed: float,cadence: float,fast: bool) -> float:
+	var duty := 0.54 if fast else 0.62
+	return clampf(speed*duty/(2.0*maxf(cadence,0.01)),0.0,0.36)
+
+func align_ankle(side: String,weight: float) -> void:
+	if not ankle_basis.has(side):
+		return
+	var id := skeleton.find_bone(side+"_Foot")
+	var parent_id := skeleton.get_bone_parent(id)
+	if parent_id<0:
+		return
+	var rest_basis: Basis = ankle_basis[side]
+	var world_basis := global_transform.basis.orthonormalized()*rest_basis
+	var local_basis := skeleton.global_transform.basis.orthonormalized().inverse()*world_basis
+	var parent_basis := skeleton.get_bone_global_pose(parent_id).basis.orthonormalized()
+	var goal := (parent_basis.inverse()*local_basis).get_rotation_quaternion()
+	var current := skeleton.get_bone_pose_rotation(id)
+	skeleton.set_bone_pose_rotation(id,current.slerp(goal,clampf(weight,0.0,1.0)).normalized())

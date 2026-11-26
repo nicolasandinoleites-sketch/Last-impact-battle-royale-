@@ -16,6 +16,9 @@ var launching := false
 var info := ""
 var refresh_left := 0.0
 var preview_pending := false
+var preview_elapsed := 0.0
+var preview_load_ms := -1
+var preview_started_ms := 0
 var preview_resources: Array[Resource] = []
 const PREVIEW_PATHS = ["res://assets/tripo/raze.glb","res://assets/tripo/ignis_x1.glb"]
 
@@ -29,12 +32,15 @@ func _ready() -> void:
 	print("LAST IMPACT R062 LOBBY READY | ",info)
 	if DisplayServer.get_name() != "headless":
 		preview_pending = true
+		preview_started_ms = Time.get_ticks_msec()
 		for path in PREVIEW_PATHS:
 			if ResourceLoader.load_threaded_request(path)!=OK:
 				preview_pending = false
 	queue_redraw()
 
 func _process(delta: float) -> void:
+	if preview_pending:
+		preview_elapsed += delta
 	poll_preview()
 	if is_instance_valid(preview):
 		preview.active_preview = (mode=="home" or mode=="loadout") and not launching
@@ -242,6 +248,10 @@ func draw_stage() -> void:
 func poll_preview() -> void:
 	if not preview_pending or launching:
 		return
+	if preview_elapsed>12.0:
+		preview_pending = false
+		status = "Vista previa: modo seguro"
+		return
 	for path in PREVIEW_PATHS:
 		var state := ResourceLoader.load_threaded_get_status(path)
 		if state==ResourceLoader.THREAD_LOAD_FAILED or state==ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
@@ -257,4 +267,6 @@ func poll_preview() -> void:
 	preview_pending = false
 	preview = Preview.new()
 	add_child(preview)
+	preview_load_ms = Time.get_ticks_msec()-preview_started_ms
+	print("LOBBY PREVIEW READY MS ",preview_load_ms)
 	queue_redraw()

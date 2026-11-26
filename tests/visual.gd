@@ -152,12 +152,24 @@ func run() -> void:
 	for tick in range(24):
 		await physics_frame
 	await capture("13_mobile_strafe")
+	print("PHONE ASPECT FOOT ERROR ",scene.player.raze.foot_ik_error)
 	print("LEG IK DIAGNOSTIC ",scene.player.raze.foot_ik_error)
 	if not scene.player.raze.foot_ik_active or not is_finite(scene.player.raze.foot_ik_error):
 		push_error("VISUAL CAPTURE FAILED: leg IK inactive")
 		quit(1)
 		return
 	scene.mobile_move = Vector2.ZERO
+	scene.player.aiming = false
+	scene.mobile_move = Vector2(-1,1).normalized()
+	for tick in range(30):
+		await physics_frame
+	await capture("15_mobile_diagonal_back")
+	scene.mobile_move = Vector2.ZERO
+	scene.player.shoulder = -1.0
+	scene.player.aiming = true
+	for tick in range(30):
+		await physics_frame
+	await capture("16_mobile_other_shoulder")
 	print("VISUAL MOTION COMPLETE")
 	print("VISUAL CAPTURE COMPLETE")
 	quit(0)

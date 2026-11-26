@@ -8,6 +8,9 @@ var move_center := Vector2.ZERO
 var knob := Vector2.ZERO
 var mouse_look := false
 var mouse_fire := false
+var stat_elapsed := 0.0
+var cached_fps := 0
+var cached_mem := 0.0
 const WHITE := Color(0.95,0.97,0.97,0.96)
 const DARK := Color(0.04,0.07,0.09,0.77)
 const ACCENT := Color(0.96,0.57,0.24,1)
@@ -16,7 +19,12 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_process_input(true)
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	stat_elapsed += delta
+	if stat_elapsed>=0.5:
+		stat_elapsed = 0.0
+		cached_fps = Engine.get_frames_per_second()
+		cached_mem = Performance.get_monitor(Performance.MEMORY_STATIC)/1048576.0
 	queue_redraw()
 
 func at(x: float,y: float) -> Vector2:
@@ -46,7 +54,7 @@ func _draw() -> void:
 	draw_minimap(u)
 	draw_rect(Rect2(at(0.145,0.025),Vector2(180,62)*u),DARK)
 	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R062",int(14*u),ACCENT)
-	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d   ·   MEM %.0f MB" % [Engine.get_frames_per_second(),Performance.get_monitor(Performance.MEMORY_STATIC)/1048576.0],font)
+	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d   ·   MEM %.0f MB" % [cached_fps,cached_mem],font)
 	label_at(at(0.145,0.025)+Vector2(9,50)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
 	centered(at(0.49,0.16),game.message,int(15*u))
 	var center := size*0.5
@@ -58,9 +66,10 @@ func _draw() -> void:
 	draw_circle(joystick,58*u,Color(0.04,0.07,0.09,0.38))
 	draw_arc(joystick,58*u,0,TAU,40,Color(1,1,1,0.55),2*u,true)
 	draw_circle(joystick+knob,25*u,Color(0.88,0.92,0.93,0.58))
+	var positions := buttons()
 	var names := {"FIRE":"FUEGO","AIM":"MIRA","JUMP":"SALTO","SLIDE":"SLIDE","LOAD":"REC.","RUN":"CORRER","SIDE":"LADO","FPS":"CALIDAD","RESET":"RESET","LOBBY":"LOBBY"}
-	for name in buttons():
-		var p: Vector2 = buttons()[name]
+	for name in positions:
+		var p: Vector2 = positions[name]
 		var r := radius(name)
 		var active: bool = (name == "FIRE" and game.fire) or (name == "AIM" and game.player.aiming) or (name == "RUN" and game.mobile_sprint)
 		draw_circle(p,r,Color(0.70,0.29,0.11,0.68) if active else DARK)
@@ -84,8 +93,9 @@ func _draw() -> void:
 	centered(bar.get_center()+Vector2(0,-9*u),"VIDA %d / ESCUDO %d" % [game.health,game.armor],int(10*u))
 
 func button_at(pos: Vector2) -> String:
-	for name in buttons():
-		if pos.distance_to(buttons()[name]) <= radius(name)+5*unit():
+	var positions := buttons()
+	for name in positions:
+		if pos.distance_to(positions[name]) <= radius(name)+5*unit():
 			return name
 	return ""
 
