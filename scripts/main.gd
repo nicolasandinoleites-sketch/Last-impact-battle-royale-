@@ -317,7 +317,7 @@ func reset_round() -> void:
 		zone.reset_zone()
 		inventory.reset()
 		round_seed += 1
-		var sites: Array[Vector3] = frontier.loot_positions(round_seed)
+		var sites: Array[Vector3] = frontier.battle_loot_positions(round_seed) if experimental_deployment else frontier.loot_positions(round_seed)
 		for i in range(pickups.size()):
 			pickups[i].position = sites[i]
 			pickups[i].reset_pickup()
@@ -422,7 +422,7 @@ func finish_survival(result: String) -> void:
 	reload_left = 0.0
 
 func spawn_pickups() -> void:
-	var sites: Array[Vector3] = frontier.loot_positions(round_seed)
+	var sites: Array[Vector3] = frontier.battle_loot_positions(round_seed) if experimental_deployment else frontier.loot_positions(round_seed)
 	for data in [
 		["MED",1,Vector3(-3,0,10)],["SHIELD",1,Vector3(3,0,10)],["AMMO",40,Vector3(0,0,7)],
 		["MED",2,Vector3(-10,0,3)],["SHIELD",2,Vector3(10,0,5)],["AMMO",50,Vector3(0,0,-7)],

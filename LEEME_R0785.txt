@@ -1,0 +1,1 @@
+LAST IMPACT R07.8.5 — IA táctica y botín. Abrir project.godot en Godot 4.6 y ejecutar lobby.tscn o battle_royale.tscn. Pruebas locales en qa_r0785. No APK; validación visual y Android pendientes.

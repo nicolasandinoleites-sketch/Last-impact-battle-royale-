@@ -26,6 +26,125 @@ var route_points := PackedVector3Array()
 var route_index := 0
 var animation_interval := 1.0/20.0
 var full_animation_distance := 14.0
+# Tactical behavior is enabled only in the aircraft Battle Royale mode.
+var armor := 0
+var tactical_goal := Vector3.ZERO
+var tactical_pickup: Node3D
+var decision_left := 0.0
+var patrol_index := 0
+var last_seen := Vector3.ZERO
+var memory_left := 0.0
+var loot_count := 0
+var tactical_ready := false
+
+func tactical_enabled() -> bool:
+	return is_instance_valid(game) and game.experimental_deployment
+
+func visible_player() -> bool:
+	var difference: Vector3 = game.player.global_position-global_position
+	if difference.length()>18.0 or absf(difference.y)>3.0:
+		return false
+	return clear_path(game.player.global_position)
+
+func clear_path(destination: Vector3) -> bool:
+	var ray := PhysicsRayQueryParameters3D.create(global_position+Vector3.UP*0.8,destination+Vector3.UP*0.8,1)
+	return get_world_3d().direct_space_state.intersect_ray(ray).is_empty()
+
+func set_tactical_goal(state: String, destination: Vector3) -> void:
+	if state!=ai_state or tactical_goal.distance_to(destination)>2.0:
+		path_left = 0.0
+	ai_state = state
+	tactical_goal = destination
+
+func select_supply():
+	var best: Node3D = null
+	var score := INF
+	for pickup in game.pickups:
+		if not pickup.active or game.zone.outside(pickup.global_position): continue
+		if pickup.kind=="MED" and hp>70: continue
+		if pickup.kind=="SHIELD" and armor>=35: continue
+		if pickup.kind not in ["MED","SHIELD"]: continue
+		var distance: float = global_position.distance_to(pickup.global_position)
+		if distance>32.0: continue
+		var claimed := false
+		for other in game.targets:
+			if other!=self and other.get_script()==get_script() and other.active and other.tactical_pickup==pickup:
+				claimed = true
+		if claimed: continue
+		var route: PackedVector3Array = game.frontier.route(global_position,pickup.global_position)
+		if route.is_empty() and distance>2.0: continue
+		var cost := distance+float(route.size())*0.35
+		if pickup.kind=="MED" and hp<45: cost -= 15.0
+		if cost<score:
+			best = pickup
+			score = cost
+	return best
+
+func collect_supply() -> bool:
+	if not is_instance_valid(tactical_pickup) or not tactical_pickup.active: return false
+	if global_position.distance_to(tactical_pickup.global_position)>1.4 or not clear_path(tactical_pickup.global_position): return false
+	var used := 0
+	if tactical_pickup.kind=="MED" and hp<100:
+		hp = mini(100,hp+35)
+		used = 1
+	elif tactical_pickup.kind=="SHIELD" and armor<50:
+		armor = mini(50,armor+25)
+		used = 1
+	if used==0: return false
+	tactical_pickup.collect(used)
+	loot_count += 1
+	tactical_pickup = null
+	decision_left = 0.0
+	return true
+
+func open_goal(candidate: Vector3) -> Vector3:
+	var cell: Vector2i = game.frontier.nearest_open(game.frontier.cell_at(candidate))
+	return game.frontier.cell_center(cell)
+
+func decide_tactical(delta: float) -> Vector3:
+	memory_left = maxf(0.0,memory_left-delta)
+	decision_left -= delta
+	if not tactical_ready:
+		tactical_ready = true
+		tactical_goal = global_position
+		patrol_index = game.targets.find(self)
+		decision_left = 0.0
+	if decision_left>0.0:
+		return tactical_goal
+	decision_left = 0.30
+	var seen := visible_player()
+	if seen:
+		last_seen = game.player.global_position
+		memory_left = 2.4
+	var center: Vector3 = game.zone.global_position
+	if game.zone.outside(global_position) or global_position.distance_to(center)>maxf(3.0,game.zone.radius-3.0):
+		tactical_pickup = null
+		set_tactical_goal("ZONE",open_goal(center))
+		return tactical_goal
+	var supply = select_supply()
+	if is_instance_valid(supply) and (not seen or hp<45):
+		tactical_pickup = supply
+		set_tactical_goal("LOOT",supply.global_position)
+		return tactical_goal
+	tactical_pickup = null
+	if seen and hp<35:
+		var away: Vector3 = global_position-game.player.global_position
+		away.y = 0.0
+		if away.length_squared()<0.01: away = Vector3.RIGHT
+		var retreat: Vector3 = global_position+away.normalized()*8.0
+		if game.zone.outside(retreat): retreat = center.lerp(global_position,0.6)
+		set_tactical_goal("RETREAT",open_goal(retreat))
+	elif seen:
+		set_tactical_goal("ENGAGE",game.player.global_position)
+	elif memory_left>0.0 and global_position.distance_to(last_seen)>2.0:
+		set_tactical_goal("SEARCH",open_goal(last_seen))
+	elif ai_state!="PATROL" or global_position.distance_to(tactical_goal)<1.5:
+		var angle := float(patrol_index)*2.399963
+		patrol_index += 1
+		var candidate := Vector3(cos(angle),0,sin(angle))*minf(32.0,maxf(2.0,game.zone.radius-5.0)) + center
+		set_tactical_goal("PATROL",open_goal(candidate))
+	return tactical_goal
+
 
 func _ready() -> void:
 	spawn_point = position
@@ -95,14 +214,23 @@ func _physics_process(delta: float) -> void:
 	var distance := difference.length()
 	var direction := difference.normalized()
 	var destination: Vector3 = game.player.global_position
-	ai_state = "FOLLOW"
-	if game.zone.outside(global_position):
-		ai_state = "ZONE"
-		destination = game.zone.global_position
-		direction = Vector3(-global_position.x,0,-global_position.z).normalized()
-	elif distance<1.3:
-		ai_state = "IDLE"
-		direction = Vector3.ZERO
+	if not tactical_enabled():
+		ai_state = "FOLLOW"
+		if game.zone.outside(global_position):
+			ai_state = "ZONE"
+			destination = game.zone.global_position
+			direction = Vector3(-global_position.x,0,-global_position.z).normalized()
+		elif distance<1.3:
+			ai_state = "IDLE"
+			direction = Vector3.ZERO
+	if tactical_enabled():
+		# Preserve tactical state across physics frames; decision rate is bounded.
+		destination = decide_tactical(delta)
+		var offset := destination-global_position
+		offset.y = 0.0
+		direction = offset.normalized() if offset.length()>1.0 else Vector3.ZERO
+		if ai_state=="ENGAGE" and distance<1.3: direction = Vector3.ZERO
+		if ai_state=="LOOT": collect_supply()
 	if direction.length_squared()>0.01:
 		direction = navigation_direction(destination,delta,direction)
 	if detour_left>0.0 and direction.length_squared()>0.01:
@@ -145,7 +273,7 @@ func _physics_process(delta: float) -> void:
 		anim_elapsed = 0.0
 		anim_updates += 1
 	# Arcade contact-only opponent, same damage rule as the prototype drone.
-	if distance<1.4 and height_gap<1.1 and contact_left<=0.0:
+	if distance<1.4 and height_gap<1.1 and contact_left<=0.0 and (not tactical_enabled() or ai_state=="ENGAGE"):
 		var ray := PhysicsRayQueryParameters3D.create(global_position+Vector3.UP*0.75,game.player.global_position+Vector3.UP*0.75,1)
 		if get_world_3d().direct_space_state.intersect_ray(ray).is_empty():
 			contact_left = 1.5
@@ -158,12 +286,19 @@ func update_lens_guard(camera_position: Vector3) -> void:
 func take_hit(damage: int) -> void:
 	if not active:
 		return
-	hp = maxi(0,hp-maxi(0,damage))
+	var incoming := maxi(0,damage)
+	if tactical_enabled():
+		var absorbed := mini(armor,incoming)
+		armor -= absorbed
+		incoming -= absorbed
+		decision_left = 0.0
+	hp = maxi(0,hp-incoming)
 	if hp==0:
 		active = false
 		visible = false
 		collision_layer = 0
 		velocity = Vector3.ZERO
+		tactical_pickup = null
 		ai_state = "INACTIVE"
 		destroyed.emit()
 
@@ -171,6 +306,15 @@ func reset_target() -> void:
 	position = spawn_point
 	reset_physics_interpolation()
 	hp = 100
+	armor = 0
+	tactical_ready = false
+	tactical_pickup = null
+	decision_left = 0.0
+	memory_left = 0.0
+	loot_count = 0
+	patrol_index = 0
+	last_seen = Vector3.ZERO
+	tactical_goal = Vector3.ZERO
 	active = true
 	visible = true
 	collision_layer = 2

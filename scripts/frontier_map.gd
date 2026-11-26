@@ -230,6 +230,28 @@ func loot_positions(seed_value: int) -> Array[Vector3]:
 		result.append(available.pop_at(index))
 	return result
 
+func battle_loot_positions(seed_value: int) -> Array[Vector3]:
+	# Preserve the three starter supplies, distribute the next four across sectors.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+	var result: Array[Vector3] = [loot_sites[0],loot_sites[1],loot_sites[2]]
+	var remaining: Array[Vector3] = []
+	for i in range(3,loot_sites.size()):
+		var p: Vector3 = loot_sites[i]
+		if not grid.is_point_solid(cell_at(p)): remaining.append(p)
+	for sector in sectors:
+		var rect: Rect2 = sector["rect"]
+		var choices: Array[Vector3] = []
+		for p in remaining:
+			if rect.has_point(Vector2(p.x,p.z)): choices.append(p)
+		if not choices.is_empty():
+			var chosen: Vector3 = choices[rng.randi_range(0,choices.size()-1)]
+			result.append(chosen)
+			remaining.erase(chosen)
+	while result.size()<9 and not remaining.is_empty():
+		result.append(remaining.pop_at(rng.randi_range(0,remaining.size()-1)))
+	return result
+
 static func sector_texture(kind: String) -> ImageTexture:
 	if surface_cache.has(kind):
 		return surface_cache[kind]
