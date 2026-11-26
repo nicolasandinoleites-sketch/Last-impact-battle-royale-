@@ -117,7 +117,8 @@ line=open(sys.argv[1]).read().splitlines()[-1]
 d=json.loads(line.split("LAST IMPACT TELEMETRY ",1)[1])
 assert d["frames"]>0 and d["duration_ms"]>=10000 and d["mean_fps"]>0
 assert 0<d["median_ms"]<=d["p95_ms"]<=d["p99_ms"]
-assert d["one_percent_low_fps"]>0 and d["build"]=="0.7.6.7"
+assert d["one_percent_low_fps"]>0 and d["build"]=="0.7.6.8"
+assert all(d[k]>=0 for k in ("player_animation_us_ema","weapon_ik_us_ema","operator_animation_us_ema_sum","operator_reduced_ticks"))
 assert d["crouch_clips"] is True
 assert 0<=d["torso_clip_weight"]<=0.41
 assert isinstance(d["gait_calibrated"],bool)

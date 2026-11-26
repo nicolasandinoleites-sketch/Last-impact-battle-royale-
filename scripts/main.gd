@@ -450,7 +450,20 @@ func _process(_delta: float) -> void:
 			report["seed"] = round_seed
 			report["zone_phase"] = zone.phase
 			report["storm_exposure"] = storm_exposure
-			report["build"] = "0.7.6.7"
+			report["build"] = "0.7.6.8"
+			report["player_animation_us_ema"] = player.animation_cost_us
+			report["weapon_ik_us_ema"] = player.weapon_cost_us
+			var operator_cost := 0.0
+			var operator_skips := 0
+			var hidden_operators := 0
+			for rival in targets:
+				if rival.active and "animation_cost_us" in rival:
+					operator_cost += float(rival.animation_cost_us)
+					operator_skips += int(rival.offscreen_anim_skips)
+					hidden_operators += 1 if rival.lens_hidden else 0
+			report["operator_animation_us_ema_sum"] = operator_cost
+			report["operator_reduced_ticks"] = operator_skips
+			report["lens_hidden_operators"] = hidden_operators
 			report["locomotion_clips"] = player.raze.clip_motion.available
 			report["clip_samples"] = player.raze.clip_motion.sample_count
 			report["torso_clip_weight"] = player.raze.clip_motion.torso_weight
