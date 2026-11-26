@@ -370,6 +370,19 @@ func run() -> void:
 		return
 	if not check(survival.targets[4].model_loaded and survival.targets[0].get_script()!=opponent.get_script(), "mixed drone and operator roster"):
 		return
+	var original_layer: int = opponent.collision_layer
+	var original_hp: int = opponent.hp
+	var chest: Vector3 = opponent.global_position+Vector3.UP*0.9
+	opponent.update_lens_guard(chest+Vector3(0.4,0,0))
+	if not check(opponent.lens_hidden and not opponent.visual.visible and opponent.active and opponent.collision_layer==original_layer and opponent.hp==original_hp,"near-lens guard preserves opponent simulation"):
+		return
+	opponent.update_lens_guard(chest+Vector3(0.68,0,0))
+	if not check(opponent.lens_hidden,"near-lens hysteresis prevents flicker"):
+		return
+	opponent.update_lens_guard(chest+Vector3(0.85,0,0))
+	if not check(not opponent.lens_hidden and opponent.visual.visible,"opponent reappears outside lens"):
+		return
+	print("LENS GUARD PASS")
 	var supply = survival.pickups[0]
 	survival.player.position = Vector3(0,0.1,24)
 	if not check(not survival.collect_nearby() and supply.active, "pickup distance gate"):
