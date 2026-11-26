@@ -5,6 +5,8 @@ var look_id := -1
 var fire_id := -1
 var sprint_id := -1
 var move_center := Vector2.ZERO
+var qa_move_start := Vector3.ZERO
+var qa_look_start := 0.0
 var knob := Vector2.ZERO
 var mouse_look := false
 var mouse_fire := false
@@ -60,7 +62,7 @@ func _draw() -> void:
 	var font := int(12*u)
 	draw_minimap(u)
 	draw_rect(Rect2(at(0.145,0.025),Vector2(190,78)*u),DARK)
-	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0755",int(14*u),ACCENT)
+	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0756",int(14*u),ACCENT)
 	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d · MEM EST %.0f MB" % [cached_fps,cached_mem],font)
 	label_at(at(0.145,0.025)+Vector2(9,50)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
 	if game.survival_mode and not game.telemetry.latest.is_empty():
@@ -142,8 +144,12 @@ func press_button(name: String, index: int) -> void:
 				game.fire = true
 		"RUN":
 			game.mobile_sprint = not game.mobile_sprint
-		"AIM": game.player.aiming = not game.player.aiming
-		"SIDE": game.player.shoulder *= -1.0
+		"AIM":
+			game.player.aiming = not game.player.aiming
+			game.qa_control("AIM_ON" if game.player.aiming else "AIM_OFF")
+		"SIDE":
+			game.player.shoulder *= -1.0
+			game.qa_control("SHOULDER")
 		"JUMP": game.player.jump_requested = true
 		"SLIDE": game.player.request_slide()
 		"LOAD": game.start_reload()
@@ -207,18 +213,24 @@ func _input(event: InputEvent) -> void:
 			elif event.position.x < size.x*0.42 and event.position.y > size.y*0.45 and move_id < 0:
 				move_id = id
 				move_center = event.position
+				qa_move_start = game.player.global_position
 				set_move(event.position)
 			elif look_id < 0:
 				look_id = id
+				qa_look_start = game.player.yaw
 		else:
 			if id == move_id:
 				move_id = -1
 				knob = Vector2.ZERO
 				game.mobile_move = Vector2.ZERO
+				if not event.canceled and game.player.global_position.distance_to(qa_move_start)>0.15:
+					game.qa_control("MOVE_RELEASE")
 				if event.canceled:
 					game.mobile_sprint = false
 			if id == look_id:
 				look_id = -1
+				if not event.canceled and absf(wrapf(game.player.yaw-qa_look_start,-PI,PI))>0.02:
+					game.qa_control("LOOK_RELEASE")
 			if id == fire_id:
 				fire_id = -1
 				game.fire = false
