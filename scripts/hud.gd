@@ -342,7 +342,7 @@ func draw_storm_exposure() -> void:
 		draw_rect(Rect2(size.x-width,width,width,size.y-width*2.0),c)
 
 	# Sparse, wind-driven sand streaks. Deterministic, no particle nodes or allocations per grain.
-	var count := [12,20,32][game.profile]
+	var count: int = [12,20,32][game.profile]
 	var t: float = game.zone.wind_clock
 	for i in range(count):
 		var seed := float(i)*0.61803399
