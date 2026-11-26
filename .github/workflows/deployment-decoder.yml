@@ -45,3 +45,7 @@ jobs:
           name: LastImpact_DeploymentFixtures
           path: /tmp/deployment_*.log
           if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LastImpact_OfflineGodot46
+          path: /tmp/godot.zip
