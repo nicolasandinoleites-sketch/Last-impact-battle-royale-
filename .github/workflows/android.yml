@@ -7,9 +7,9 @@ on:
         type: boolean
         default: false
   push:
-    branches: [r075-storm]
+    branches: [r0751-storm-polish]
   pull_request:
-    branches: [r074-mobile-performance]
+    branches: [r075-storm]
 permissions:
   contents: read
 jobs:
@@ -124,13 +124,13 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: LastImpact_R075_SafeVisual
+          name: LastImpact_R0751_SafeVisual
           path: /tmp/lastimpact_visual_safe/
           if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: LastImpact_R075_Visual
+          name: LastImpact_R0751_Visual
           path: /tmp/lastimpact_visual/
           if-no-files-found: ignore
       - name: Prepare internal emulator APK (x86_64 only)
@@ -162,7 +162,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: LastImpact_R075_AndroidQA
+          name: LastImpact_R0751_AndroidQA
           path: |
             /tmp/lastimpact_android_qa/
             /tmp/emulator_export.log
@@ -172,27 +172,27 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build
-          Godot_v4.6-stable_linux.x86_64 --headless --verbose --path . --export-debug Android build/LastImpact_R075.apk 2>&1 | tee /tmp/export.log
-          test -s build/LastImpact_R075.apk
-          "$ANDROID_HOME/build-tools/35.0.1/apksigner" verify --verbose build/LastImpact_R075.apk
-          "$ANDROID_HOME/build-tools/35.0.1/aapt" dump badging build/LastImpact_R075.apk | head -n 20 || true
-          unzip -l build/LastImpact_R075.apk > /tmp/arm-apk-contents.txt
+          Godot_v4.6-stable_linux.x86_64 --headless --verbose --path . --export-debug Android build/LastImpact_R0751.apk 2>&1 | tee /tmp/export.log
+          test -s build/LastImpact_R0751.apk
+          "$ANDROID_HOME/build-tools/35.0.1/apksigner" verify --verbose build/LastImpact_R0751.apk
+          "$ANDROID_HOME/build-tools/35.0.1/aapt" dump badging build/LastImpact_R0751.apk | head -n 20 || true
+          unzip -l build/LastImpact_R0751.apk > /tmp/arm-apk-contents.txt
           grep -F "lib/arm64-v8a/libgodot_android.so" /tmp/arm-apk-contents.txt
           grep -F "lib/armeabi-v7a/libgodot_android.so" /tmp/arm-apk-contents.txt
-          sha256sum build/LastImpact_R075.apk > build/SHA256SUMS.txt
+          sha256sum build/LastImpact_R0751.apk > build/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         if: ${{ success() }}
         with:
-          name: LastImpact_R075_Android
+          name: LastImpact_R0751_Android
           path: |
-            build/LastImpact_R075.apk
+            build/LastImpact_R0751.apk
             build/SHA256SUMS.txt
           if-no-files-found: error
       - name: Upload diagnostic logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: LastImpact_R075_Diagnostico
+          name: LastImpact_R0751_Diagnostico
           path: |
             /tmp/import.log
             /tmp/smoke.log
