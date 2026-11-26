@@ -12,6 +12,10 @@ func run() -> void:
  assert(not game.player.is_physics_processing())
  assert(not game.targets[0].is_physics_processing())
  var zone_before: float = game.zone.radius
+ var saw_fall := false
+ var saw_glide := false
+ var saw_compression := false
+ var prior_fov: float = game.player.camera.fov
  var ammo_before: int = game.ammo
  game.shoot()
  game.damage_player(50)
@@ -25,8 +29,17 @@ func run() -> void:
   if not game.deployment_active():
    break
   assert(game.zone.radius==zone_before)
+  var phase: int = game.deployment.flight.phase
+  saw_fall = saw_fall or phase==2
+  saw_glide = saw_glide or phase==3
+  saw_compression = saw_compression or game.deployment.pose.landing_weight>0.4
+  assert(absf(game.player.camera.fov-prior_fov)<3.0)
+  prior_fov = game.player.camera.fov
  assert(not game.deployment_active())
  assert(game.deployment.landing_clear)
+ assert(saw_fall and saw_glide and saw_compression)
+ assert(absf(game.player.visual.rotation.x)<0.01 and absf(game.player.visual.rotation.z)<0.01)
+ assert(absf(game.player.camera.fov-60.0)<0.2)
  assert(game.player.is_physics_processing() and game.targets[0].is_physics_processing())
  assert(game.player.weapon.visible)
  for i in range(5):

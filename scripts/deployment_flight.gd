@@ -3,6 +3,7 @@ extends RefCounted
 enum Phase { INTRO, IN_PLANE, FREEFALL, GLIDE, LAND, GROUND }
 const EDGE := 58.0
 const ALTITUDE := 78.0
+const LAND_DURATION := 0.65
 var phase: int = Phase.INTRO
 var elapsed := 0.0
 var plane_position := Vector3(-50,ALTITUDE,0)
@@ -19,6 +20,7 @@ func reset() -> void:
  position = Vector3.ZERO
  velocity = Vector3.ZERO
  jumped = false
+ ground_y = 0.0
 func transition(next: int) -> void:
  phase = next
  time_in_phase = 0.0
@@ -70,5 +72,5 @@ func step(delta: float, input: Vector2, request_jump: bool, request_glide: bool,
    velocity = Vector3.ZERO
    transition(Phase.LAND)
   position = next
- elif phase==Phase.LAND and time_in_phase>=0.36:
+ elif phase==Phase.LAND and time_in_phase>=LAND_DURATION:
   transition(Phase.GROUND)

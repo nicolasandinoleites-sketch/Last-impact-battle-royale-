@@ -4,6 +4,9 @@ extends Node3D
 const Flight = preload("res://scripts/deployment_flight.gd")
 const Surface = preload("res://scripts/deployment_surface.gd")
 const Pose = preload("res://scripts/deployment_pose.gd")
+const CameraMotion = preload("res://scripts/deployment_camera.gd")
+var camera_motion := CameraMotion.new()
+var body_tilt := Vector2.ZERO
 var flight := Flight.new()
 var surface := Surface.new()
 var pose := Pose.new()
@@ -18,6 +21,8 @@ var last_phase := Flight.Phase.INTRO
 
 func begin(actor) -> void:
  player = actor
+ camera_motion.reset()
+ body_tilt = Vector2.ZERO
  player.reset_movement()
  player.set_physics_process(false)
  player.contact_shadow.hide()
@@ -36,7 +41,7 @@ func begin(actor) -> void:
  player.position = flight.plane_position
  player.yaw = -PI*0.5
  player.pitch = -0.38
- player.visual.rotation.y = player.yaw
+ player.visual.rotation = Vector3(0,player.yaw,0)
  player.update_camera(1.0)
  player.reset_physics_interpolation()
 
@@ -95,10 +100,22 @@ func step(delta: float, stick: Vector2) -> void:
     flight.transition(Flight.Phase.GLIDE)
  elif flight.phase==Flight.Phase.LAND:
   player.global_position = flight.position
+ var landing_progress := clampf(flight.time_in_phase/Flight.LAND_DURATION,0.0,1.0) if flight.phase==Flight.Phase.LAND else 0.0
  if pose_ready:
-  pose.update(player.raze.skeleton,delta,flight.phase,stick,flight.elapsed)
- player.visual.rotation.y = lerp_angle(player.visual.rotation.y,player.yaw,1.0-exp(-delta*8.0))
- player.update_camera(delta)
+  pose.update(player.raze.skeleton,delta,flight.phase,stick,flight.elapsed,landing_progress)
+ var tilt_goal := Vector2.ZERO
+ if flight.phase==Flight.Phase.FREEFALL:
+  tilt_goal = Vector2(deg_to_rad(-33.0+stick.y*9.0),deg_to_rad(-stick.x*13.0))
+ elif flight.phase==Flight.Phase.GLIDE:
+  tilt_goal = Vector2(deg_to_rad(-13.0+stick.y*6.0),deg_to_rad(-stick.x*10.0))
+ body_tilt = body_tilt.lerp(tilt_goal,1.0-exp(-delta*(16.0 if flight.phase==Flight.Phase.LAND else 7.0)))
+ player.visual.rotation = Vector3(body_tilt.x,lerp_angle(player.visual.rotation.y,player.yaw,1.0-exp(-delta*8.0)),body_tilt.y)
+ camera_motion.step(delta,flight.phase,stick,landing_progress)
+ player.pivot.rotation = Vector3(clampf(player.pitch+camera_motion.pitch_offset,-1.15,0.48),player.yaw,camera_motion.roll)
+ player.pivot.position.y = camera_motion.height
+ player.boom.position.x = camera_motion.shoulder*player.shoulder
+ player.boom.spring_length = camera_motion.distance
+ player.camera.fov = camera_motion.fov
  if previous!=flight.phase:
   print("LAST IMPACT DEPLOYMENT PHASE ",Flight.Phase.keys()[flight.phase])
  last_phase = flight.phase
@@ -111,12 +128,16 @@ func step(delta: float, stick: Vector2) -> void:
 func finish() -> void:
  active = false
  action_requested = false
+ if pose_ready:
+  pose.restore(player.raze.skeleton)
+ player.visual.rotation = Vector3(0,player.yaw,0)
+ body_tilt = Vector2.ZERO
  player.reset_movement()
  player.camera.far = saved_camera_far
  if player.weapon_loaded:
   player.weapon.visible = saved_weapon_visibility
- player.pitch = -0.13
- player.update_camera(1.0)
+ # Ground camera begins from the same user pitch; no forced view recenter.
+ player.update_camera(0.0)
  player.reset_physics_interpolation()
  player.set_physics_process(true)
 
