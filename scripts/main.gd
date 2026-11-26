@@ -8,6 +8,9 @@ const ZoneScript = preload("res://scripts/survival_zone.gd")
 const DroneScript = preload("res://scripts/survival_drone.gd")
 const OperatorScript = preload("res://scripts/survival_operator.gd")
 var zone
+const Frontier = preload("res://scripts/frontier_map.gd")
+var frontier
+var round_seed := 7300
 var round_result := ""
 var zone_tick := 0.0
 const InventoryScript = preload("res://scripts/survival_inventory.gd")
@@ -45,9 +48,10 @@ func _ready() -> void:
 	game_audio = GameAudio.new()
 	add_child(game_audio)
 	build_arena()
-	arena_art = ArenaArt.new()
-	add_child(arena_art)
-	arena_art.decorate(self)
+	if not survival_mode:
+		arena_art = ArenaArt.new()
+		add_child(arena_art)
+		arena_art.decorate(self)
 	apply_profile()
 	player = PlayerScript.new()
 	player.position = Vector3(0,0.1,12)
@@ -115,6 +119,11 @@ func build_arena() -> void:
 	sun.light_energy = 1.05
 	sun.shadow_enabled = false
 	add_child(sun)
+	if survival_mode:
+		frontier = Frontier.new()
+		add_child(frontier)
+		frontier.build(self)
+		return
 	var floor_mat := mat("65736c")
 	floor_mat.albedo_texture = ArenaArt.floor_texture()
 	floor_mat.uv1_scale = Vector3(20,20,20)
@@ -219,8 +228,11 @@ func reset_round() -> void:
 	if survival_mode:
 		zone.reset_zone()
 		inventory.reset()
-		for pickup in pickups:
-			pickup.reset_pickup()
+		round_seed += 1
+		var sites: Array[Vector3] = frontier.loot_positions(round_seed)
+		for i in range(pickups.size()):
+			pickups[i].position = sites[i]
+			pickups[i].reset_pickup()
 	for t in targets:
 		t.reset_target()
 	eliminated = 0
@@ -243,6 +255,10 @@ func reset_round() -> void:
 func apply_profile() -> void:
 	Engine.max_fps = [30,45,60][profile]
 	get_viewport().scaling_3d_scale = 1.0 if OS.has_feature("android") else [0.65,0.82,1.0][profile]
+	if is_instance_valid(frontier) and is_instance_valid(frontier.decor):
+		# Shared instancing keeps decorative detail cheap; low profile drops roof trim only.
+		if frontier.decor.get_child_count()>2:
+			frontier.decor.get_child(2).visible = profile>0
 	sun.shadow_enabled = profile == 2 and not OS.has_feature("android")
 
 func next_profile() -> void:
@@ -295,6 +311,7 @@ func finish_survival(result: String) -> void:
 	reload_left = 0.0
 
 func spawn_pickups() -> void:
+	var sites: Array[Vector3] = frontier.loot_positions(round_seed)
 	for data in [
 		["MED",1,Vector3(-3,0,10)],["SHIELD",1,Vector3(3,0,10)],["AMMO",40,Vector3(0,0,7)],
 		["MED",2,Vector3(-10,0,3)],["SHIELD",2,Vector3(10,0,5)],["AMMO",50,Vector3(0,0,-7)],
@@ -303,7 +320,7 @@ func spawn_pickups() -> void:
 		var pickup = PickupScript.new()
 		pickup.kind = data[0]
 		pickup.quantity = data[1]
-		pickup.position = data[2]
+		pickup.position = sites[pickups.size()]
 		add_child(pickup)
 		pickups.append(pickup)
 
