@@ -152,6 +152,7 @@ func reset_effect() -> void:
 		plume_mat.set_shader_parameter("power",0.0)
 	if is_instance_valid(particles):
 		particles.emitting = false
-		particles.restart()
+		if particles.is_inside_tree():
+			particles.restart()
 		particles.emitting = false
 		particles.hide()
