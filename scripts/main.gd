@@ -16,6 +16,9 @@ const MobileProfile = preload("res://scripts/mobile_profile.gd")
 var qa_sample_start := 0
 var qa_sample_frames := 0
 var qa_sample_done := false
+const FrameTelemetry = preload("res://scripts/frame_telemetry.gd")
+var telemetry := FrameTelemetry.new()
+var telemetry_paused := false
 var round_result := ""
 var zone_tick := 0.0
 const InventoryScript = preload("res://scripts/survival_inventory.gd")
@@ -240,6 +243,8 @@ func start_reload() -> void:
 		message = "Recargando..."
 
 func reset_round() -> void:
+	telemetry.reset()
+	telemetry.latest = {}
 	round_result = ""
 	player.set_physics_process(true)
 	zone_tick = 0.0
@@ -294,6 +299,13 @@ func next_profile() -> void:
 		message = ["Bajo seguro · 30 FPS","Medio · 45 FPS","Alto · 60 FPS"][profile]
 
 func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		telemetry_paused = true
+		telemetry.reset()
+		telemetry.latest = {}
+	elif what == NOTIFICATION_APPLICATION_RESUMED or what == NOTIFICATION_APPLICATION_FOCUS_IN:
+		telemetry_paused = false
+		telemetry.reset()
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
 		get_tree().change_scene_to_file("res://lobby.tscn")
 
@@ -410,6 +422,16 @@ func _process(_delta: float) -> void:
 		world_environment.fog_light_color = Color("a07850")
 		world_environment.fog_density = 0.0
 		game_audio.set_storm_exposure(storm_exposure)
+	if survival_mode and round_result=="" and not telemetry_paused and (not OS.has_feature("android") or android_qa_ticks>=120):
+		var report := telemetry.record(Time.get_ticks_usec(),profile)
+		if not report.is_empty():
+			report["seed"] = round_seed
+			report["zone_phase"] = zone.phase
+			report["storm_exposure"] = storm_exposure
+			report["build"] = "0.7.5.5"
+			report["os"] = OS.get_name()
+			report["device"] = OS.get_model_name()
+			print("LAST IMPACT TELEMETRY ",JSON.stringify(report))
 	if not OS.has_feature("android") or not survival_mode or qa_sample_done or qa_sample_start==0:
 		return
 	var elapsed := Time.get_ticks_msec()-qa_sample_start

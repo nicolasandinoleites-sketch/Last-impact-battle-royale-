@@ -72,6 +72,17 @@ tap_fraction 01_lobby 0.847 0.761
 wait_log "ANDROID FRONTIER READY" 1
 wait_log "ANDROID FRONTIER TICKS 120" 1
 wait_log "ANDROID FRONTIER PERF" 1
+wait_log "LAST IMPACT TELEMETRY " 1
+adb logcat -d -v brief -s godot:I | grep -F "LAST IMPACT TELEMETRY " | tee "$OUT/telemetry.txt"
+python3 - "$OUT/telemetry.txt" <<'PY'
+import json,sys
+line=open(sys.argv[1]).read().splitlines()[-1]
+d=json.loads(line.split("LAST IMPACT TELEMETRY ",1)[1])
+assert d["frames"]>0 and d["duration_ms"]>=10000 and d["mean_fps"]>0
+assert 0<d["median_ms"]<=d["p95_ms"]<=d["p99_ms"]
+assert d["one_percent_low_fps"]>0 and d["build"]=="0.7.5.5"
+print("QA-03 TELEMETRY VALIDATED")
+PY
 adb logcat -d -v brief -s godot:I | grep -F "ANDROID FRONTIER PERF" | tee "$OUT/performance.txt"
 dismiss_immersive
 capture 02_frontier

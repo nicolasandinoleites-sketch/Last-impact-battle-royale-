@@ -59,10 +59,13 @@ func _draw() -> void:
 		draw_storm_exposure()
 	var font := int(12*u)
 	draw_minimap(u)
-	draw_rect(Rect2(at(0.145,0.025),Vector2(180,62)*u),DARK)
-	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0754",int(14*u),ACCENT)
-	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d   ·   MEM %.0f MB" % [cached_fps,cached_mem],font)
+	draw_rect(Rect2(at(0.145,0.025),Vector2(190,78)*u),DARK)
+	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0755",int(14*u),ACCENT)
+	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d · MEM EST %.0f MB" % [cached_fps,cached_mem],font)
 	label_at(at(0.145,0.025)+Vector2(9,50)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
+	if game.survival_mode and not game.telemetry.latest.is_empty():
+		var stats: Dictionary = game.telemetry.latest
+		label_at(at(0.145,0.025)+Vector2(9,67)*u,"P95 %.0f ms · 1%% LOW %.0f" % [stats["p95_ms"],stats["one_percent_low_fps"]],font)
 	if game.survival_mode:
 		draw_rect(Rect2(at(0.49,0.16)-Vector2(155,14)*u,Vector2(310,44)*u),Color(0.04,0.07,0.09,0.66))
 	centered(at(0.49,0.16),game.message,int(15*u))
