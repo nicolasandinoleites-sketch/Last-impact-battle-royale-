@@ -36,9 +36,9 @@ func unit() -> float:
 func buttons() -> Dictionary:
 	var positions := {"FIRE":at(0.91,0.59),"AIM":at(0.79,0.48),"JUMP":at(0.92,0.80),"SLIDE":at(0.80,0.82),"LOAD":at(0.68,0.82),"RUN":at(0.10,0.49),"SIDE":at(0.66,0.49),"FPS":at(0.92,0.10),"RESET":at(0.77,0.10),"LOBBY":at(0.65,0.10)}
 	if game!=null and game.survival_mode:
-		positions["PICKUP"] = at(0.52,0.76)
-		positions["MED"] = at(0.38,0.90)
-		positions["SHIELD"] = at(0.49,0.90)
+		positions["PICKUP"] = at(0.60,0.70)
+		positions["MED"] = at(0.08,0.32)
+		positions["SHIELD"] = at(0.19,0.32)
 	return positions
 
 func radius(name: String) -> float:
@@ -61,6 +61,8 @@ func _draw() -> void:
 	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R073",int(14*u),ACCENT)
 	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d   ·   MEM %.0f MB" % [cached_fps,cached_mem],font)
 	label_at(at(0.145,0.025)+Vector2(9,50)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
+	if game.survival_mode:
+		draw_rect(Rect2(at(0.49,0.16)-Vector2(155,14)*u,Vector2(310,44)*u),Color(0.04,0.07,0.09,0.66))
 	centered(at(0.49,0.16),game.message,int(15*u))
 	if game.survival_mode:
 		var zone_label := "ZONA %d m · %ds · %d/%d rivales" % [roundi(game.zone.radius),game.zone.seconds_remaining(),game.targets.size()-game.eliminated,game.targets.size()]
@@ -83,12 +85,17 @@ func _draw() -> void:
 		names["SHIELD"] = "ESCUDO %d" % game.inventory.shield_cells
 		var pickup = game.nearest_pickup()
 		if pickup!=null:
-			centered(at(0.49,0.70),"SUMINISTRO: "+str(pickup.kind),int(12*u),pickup.item_color())
+			var supply_name := {"MED":"BOTIQUIN","SHIELD":"ESCUDO","AMMO":"ENERGIA"}
+			centered(at(0.60,0.62),str(supply_name.get(pickup.kind,pickup.kind)),int(12*u),pickup.item_color())
 	for name in positions:
 		var p: Vector2 = positions[name]
 		var r := radius(name)
 		var active: bool = (name == "FIRE" and game.fire) or (name == "AIM" and game.player.aiming) or (name == "RUN" and game.mobile_sprint)
-		draw_circle(p,r,Color(0.70,0.29,0.11,0.68) if active else DARK)
+		var fill := Color(0.70,0.29,0.11,0.68) if active else DARK
+		if game.survival_mode:
+			if (name=="MED" and game.inventory.medkits==0) or (name=="SHIELD" and game.inventory.shield_cells==0) or (name=="PICKUP" and game.nearest_pickup()==null):
+				fill.a = 0.35
+		draw_circle(p,r,fill)
 		draw_arc(p,r,0,TAU,32,Color(1,1,1,0.68),1.5*u,true)
 		draw_button_icon(name,p,u)
 		centered(p+Vector2(0,13*u),names[name],int(9*u))
@@ -292,6 +299,14 @@ func draw_button_icon(name: String,p: Vector2,u: float) -> void:
 			draw_line(q-Vector2(0,s+3*u),q+Vector2(0,s+3*u),WHITE,1.2*u,true)
 		"JUMP","RUN":
 			draw_polyline(PackedVector2Array([q+Vector2(-s,3*u),q+Vector2(0,-s),q+Vector2(s,3*u)]),WHITE,2*u,true)
+		"MED":
+			draw_line(q-Vector2(s,0),q+Vector2(s,0),Color("68d9a4"),3*u,true)
+			draw_line(q-Vector2(0,s),q+Vector2(0,s),Color("68d9a4"),3*u,true)
+		"SHIELD":
+			draw_polyline(PackedVector2Array([q+Vector2(-s,-s),q+Vector2(s,-s),q+Vector2(s,0),q+Vector2(0,s),q+Vector2(-s,0),q+Vector2(-s,-s)]),Color("63bde8"),2*u,true)
+		"PICKUP":
+			draw_rect(Rect2(q-Vector2(s,s)*0.7,Vector2(s,s)*1.4),ACCENT,false,2*u)
+			draw_line(q-Vector2(s*0.7,0),q+Vector2(s*0.7,0),ACCENT,1.5*u)
 		"SLIDE":
 			draw_line(q-Vector2(s,0),q+Vector2(s,0),WHITE,2*u,true)
 			draw_line(q+Vector2(-s,5*u),q+Vector2(s,5*u),WHITE,2*u,true)
