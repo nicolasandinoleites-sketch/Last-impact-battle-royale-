@@ -438,12 +438,16 @@ func solve_leg(side: String,world_goal: Vector3,world_pole: Vector3) -> float:
 	return skeleton.to_global(skeleton.get_bone_global_pose(foot).origin).distance_to(world_goal)
 
 # For unclamped strides, the stance trajectory cancels the actor's nominal travel.
+# Cadence is a complete stride cycle; stance distance must fit within the leg reach budget.
+const GAIT_MAX_HALF_STEP := 0.36
 func gait_cadence(speed: float,fast: bool) -> float:
-	return clampf(speed/2.1,1.15,3.2) if fast else clampf(speed/1.9,0.85,2.1)
+	var duty := 0.54 if fast else 0.62
+	var nominal := speed/(2.0*GAIT_MAX_HALF_STEP/duty)
+	return clampf(nominal,1.15 if fast else 0.85,3.2 if fast else 2.8)
 
 func gait_half_step(speed: float,cadence: float,fast: bool) -> float:
 	var duty := 0.54 if fast else 0.62
-	return clampf(speed*duty/(2.0*maxf(cadence,0.01)),0.0,0.36)
+	return clampf(speed*duty/(2.0*maxf(cadence,0.01)),0.0,GAIT_MAX_HALF_STEP)
 
 func align_ankle(side: String,weight: float) -> void:
 	if not ankle_basis.has(side):
