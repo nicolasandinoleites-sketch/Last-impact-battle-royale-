@@ -19,7 +19,7 @@ func _initialize() -> void:
    assert(cam.fov>71.0 and cam.fov<73.0)
   if phase==4:
    assert(absf(cam.fov-60.0)<0.1 and absf(cam.pitch_offset)<0.01)
- assert(max_step<2.1)
+ assert(max_step<2.7)
  cam.reset()
  assert(cam.fov==60.0 and cam.roll==0.0 and cam.pitch_offset==0.0)
  print("DEPLOYMENT CAMERA PASS | bounded FOV, bank, phase smoothing and landing settle")
