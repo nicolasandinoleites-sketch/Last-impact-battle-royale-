@@ -107,8 +107,14 @@ func run() -> void:
 	scene.player.sprint = false
 	scene.player.aiming = false
 	scene.player.combat_hold = 0.0
+	scene.player.update_facing(Vector3(1,0,-1).normalized(),1.0)
+	if not check(absf(angle_difference(scene.player.visual.rotation.y,-PI*0.25))<0.01, "forward diagonal turns body toward travel"):
+		return
+	scene.player.update_facing(Vector3.BACK,1.0)
+	if not check(absf(angle_difference(scene.player.visual.rotation.y,old_yaw))<0.01, "backpedal retains forward tactical facing"):
+		return
 	scene.player.update_facing(Vector3.RIGHT,1.0)
-	if not check(absf(angle_difference(scene.player.visual.rotation.y,-PI*0.5))<0.01, "free movement turns body toward travel"):
+	if not check(absf(angle_difference(scene.player.visual.rotation.y,old_yaw))<0.01, "free strafe retains forward tactical facing"):
 		return
 	scene.player.aiming = true
 	scene.player.update_facing(Vector3.RIGHT,1.0)
