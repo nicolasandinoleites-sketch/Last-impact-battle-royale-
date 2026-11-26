@@ -1,6 +1,6 @@
 extends CharacterBody3D
 signal destroyed
-var game: Node3D
+var game
 var hp := 100
 var active := true
 var spawn_point := Vector3.ZERO
