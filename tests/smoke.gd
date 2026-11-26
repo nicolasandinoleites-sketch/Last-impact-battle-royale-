@@ -91,6 +91,11 @@ func run() -> void:
 		return
 	if not check(actor.dance() and not actor.preview_dance, "dance returns to rest"):
 		return
+	var initial_pitch: float = scene.player.pitch
+	scene.player.view_recoil = 0.05
+	scene.player.update_camera(0.2)
+	if not check(is_equal_approx(scene.player.pitch,initial_pitch) and scene.player.view_recoil<0.001, "camera recoil returns without aim drift"):
+		return
 	var origin: Vector3 = scene.player.position
 	scene.mobile_move = Vector2(0,-1)
 	await frames(20)

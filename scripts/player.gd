@@ -30,6 +30,7 @@ const Ignis = preload("res://scripts/ignis.gd")
 var weapon: Node3D
 var weapon_loaded := false
 var reload_visual := 0.0
+var view_recoil := 0.0
 const STANDING_HEIGHT := 1.8
 const LOW_HEIGHT := 1.0
 
@@ -117,7 +118,8 @@ func look_delta(relative: Vector2) -> void:
 	pitch = clampf(pitch - relative.y * sensitivity, -0.85, 0.48)
 
 func update_camera(delta: float) -> void:
-	pivot.rotation = Vector3(pitch,yaw,0)
+	view_recoil = move_toward(view_recoil,0.0,delta*0.45)
+	pivot.rotation = Vector3(clampf(pitch+view_recoil,-0.85,0.48),yaw,0)
 	pivot.position.y = lerpf(pivot.position.y, 0.95 if low_stance else 1.52, minf(1.0,delta*10.0))
 	boom.position.x = lerpf(boom.position.x, shoulder * (0.58 if aiming else 0.48), minf(1.0, delta * 12.0))
 	boom.spring_length = lerpf(boom.spring_length, 1.95 if aiming else 2.75, minf(1.0, delta * 12.0))
@@ -159,6 +161,7 @@ func reset_movement() -> void:
 	combat_facing = false
 	set_stance(false)
 	reload_visual = 0.0
+	view_recoil = 0.0
 	if weapon_loaded:
 		weapon.clear_effects()
 
@@ -207,7 +210,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		visual.scale.y = lerpf(visual.scale.y,0.55 if low_stance else 1.0,minf(1.0,delta*12.0))
 	if weapon_loaded:
-		weapon.update_pose(delta,aiming or combat_facing,reload_visual,low_stance,pitch)
+		weapon.update_pose(delta,aiming or combat_facing,reload_visual,low_stance,pitch+view_recoil)
 	if position.y < -8.0:
 		position = Vector3(0,0.1,12)
 		reset_movement()

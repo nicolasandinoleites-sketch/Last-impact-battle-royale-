@@ -5,7 +5,6 @@ const HudScript = preload("res://scripts/hud.gd")
 var player
 const GameAudio = preload("res://scripts/game_audio.gd")
 var game_audio: Node
-var camera_kick := 0.0
 var health := 100
 var armor := 0
 var hud
@@ -117,7 +116,6 @@ func _physics_process(delta: float) -> void:
 	var keyboard := Vector2(float(keys.get(KEY_D,false))-float(keys.get(KEY_A,false)),float(keys.get(KEY_S,false))-float(keys.get(KEY_W,false)))
 	player.move_input = (mobile_move+keyboard).limit_length(1.0)
 	player.sprint = mobile_sprint or keys.get(KEY_SHIFT,false)
-	camera_kick = move_toward(camera_kick,0.0,delta*0.22)
 	player.combat_facing = fire
 	player.reload_visual = clampf(reload_left/1.4,0.0,1.0)
 	cooldown = maxf(0.0,cooldown-delta)
@@ -141,7 +139,7 @@ func shoot() -> void:
 	if player.weapon_loaded:
 		player.weapon.pulse()
 	game_audio.fire_player.play()
-	player.pitch = clampf(player.pitch+0.009,-0.85,0.48)
+	player.view_recoil = minf(0.05,player.view_recoil+0.018)
 	var cam: Camera3D = player.camera
 	var center := get_viewport().get_visible_rect().size*0.5
 	var origin := cam.project_ray_origin(center)
@@ -153,6 +151,8 @@ func shoot() -> void:
 		endpoint = result["position"]
 	# Check line from character toward the crosshair hit to prevent firing through nearby cover.
 	var muzzle: Vector3 = player.global_position + Basis(Vector3.UP,player.yaw)*Vector3(0.34,0.75 if player.low_stance else 1.32,-0.60)
+	if player.weapon_loaded:
+		muzzle = player.weapon.flash.global_position
 	var attack := state.intersect_ray(PhysicsRayQueryParameters3D.create(muzzle,endpoint+(endpoint-muzzle).normalized()*0.08,3))
 	if not attack.is_empty() and attack["collider"].has_method("take_hit"):
 		attack["collider"].take_hit(34)

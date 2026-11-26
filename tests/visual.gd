@@ -18,6 +18,10 @@ func run() -> void:
 	var lobby = load("res://lobby.tscn").instantiate()
 	root.add_child(lobby)
 	await wait_frames(30)
+	if not is_instance_valid(lobby.preview) or not lobby.preview.loaded:
+		push_error("VISUAL CAPTURE FAILED: actual lobby character")
+		quit(1)
+		return
 	await capture("01_lobby")
 	root.remove_child(lobby)
 	lobby.free()
