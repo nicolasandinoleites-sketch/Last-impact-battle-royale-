@@ -466,7 +466,7 @@ func _process(_delta: float) -> void:
 			report["seed"] = round_seed
 			report["zone_phase"] = zone.phase
 			report["storm_exposure"] = storm_exposure
-			report["build"] = "0.7.6.9"
+			report["build"] = "0.7.7"
 			report["adaptive_level"] = adaptive_resolution.level
 			var base_size: Vector2i = get_tree().root.content_scale_size
 			report["base_width"] = base_size.x
