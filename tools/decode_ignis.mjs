@@ -50,13 +50,13 @@ const spread=(list)=>{if(!list.length)return Infinity;const ys=list.map(p=>p[1])
 const endA=spread(pts.filter(p=>project(p)<lo+(hi-lo)*.15)),endB=spread(pts.filter(p=>project(p)>hi-(hi-lo)*.15));
 if(endA<endB){ax=-ax;az=-az;[lo,hi]=[-hi,-lo];}
 const mid=(lo+hi)/2, factor=.68/(hi-lo);
-const cross=p=>az*p[0]-ax*p[2];
+const cross=p=>-az*p[0]+ax*p[2];
 const cx=(Math.min(...pts.map(cross))+Math.max(...pts.map(cross)))/2;
 const cy=(Math.min(...pts.map(p=>p[1]))+Math.max(...pts.map(p=>p[1])))/2;
 const min=[Infinity,Infinity,Infinity],max=[-Infinity,-Infinity,-Infinity];
 pts.forEach((p,i)=>{const a=[(cross(p)-cx)*factor,(p[1]-cy)*factor,-(project(p)-mid)*factor];a.forEach((v,k)=>{buffer.writeFloatLE(v,pv.byteOffset+(pos.byteOffset||0)+i*(pv.byteStride||12)+k*4);min[k]=Math.min(min[k],v);max[k]=Math.max(max[k],v);});});
 pos.min=min;pos.max=max;
-const nv=doc.bufferViews[normal.bufferView];if(normal.componentType===5126){for(let i=0;i<normal.count;i++){const off=nv.byteOffset+(normal.byteOffset||0)+i*(nv.byteStride||12),x=buffer.readFloatLE(off),z=buffer.readFloatLE(off+8);buffer.writeFloatLE(az*x-ax*z,off);buffer.writeFloatLE(-ax*x-az*z,off+8);}}
+const nv=doc.bufferViews[normal.bufferView];if(normal.componentType===5126){for(let i=0;i<normal.count;i++){const off=nv.byteOffset+(normal.byteOffset||0)+i*(nv.byteStride||12),x=buffer.readFloatLE(off),z=buffer.readFloatLE(off+8);buffer.writeFloatLE(-az*x+ax*z,off);buffer.writeFloatLE(-ax*x-az*z,off+8);}}
 const ia=doc.accessors[prim.indices],iv=doc.bufferViews[ia.bufferView],parent=Array.from({length:pos.count},(_,i)=>i);
 const root=i=>{while(parent[i]!==i){parent[i]=parent[parent[i]];i=parent[i];}return i;};const join=(a,b)=>{parent[root(a)]=root(b);};
 const weld=new Map();pts.forEach((p,i)=>{const key=p.map(x=>Math.round(x*10000)).join(',');if(weld.has(key))join(i,weld.get(key));else weld.set(key,i);});
