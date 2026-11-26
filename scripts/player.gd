@@ -247,6 +247,8 @@ func _physics_process(delta: float) -> void:
 	right_leg.rotation.x = -stride
 	if model_loaded:
 		raze.locomotion(delta,animation_speed,is_on_floor(),low_stance,combat_hold>0.0,sprint,velocity.y,local_motion,body_acceleration)
+		if raze.clip_motion.weight>0.5 and get_parent().has_method("qa_control"):
+			get_parent().qa_control("CLIP_ACTIVE")
 	else:
 		visual.scale.y = lerpf(visual.scale.y,0.55 if low_stance else 1.0,minf(1.0,delta*12.0))
 	if weapon_loaded:
