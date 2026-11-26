@@ -34,6 +34,19 @@ PY
 )
   adb shell input tap "$x" "$y"
 }
+swipe_fraction() {
+  local x1 y1 x2 y2
+  read -r x1 y1 x2 y2 < <(python3 - "$OUT/$1.png" "$2" "$3" "$4" "$5" <<'PY'
+import struct,sys
+with open(sys.argv[1],"rb") as f:
+    header=f.read(24)
+w,h=struct.unpack(">II",header[16:24])
+assert w>h
+print(*(round(float(v)*(w if i%2==0 else h)) for i,v in enumerate(sys.argv[2:])))
+PY
+)
+  adb shell input swipe "$x1" "$y1" "$x2" "$y2" "$6"
+}
 dismiss_immersive() {
   adb shell uiautomator dump /sdcard/lastimpact_window.xml >/dev/null 2>&1 || return 0
   adb pull /sdcard/lastimpact_window.xml "$OUT/window.xml" >/dev/null 2>&1 || return 0
@@ -80,7 +93,7 @@ line=open(sys.argv[1]).read().splitlines()[-1]
 d=json.loads(line.split("LAST IMPACT TELEMETRY ",1)[1])
 assert d["frames"]>0 and d["duration_ms"]>=10000 and d["mean_fps"]>0
 assert 0<d["median_ms"]<=d["p95_ms"]<=d["p99_ms"]
-assert d["one_percent_low_fps"]>0 and d["build"]=="0.7.5.5"
+assert d["one_percent_low_fps"]>0 and d["build"]=="0.7.5.6"
 print("QA-03 TELEMETRY VALIDATED")
 PY
 adb logcat -d -v brief -s godot:I | grep -F "ANDROID FRONTIER PERF" | tee "$OUT/performance.txt"
@@ -88,6 +101,30 @@ dismiss_immersive
 capture 02_frontier
 adb shell dumpsys meminfo "$PKG" > "$OUT/frontier_meminfo.txt"
 adb shell pidof "$PKG" | grep -E '[0-9]+'
+# OS-injected single-finger events; separate engine fixtures cover simultaneous contacts.
+tap_fraction 02_frontier 0.77 0.10
+sleep 2
+swipe_fraction 02_frontier 0.91 0.59 0.91 0.59 1600
+wait_log "LAST IMPACT CONTROL SHOT" 1
+tap_fraction 02_frontier 0.68 0.82
+wait_log "LAST IMPACT CONTROL RELOAD_COMPLETE" 1
+tap_fraction 02_frontier 0.79 0.48
+wait_log "LAST IMPACT CONTROL AIM_ON" 1
+tap_fraction 02_frontier 0.79 0.48
+wait_log "LAST IMPACT CONTROL AIM_OFF" 1
+tap_fraction 02_frontier 0.92 0.80
+wait_log "LAST IMPACT CONTROL JUMP" 1
+tap_fraction 02_frontier 0.77 0.10
+sleep 2
+swipe_fraction 02_frontier 0.14 0.80 0.14 0.66 2000
+wait_log "LAST IMPACT CONTROL MOVE_RELEASE" 1
+swipe_fraction 02_frontier 0.52 0.45 0.62 0.45 1000
+wait_log "LAST IMPACT CONTROL LOOK_RELEASE" 1
+tap_fraction 02_frontier 0.66 0.49
+wait_log "LAST IMPACT CONTROL SHOULDER" 1
+capture 04_controls
+adb logcat -d -v brief -s godot:I | grep -F "LAST IMPACT CONTROL " | tee "$OUT/controls.txt"
+echo "QA-04 ADB SINGLE TOUCH VALIDATED"
 tap_fraction 02_frontier 0.65 0.10
 wait_log "LAST IMPACT R073 LOBBY READY" 2
 sleep 2
