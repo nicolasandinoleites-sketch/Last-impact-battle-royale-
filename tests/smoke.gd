@@ -296,10 +296,10 @@ func run() -> void:
 	if not check(absf(storm.wall_vertex(0.17,0).length()-1.0)<0.001 and absf(storm.wall_vertex(0.17,5).y-storm.wall_vertex(0.47,5).y)>0.1, "storm ground boundary and irregular crown"):
 		return
 	storm.set_profile(0)
-	if not check(not storm.outer_cloud.visible, "low profile uses single storm surface"):
+	if not check(not storm.outer_cloud.visible and not storm.wall.visible and storm.volume.visible and int(storm.volume_material.get_shader_parameter("sample_count"))==1, "low profile uses one depth-aware dust sample per segment"):
 		return
 	storm.set_profile(2)
-	if not check(storm.outer_cloud.visible and is_equal_approx(storm.outer_cloud.scale.x,storm.radius+5.0), "high profile adds exterior dust cloud"):
+	if not check(not storm.outer_cloud.visible and storm.volume.visible and int(storm.volume_material.get_shader_parameter("sample_count"))==2, "high profile increases depth integration quality"):
 		return
 	storm.set_profile(survival.profile)
 	var frontier = survival.frontier
@@ -355,7 +355,7 @@ func run() -> void:
 	if not check(survival.targets[0].position.distance_to(drone_start)>0.1, "arcade drone moves"):
 		return
 	survival.zone.advance(84.0)
-	if not check(survival.zone.radius<54.0 and survival.zone.radius>6.0 and is_equal_approx(survival.zone.wall.scale.x,survival.zone.radius), "zone contracts with storm front"):
+	if not check(survival.zone.radius<54.0 and survival.zone.radius>6.0 and is_equal_approx(survival.zone.wall.scale.x,survival.zone.radius) and is_equal_approx(float(survival.zone.volume_material.get_shader_parameter("safe_radius")),survival.zone.radius), "zone contracts with storm volume"):
 		return
 	survival.zone.advance(200.0)
 	if not check(is_equal_approx(survival.zone.radius,6.0) and survival.zone.phase==2, "zone reaches final size"):
