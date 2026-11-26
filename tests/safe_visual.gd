@@ -36,5 +36,17 @@ func run() -> void:
 		push_error("VISUAL CAPTURE FAILED: safe frontier")
 		quit(1)
 		return
+	survival.player.position = Vector3(0,0.1,48.0)
+	survival.player.yaw = PI
+	survival.player.reset_movement()
+	survival.player.reset_physics_interpolation()
+	for i in range(45):
+		await process_frame
+	await RenderingServer.frame_post_draw
+	image = root.get_texture().get_image()
+	if image==null or image.is_empty() or image.save_png("/tmp/lastimpact_visual_safe/04_safe_storm.png")!=OK:
+		push_error("VISUAL CAPTURE FAILED: safe storm")
+		quit(1)
+		return
 	print("SAFE MATERIAL CAPTURE COMPLETE")
 	quit(0)
