@@ -1,6 +1,11 @@
 extends CharacterBody3D
 signal destroyed
 const Raze = preload("res://scripts/raze.gd")
+const CameraGuard = preload("res://scripts/camera_guard.gd")
+var lens_hidden := false
+var animation_cost_us := 0.0
+var offscreen_anim_skips := 0
+var animation_lod_enabled := true
 var game
 var hp := 100
 var active := true
@@ -121,11 +126,23 @@ func _physics_process(delta: float) -> void:
 		visual.rotation.y = lerp_angle(visual.rotation.y,atan2(-horizontal.x,-horizontal.z),1.0-exp(-delta*10.0))
 	elif distance>0.1:
 		visual.rotation.y = lerp_angle(visual.rotation.y,atan2(-difference.x,-difference.z),1.0-exp(-delta*7.0))
-	animation_interval = 1.0/20.0 if distance<full_animation_distance else 1.0/10.0
+	# Render-only guard. Keep active state, hitbox, navigation and contact damage.
+	var camera: Camera3D = game.player.camera
+	lens_hidden = CameraGuard.overlaps_lens(camera.global_position,global_position,lens_hidden)
+	visual.visible = not lens_hidden
+	# Use several conservative samples so a tall actor at the frustum edge is not
+	# treated as fully offscreen. Near actors retain the normal update rate.
+	var on_screen := camera.is_position_in_frustum(global_position+Vector3.UP*0.25) or camera.is_position_in_frustum(global_position+Vector3.UP*0.9) or camera.is_position_in_frustum(global_position+Vector3.UP*1.75)
+	var reduced := animation_lod_enabled and (lens_hidden or (distance>8.0 and not on_screen))
+	animation_interval = 1.0/5.0 if reduced else (1.0/20.0 if distance<full_animation_distance else 1.0/10.0)
+	if reduced:
+		offscreen_anim_skips += 1
 	anim_elapsed += delta
 	if model_loaded and anim_elapsed>=animation_interval:
 		var local := visual.global_transform.basis.orthonormalized().inverse()*horizontal
-		actor.locomotion(minf(anim_elapsed,0.15),horizontal.length(),is_on_floor(),false,false,false,velocity.y,Vector2(local.x,local.z) if distance<full_animation_distance else Vector2.ZERO)
+		var start_us := Time.get_ticks_usec()
+		actor.locomotion(minf(anim_elapsed,0.20),horizontal.length(),is_on_floor(),false,false,false,velocity.y,Vector2(local.x,local.z) if distance<full_animation_distance else Vector2.ZERO)
+		animation_cost_us = lerpf(animation_cost_us,float(Time.get_ticks_usec()-start_us),0.12)
 		anim_elapsed = 0.0
 		anim_updates += 1
 	# Arcade contact-only opponent, same damage rule as the prototype drone.
@@ -163,6 +180,10 @@ func reset_target() -> void:
 	route_index = 0
 	anim_elapsed = 0.0
 	anim_updates = 0
+	lens_hidden = false
+	visual.show()
+	animation_cost_us = 0.0
+	offscreen_anim_skips = 0
 	ai_state = "IDLE"
 	visual.rotation.y = 0.0
 	if model_loaded:
