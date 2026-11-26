@@ -22,5 +22,19 @@ func run() -> void:
 	await RenderingServer.frame_post_draw
 	image = root.get_texture().get_image()
 	image.save_png("/tmp/lastimpact_visual_safe/02_safe_aim.png")
+	root.remove_child(scene)
+	scene.free()
+	var survival = load("res://survival.tscn").instantiate()
+	root.add_child(survival)
+	survival.profile = 0
+	survival.apply_profile()
+	for i in range(45):
+		await process_frame
+	await RenderingServer.frame_post_draw
+	image = root.get_texture().get_image()
+	if image==null or image.is_empty() or image.save_png("/tmp/lastimpact_visual_safe/03_safe_frontier.png")!=OK:
+		push_error("VISUAL CAPTURE FAILED: safe frontier")
+		quit(1)
+		return
 	print("SAFE MATERIAL CAPTURE COMPLETE")
 	quit(0)
