@@ -1,0 +1,29 @@
+name: Deployment asset decoder
+on:
+  pull_request:
+    branches: [r0773-air-motion]
+  push:
+    branches: [r0774-deployment-assets]
+permissions:
+  contents: read
+jobs:
+  decoder:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package pinned decoder for offline asset conversion
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/deployment-decoder
+          npm install --prefix /tmp/deployment-decoder --no-save --no-package-lock meshoptimizer@0.23.0
+          cp /tmp/deployment-decoder/node_modules/meshoptimizer/meshopt_decoder.module.js /tmp/deployment-decoder/meshopt_decoder.mjs
+          cp /tmp/deployment-decoder/node_modules/meshoptimizer/LICENSE.md /tmp/deployment-decoder/LICENSE.md
+          cd /tmp/deployment-decoder
+          sha256sum meshopt_decoder.mjs LICENSE.md > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LastImpact_DeploymentDecoder
+          path: |
+            /tmp/deployment-decoder/meshopt_decoder.mjs
+            /tmp/deployment-decoder/LICENSE.md
+            /tmp/deployment-decoder/SHA256SUMS.txt
