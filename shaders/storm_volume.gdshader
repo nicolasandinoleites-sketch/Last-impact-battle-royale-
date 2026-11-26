@@ -13,7 +13,10 @@ void vertex() {
 
 // Return extinction density and density-weighted cloud shade in world space.
 vec2 dust_at(vec3 p) {
+	// Roof reaches at most 39 m, plus 9 m feather. Density is exactly zero above it.
+	if (p.y >= 48.0) { return vec2(0.0); }
 	float edge = smoothstep(-5.0,8.0,length(p.xz-storm_center)-safe_radius);
+	if (edge <= 0.0) { return vec2(0.0); }
 	vec2 uv = p.xz*0.027 + vec2(p.y*0.012,-p.y*0.019) + vec2(-wind_time*0.017,wind_time*0.007);
 	float n = texture(cloud_tex,uv).r;
 	float roof = 30.0 + (n-0.5)*18.0;
@@ -54,7 +57,14 @@ void fragment() {
 	float cc = dot(o,o)-rr*rr;
 	float disc = bb*bb-aa*cc;
 	vec2 accum = vec2(0.0);
-	if (aa>0.00001 && disc>0.0) {
+	// A segment with both endpoints in the inner safe disk cannot cross its boundary.
+	// Conservative margin avoids changing boundary pixels due to floating-point error.
+	vec2 end_xz = o + d*far_t;
+	float inner = max(0.0,rr-0.001);
+	bool wholly_safe = dot(o,o)<inner*inner && dot(end_xz,end_xz)<inner*inner;
+	if (wholly_safe) {
+		accum = vec2(0.0);
+	} else if (aa>0.00001 && disc>0.0) {
 		float root = sqrt(disc);
 		float enter = (-bb-root)/aa;
 		float leave = (-bb+root)/aa;
