@@ -30,6 +30,10 @@ func make_player(duration: float, frequency: float, noise_level: float) -> Audio
 	add_child(p)
 	return p
 
+func prepare_storm() -> void:
+	if not is_instance_valid(wind_player):
+		wind_player = make_wind()
+
 func set_storm_exposure(amount: float) -> void:
 	if amount<0.02:
 		if is_instance_valid(wind_player) and wind_player.playing:
