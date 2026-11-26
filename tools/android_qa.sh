@@ -71,6 +71,8 @@ capture 01_lobby
 tap_fraction 01_lobby 0.847 0.761
 wait_log "ANDROID FRONTIER READY" 1
 wait_log "ANDROID FRONTIER TICKS 120" 1
+wait_log "ANDROID FRONTIER PERF" 1
+adb logcat -d -v brief -s godot:I | grep -F "ANDROID FRONTIER PERF" | tee "$OUT/performance.txt"
 dismiss_immersive
 capture 02_frontier
 adb shell dumpsys meminfo "$PKG" > "$OUT/frontier_meminfo.txt"
