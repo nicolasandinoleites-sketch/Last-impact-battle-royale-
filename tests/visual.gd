@@ -228,6 +228,18 @@ func run() -> void:
 	survival.player.reset_physics_interpolation()
 	await wait_frames(35)
 	await capture("26_storm_approaching")
+	var storm_camera := Camera3D.new()
+	survival.add_child(storm_camera)
+	storm_camera.position = Vector3(8,4,survival.zone.radius-15.0)
+	storm_camera.look_at(Vector3(0,18,survival.zone.radius+2.0))
+	storm_camera.current = true
+	survival.hud.hide()
+	await wait_frames(12)
+	await capture("28_storm_crown")
+	storm_camera.current = false
+	survival.player.camera.current = true
+	survival.hud.show()
+	storm_camera.queue_free()
 	survival.player.position = Vector3(0,0.1,survival.zone.radius+5.0)
 	survival.player.yaw = 0.0
 	survival.player.reset_movement()

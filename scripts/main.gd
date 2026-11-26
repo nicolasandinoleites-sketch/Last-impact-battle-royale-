@@ -67,6 +67,7 @@ func _ready() -> void:
 		zone = ZoneScript.new()
 		add_child(zone)
 		zone.set_profile(profile)
+		game_audio.prepare_storm()
 		message = "Supervivencia: permanece en la zona"
 		spawn_pickups()
 	for p in [Vector3(0,0,-4),Vector3(-8,0,-8),Vector3(9,0,-13),Vector3(-15,0,-20),Vector3(14,0,7),Vector3(-18,0,7)]:
@@ -400,11 +401,11 @@ func use_shield_cell() -> bool:
 func _process(_delta: float) -> void:
 	if survival_mode and is_instance_valid(zone) and is_instance_valid(player):
 		storm_exposure = lerpf(storm_exposure,zone.exposure(player.global_position),1.0-exp(-_delta*3.0))
-		world_environment.background_color = Color("8cabb8").lerp(Color("79614e"),storm_exposure)
+		world_environment.background_color = Color("8cabb8").lerp(Color("7f5937"),storm_exposure)
 		world_environment.ambient_light_color = Color("c9d2d0").lerp(Color("b28e71"),storm_exposure)
 		world_environment.fog_enabled = storm_exposure>0.015
-		world_environment.fog_light_color = Color("96745a")
-		world_environment.fog_density = storm_exposure*0.065
+		world_environment.fog_light_color = Color("a07850")
+		world_environment.fog_density = pow(storm_exposure,1.25)*0.105
 		game_audio.set_storm_exposure(storm_exposure)
 	if not OS.has_feature("android") or not survival_mode or qa_sample_done or qa_sample_start==0:
 		return
