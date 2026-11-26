@@ -60,7 +60,7 @@ func _draw() -> void:
 	var font := int(12*u)
 	draw_minimap(u)
 	draw_rect(Rect2(at(0.145,0.025),Vector2(180,62)*u),DARK)
-	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0753",int(14*u),ACCENT)
+	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0754",int(14*u),ACCENT)
 	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d   ·   MEM %.0f MB" % [cached_fps,cached_mem],font)
 	label_at(at(0.145,0.025)+Vector2(9,50)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
 	if game.survival_mode:
@@ -332,10 +332,10 @@ func draw_storm_exposure() -> void:
 	if intensity<0.005:
 		return
 	# Cheap translucent dust tint and graduated edges behind the HUD.
-	draw_rect(Rect2(Vector2.ZERO,size),Color(0.53,0.34,0.18,intensity*0.12))
+	draw_rect(Rect2(Vector2.ZERO,size),Color(0.53,0.34,0.18,intensity*0.035))
 	for i in range(5):
 		var width := float(5-i)*size.y*0.018
-		var c := Color(0.29,0.17,0.09,intensity*0.065)
+		var c := Color(0.29,0.17,0.09,intensity*0.025)
 		draw_rect(Rect2(0,0,size.x,width),c)
 		draw_rect(Rect2(0,size.y-width,size.x,width),c)
 		draw_rect(Rect2(0,width,width,size.y-width*2.0),c)
