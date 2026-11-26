@@ -69,6 +69,8 @@ func run() -> void:
 	if not check(clips.torso_weight==0.0 and weapon.carry_sway==Vector3.ZERO,"reset clears torso and carry"):
 		return
 	# Exercise the new stance through the real HUD command and physics.
+	for i in range(8):
+		await physics_frame
 	game.hud.press_button("CROUCH",0)
 	for i in range(45):
 		await physics_frame
