@@ -162,9 +162,16 @@ func run() -> void:
 			return
 	if not check(actor.ankle_basis.size()==2, "calibrated ankle orientations"):
 		return
-	var test_cadence: float = actor.gait_cadence(1.5,false)
-	var test_step: float = actor.gait_half_step(1.5,test_cadence,false)
-	if not check(absf(2.0*test_step*test_cadence/0.62-1.5)<0.001, "stance travel matches nominal speed"):
+	for speed in [0.5,1.5,2.8]:
+		var test_cadence: float = actor.gait_cadence(speed,false)
+		var test_step: float = actor.gait_half_step(speed,test_cadence,false)
+		var stance_speed := 2.0*test_step*test_cadence/0.62
+		print("GAIT nominal=",speed," stance=",stance_speed," cadence=",test_cadence," half_step=",test_step)
+		if not check(absf(stance_speed-speed)<0.001, "stance travel matches nominal speed "+str(speed)):
+			return
+	var sprint_cadence: float = actor.gait_cadence(6.2,true)
+	var sprint_step: float = actor.gait_half_step(6.2,sprint_cadence,true)
+	if not check(sprint_step<=0.36 and sprint_cadence<=3.2, "sprint respects leg reach and cadence budgets"):
 		return
 	var max_ik := 0.0
 	for i in range(8):
