@@ -7,9 +7,9 @@ on:
         type: boolean
         default: false
   push:
-    branches: [r077-storm-earlyout]
+    branches: [r0771-sprint-calibration]
   pull_request:
-    branches: [r0769-adaptive-resolution]
+    branches: [r077-storm-earlyout]
 permissions:
   contents: read
 jobs:
@@ -153,6 +153,20 @@ jobs:
           grep -F 'GAIT AB COMPLETE' /tmp/gait_ab.log
           if grep -E 'SCRIPT ERROR|Parse Error|TEST FAILED' /tmp/gait_ab.log; then exit 1; fi
           if grep -E 'SCRIPT ERROR|Parse Error|TEST FAILED' /tmp/clip_gameplay.log /tmp/clip_import.log; then exit 1; fi
+      - name: Measure experimental sprint amplitude and cadence candidates
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/lastimpact_sprint_ab
+          timeout 90s Godot_v4.6-stable_linux.x86_64 --headless --path . --script res://tests/sprint_calibration.gd 2>&1 | tee /tmp/lastimpact_sprint_ab/metrics.log
+          grep -F 'SPRINT CALIBRATION COMPLETE' /tmp/lastimpact_sprint_ab/metrics.log
+          if grep -E 'SCRIPT ERROR|Parse Error|TEST FAILED' /tmp/lastimpact_sprint_ab/metrics.log; then exit 1; fi
+          test -s /tmp/lastimpact_sprint_ab/report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: LastImpact_SprintCalibration
+          path: /tmp/lastimpact_sprint_ab/
+          if-no-files-found: ignore
       - name: Render desktop visual diagnostics
         run: |
           set -euo pipefail
