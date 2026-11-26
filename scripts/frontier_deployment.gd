@@ -9,6 +9,8 @@ var camera_motion := CameraMotion.new()
 var body_tilt := Vector2.ZERO
 const DeploymentAssets = preload("res://scripts/frontier_deployment_assets.gd")
 var assets: Node3D
+const Cinematic = preload("res://scripts/frontier_deployment_cinematic.gd")
+var cinematic: Node3D
 var flight := Flight.new()
 var surface := Surface.new()
 var pose := Pose.new()
@@ -40,6 +42,12 @@ func begin(actor) -> void:
   add_child(assets)
   assets.configure(player,int(get_parent().profile))
  assets.reset()
+ if assets.available and not is_instance_valid(cinematic):
+  cinematic = Cinematic.new()
+  add_child(cinematic)
+  cinematic.configure(player)
+ if is_instance_valid(cinematic):
+  cinematic.reset()
  flight.reset()
  active = true
  landing_clear = false
@@ -74,11 +82,22 @@ func step(delta: float, stick: Vector2) -> void:
  var steering := Vector2(steering3.x,steering3.z)
  var previous: int = flight.phase
  var old_position: Vector3 = player.global_position
- flight.step(delta,steering,action_requested,action_requested,0.0,Callable(surface,"height_below"),Callable(self,"filter_horizontal"))
+ var jump_now := action_requested
+ if is_instance_valid(cinematic) and previous==Flight.Phase.IN_PLANE:
+  jump_now = cinematic.request_exit(delta,flight.plane_position.x,action_requested)
+ flight.step(delta,steering,jump_now,action_requested,0.0,Callable(surface,"height_below"),Callable(self,"filter_horizontal"))
  action_requested = false
  if flight.phase in [Flight.Phase.INTRO,Flight.Phase.IN_PLANE]:
   player.global_position = flight.plane_position
  elif previous==Flight.Phase.IN_PLANE:
+  if is_instance_valid(cinematic):
+   # Match the existing flight controller exit exactly, including this frame of aircraft travel.
+   flight.position = cinematic.timeline.exit_world(flight.plane_position)
+   cinematic.release()
+   if pose_ready:
+    pose.restore(player.raze.skeleton)
+   player.raze.reset_locomotion()
+   player.yaw = PI*0.5
   player.global_position = flight.position
   player.reset_physics_interpolation()
  elif previous in [Flight.Phase.FREEFALL,Flight.Phase.GLIDE]:
@@ -125,13 +144,10 @@ func step(delta: float, stick: Vector2) -> void:
  player.camera.fov = camera_motion.fov
  if assets.available:
   var aboard: bool = flight.phase in [Flight.Phase.INTRO,Flight.Phase.IN_PLANE]
-  player.visual.visible = not aboard
-  if aboard:
-   # Exterior fly-by until the separate cabin sequence is connected.
-   player.boom.spring_length = 17.0
-   player.boom.position.x = 5.0
-   player.camera.fov = 68.0
-  assets.step(delta,flight.phase,flight.plane_position,stick)
+  var inside := aboard and is_instance_valid(cinematic) and flight.phase==Flight.Phase.IN_PLANE
+  assets.step(delta,flight.phase,flight.plane_position,stick,inside)
+  if aboard and is_instance_valid(cinematic):
+   cinematic.show_aboard(flight.phase,flight.plane_position,flight.time_in_phase,delta)
  if previous!=flight.phase:
   print("LAST IMPACT DEPLOYMENT PHASE ",Flight.Phase.keys()[flight.phase])
  last_phase = flight.phase
@@ -146,6 +162,8 @@ func finish() -> void:
  action_requested = false
  if is_instance_valid(assets):
   assets.finish()
+ if is_instance_valid(cinematic):
+  cinematic.release()
  player.visual.show()
  if pose_ready:
   pose.restore(player.raze.skeleton)
@@ -163,7 +181,9 @@ func finish() -> void:
 func status_text() -> String:
  match flight.phase:
   Flight.Phase.INTRO: return "DESPLIEGUE EXPERIMENTAL"
-  Flight.Phase.IN_PLANE: return "PULSA SALTAR"
+  Flight.Phase.IN_PLANE:
+   if is_instance_valid(cinematic): return cinematic.status_text()
+   return "PULSA SALTAR"
   Flight.Phase.FREEFALL: return "CAIDA LIBRE · ABRIR ALAS"
   Flight.Phase.GLIDE: return "PLANEO · ELIGE TU DESTINO"
   Flight.Phase.LAND: return "ATERRIZANDO"

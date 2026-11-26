@@ -59,10 +59,10 @@ func reset() -> void:
  pack.reset_rig()
  plane.hide()
 
-func step(delta: float, state: int, plane_position: Vector3, steering: Vector2) -> void:
+func step(delta: float, state: int, plane_position: Vector3, steering: Vector2, inside_cabin: bool = false) -> void:
  if not available: return
  plane.global_position = plane_position
- plane.visible = state!=Flight.Phase.GROUND
+ plane.visible = state!=Flight.Phase.GROUND and not inside_cabin
  plane.set_aircraft_power(0.82,plane.visible)
  plane.step_aircraft(delta,plane.visible)
  if phase!=state:

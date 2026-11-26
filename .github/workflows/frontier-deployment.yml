@@ -1,7 +1,7 @@
 name: FRONTIER deployment integration QA
 on:
   push:
-    branches: [r0780-deployment-assets]
+    branches: [r0781-cabin-integration]
   workflow_dispatch:
 permissions:
   contents: read
@@ -30,13 +30,14 @@ jobs:
       - name: Run fixtures
         run: |
           set -euo pipefail
-          for fixture in deployment_flight deployment_surface deployment_camera frontier_deployment smoke; do
+          for fixture in deployment_flight deployment_surface deployment_camera deployment_cabin_timeline frontier_deployment smoke; do
             timeout 120s /tmp/godot/Godot_v4.6-stable_linux.x86_64 --headless --path . --script "res://tests/$fixture.gd" 2>&1 | tee "/tmp/$fixture.log"
             if grep -E 'SCRIPT ERROR|Parse Error|Assertion failed|TEST FAILED' "/tmp/$fixture.log"; then exit 1; fi
           done
           grep -F 'DEPLOYMENT FLIGHT PASS' /tmp/deployment_flight.log
           grep -F 'DEPLOYMENT SURFACE PASS' /tmp/deployment_surface.log
           grep -F 'DEPLOYMENT CAMERA PASS' /tmp/deployment_camera.log
+          grep -F 'CABIN TIMELINE PASS' /tmp/deployment_cabin_timeline.log
           grep -F 'FRONTIER DEPLOYMENT PASS' /tmp/frontier_deployment.log
           grep -F 'LAST IMPACT R073 SMOKE PASS' /tmp/smoke.log
       - uses: actions/upload-artifact@v4
@@ -48,5 +49,6 @@ jobs:
             /tmp/deployment_flight.log
             /tmp/deployment_surface.log
             /tmp/deployment_camera.log
+            /tmp/deployment_cabin_timeline.log
             /tmp/frontier_deployment.log
             /tmp/smoke.log
