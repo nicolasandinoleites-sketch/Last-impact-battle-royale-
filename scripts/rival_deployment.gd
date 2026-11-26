@@ -61,6 +61,7 @@ func begin() -> void:
   d.land_at = Vector3.ZERO
   t.set_physics_process(false)
   t.hide()
+  if t.weapon_loaded: t.rival_weapon.hide()
   t.collision_layer = 0
   t.velocity = Vector3.ZERO
   t.visual.rotation = Vector3.ZERO
@@ -159,6 +160,7 @@ func step_drop(d: Dictionary, delta: float) -> void:
 func land(d: Dictionary) -> void:
  var t: CharacterBody3D = d.target
  d.landed = true
+ if t.weapon_loaded: t.rival_weapon.show()
  d.land_at = t.global_position
  t.velocity = Vector3.ZERO
  t.collision_layer = 2

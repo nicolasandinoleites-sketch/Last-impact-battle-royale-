@@ -1,6 +1,17 @@
 extends CharacterBody3D
 signal destroyed
 const Raze = preload("res://scripts/raze.gd")
+const Ignis = preload("res://scripts/ignis.gd")
+var rival_weapon: Node3D
+var weapon_loaded := false
+var opponent: Node3D
+var rounds := 6
+var reload_left := 0.0
+var shot_left := 0.0
+var shots := 0
+var reloads := 0
+var tracer: MeshInstance3D
+var tracer_left := 0.0
 const CameraGuard = preload("res://scripts/camera_guard.gd")
 var lens_hidden := false
 var animation_cost_us := 0.0
@@ -39,6 +50,28 @@ var tactical_ready := false
 
 func tactical_enabled() -> bool:
 	return is_instance_valid(game) and game.experimental_deployment
+
+func opponent_position() -> Vector3:
+	return opponent.global_position if is_instance_valid(opponent) else game.player.global_position
+
+func target_available(candidate) -> bool:
+	if not is_instance_valid(candidate) or candidate==self: return false
+	if candidate==game.player: return game.health>0
+	if candidate.get_script()!=get_script() or not candidate.active: return false
+	return not is_instance_valid(game.rival_deployment) or not game.rival_deployment.airborne(candidate)
+
+func select_opponent() -> Node3D:
+	var best: Node3D = null
+	var best_distance := 18.0
+	var candidates: Array = [game.player]
+	candidates.append_array(game.targets)
+	for candidate in candidates:
+		if not target_available(candidate): continue
+		var d: float = global_position.distance_to(candidate.global_position)
+		if d<=best_distance and absf(candidate.global_position.y-global_position.y)<3.0 and clear_path(candidate.global_position):
+			best = candidate
+			best_distance = d
+	return best
 
 func visible_player() -> bool:
 	var difference: Vector3 = game.player.global_position-global_position
@@ -101,6 +134,28 @@ func open_goal(candidate: Vector3) -> Vector3:
 	var cell: Vector2i = game.frontier.nearest_open(game.frontier.cell_at(candidate))
 	return game.frontier.cell_center(cell)
 
+# Virtual arena cover nodes: use the existing navigation grid and level occlusion.
+func select_reload_cover() -> Vector3:
+	if not target_available(opponent): return global_position
+	var origin: Vector2i = game.frontier.cell_at(global_position)
+	var best: Vector3 = global_position
+	var best_cost := INF
+	for x in range(-3,4):
+		for z in range(-3,4):
+			var cell := origin+Vector2i(x,z)
+			if not game.frontier.grid.is_in_boundsv(cell) or game.frontier.grid.is_point_solid(cell): continue
+			var point: Vector3 = game.frontier.cell_center(cell)
+			if game.zone.outside(point): continue
+			var ray := PhysicsRayQueryParameters3D.create(point+Vector3.UP*0.9,opponent_position()+Vector3.UP*0.9,1)
+			if get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): continue
+			var route: PackedVector3Array = game.frontier.route(global_position,point)
+			if route.is_empty(): continue
+			var cost: float = float(route.size())+global_position.distance_to(point)*0.25
+			if cost<best_cost:
+				best_cost = cost
+				best = point
+	return best
+
 func decide_tactical(delta: float) -> Vector3:
 	memory_left = maxf(0.0,memory_left-delta)
 	decision_left -= delta
@@ -112,9 +167,11 @@ func decide_tactical(delta: float) -> Vector3:
 	if decision_left>0.0:
 		return tactical_goal
 	decision_left = 0.30
-	var seen := visible_player()
+	if not (ai_state=="COVER" and reload_left>0.0 and target_available(opponent)):
+		opponent = select_opponent()
+	var seen := is_instance_valid(opponent)
 	if seen:
-		last_seen = game.player.global_position
+		last_seen = opponent_position()
 		memory_left = 2.4
 	var center: Vector3 = game.zone.global_position
 	if game.zone.outside(global_position) or global_position.distance_to(center)>maxf(3.0,game.zone.radius-3.0):
@@ -128,14 +185,19 @@ func decide_tactical(delta: float) -> Vector3:
 		return tactical_goal
 	tactical_pickup = null
 	if seen and hp<35:
-		var away: Vector3 = global_position-game.player.global_position
+		var away: Vector3 = global_position-opponent_position()
 		away.y = 0.0
 		if away.length_squared()<0.01: away = Vector3.RIGHT
 		var retreat: Vector3 = global_position+away.normalized()*8.0
 		if game.zone.outside(retreat): retreat = center.lerp(global_position,0.6)
 		set_tactical_goal("RETREAT",open_goal(retreat))
 	elif seen:
-		set_tactical_goal("ENGAGE",game.player.global_position)
+		if reload_left>0.0 and global_position.distance_to(opponent_position())>2.0:
+			var cover := select_reload_cover()
+			if cover.distance_to(global_position)>0.5:
+				set_tactical_goal("COVER",cover)
+			else: set_tactical_goal("ENGAGE",opponent_position())
+		else: set_tactical_goal("ENGAGE",opponent_position())
 	elif memory_left>0.0 and global_position.distance_to(last_seen)>2.0:
 		set_tactical_goal("SEARCH",open_goal(last_seen))
 	elif ai_state!="PATROL" or global_position.distance_to(tactical_goal)<1.5:
@@ -180,6 +242,22 @@ func _ready() -> void:
 		fallback.position.y = 0.9
 		fallback.material_override = flat_material(Color("a96050"))
 		visual.add_child(fallback)
+	if model_loaded and tactical_enabled():
+		rival_weapon = Ignis.new()
+		visual.add_child(rival_weapon)
+		weapon_loaded = rival_weapon.equip(actor.right_socket,visual)
+		rival_weapon.actor = actor
+		actor.armed = weapon_loaded
+		if weapon_loaded:
+			tracer = MeshInstance3D.new()
+			var beam := BoxMesh.new()
+			beam.size = Vector3(0.018,0.018,1.0)
+			tracer.mesh = beam
+			tracer.material_override = flat_material(Color("79e4ff"))
+			tracer.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			add_child(tracer)
+			tracer.top_level = true
+			tracer.hide()
 	badge_mesh = MeshInstance3D.new()
 	var badge := BoxMesh.new()
 	badge.size = Vector3(0.26,0.07,0.12)
@@ -229,7 +307,7 @@ func _physics_process(delta: float) -> void:
 		var offset := destination-global_position
 		offset.y = 0.0
 		direction = offset.normalized() if offset.length()>1.0 else Vector3.ZERO
-		if ai_state=="ENGAGE" and distance<1.3: direction = Vector3.ZERO
+		if ai_state=="ENGAGE" and is_instance_valid(opponent) and global_position.distance_to(opponent_position())<9.0: direction = Vector3.ZERO
 		if ai_state=="LOOT": collect_supply()
 	if direction.length_squared()>0.01:
 		direction = navigation_direction(destination,delta,direction)
@@ -254,6 +332,10 @@ func _physics_process(delta: float) -> void:
 		visual.rotation.y = lerp_angle(visual.rotation.y,atan2(-horizontal.x,-horizontal.z),1.0-exp(-delta*10.0))
 	elif distance>0.1:
 		visual.rotation.y = lerp_angle(visual.rotation.y,atan2(-difference.x,-difference.z),1.0-exp(-delta*7.0))
+	var combat: bool = tactical_enabled() and ai_state=="ENGAGE" and target_available(opponent)
+	if combat:
+		var aim: Vector3 = opponent_position()-global_position
+		visual.rotation.y = lerp_angle(visual.rotation.y,atan2(-aim.x,-aim.z),1.0-exp(-delta*12.0))
 	# Render-only guard. Keep active state, hitbox, navigation and contact damage.
 	var camera: Camera3D = game.player.camera
 	update_lens_guard(camera.global_position)
@@ -268,16 +350,54 @@ func _physics_process(delta: float) -> void:
 	if model_loaded and anim_elapsed>=animation_interval:
 		var local := visual.global_transform.basis.orthonormalized().inverse()*horizontal
 		var start_us := Time.get_ticks_usec()
-		actor.locomotion(minf(anim_elapsed,0.20),horizontal.length(),is_on_floor(),false,false,false,velocity.y,Vector2(local.x,local.z) if distance<full_animation_distance else Vector2.ZERO)
+		actor.locomotion(minf(anim_elapsed,0.20),horizontal.length(),is_on_floor(),false,combat,false,velocity.y,Vector2(local.x,local.z) if distance<full_animation_distance else Vector2.ZERO)
+		if weapon_loaded:
+			rival_weapon.update_pose(minf(anim_elapsed,0.20),combat,clampf(reload_left/1.4,0.0,1.0))
 		animation_cost_us = lerpf(animation_cost_us,float(Time.get_ticks_usec()-start_us),0.12)
 		anim_elapsed = 0.0
 		anim_updates += 1
-	# Arcade contact-only opponent, same damage rule as the prototype drone.
-	if distance<1.4 and height_gap<1.1 and contact_left<=0.0 and (not tactical_enabled() or ai_state=="ENGAGE"):
+	if weapon_loaded and tactical_enabled():
+		step_rival_combat(delta,combat)
+	# Preserve legacy contact behavior in the old survival mode.
+	if distance<1.4 and height_gap<1.1 and contact_left<=0.0 and not tactical_enabled():
 		var ray := PhysicsRayQueryParameters3D.create(global_position+Vector3.UP*0.75,game.player.global_position+Vector3.UP*0.75,1)
 		if get_world_3d().direct_space_state.intersect_ray(ray).is_empty():
 			contact_left = 1.5
 			game.damage_player(8)
+
+func step_rival_combat(delta: float, combat: bool) -> void:
+	shot_left = maxf(0.0,shot_left-delta)
+	tracer_left = maxf(0.0,tracer_left-delta)
+	if is_instance_valid(tracer): tracer.visible = tracer_left>0.0
+	if reload_left>0.0:
+		reload_left = maxf(0.0,reload_left-delta)
+		if reload_left<=0.0:
+			rounds = 6
+			reloads += 1
+		return
+	if not combat or not target_available(opponent) or shot_left>0.0: return
+	if game.deployment_active() or game.round_result!="": return
+	if rounds<=0:
+		reload_left = 1.4
+		return
+	if global_position.distance_to(opponent_position())>18.0 or not clear_path(opponent_position()): return
+	var from: Vector3 = rival_weapon.flash.global_position
+	var to: Vector3 = opponent_position()+Vector3.UP*0.9
+	var query := PhysicsRayQueryParameters3D.create(from,to,1)
+	if not get_world_3d().direct_space_state.intersect_ray(query).is_empty(): return
+	rounds -= 1
+	shots += 1
+	shot_left = 0.65
+	rival_weapon.pulse()
+	if is_instance_valid(tracer) and global_position.distance_to(game.player.global_position)<24.0:
+		tracer.global_position = (from+to)*0.5
+		if from.distance_to(to)>0.01:
+			tracer.look_at(to)
+			tracer.scale = Vector3(1,1,from.distance_to(to))
+		tracer_left = 0.08
+		tracer.show()
+	if opponent==game.player: game.damage_player(6)
+	else: opponent.take_hit(9)
 
 func update_lens_guard(camera_position: Vector3) -> void:
 	lens_hidden = CameraGuard.overlaps_lens(camera_position,global_position,lens_hidden)
@@ -295,6 +415,7 @@ func take_hit(damage: int) -> void:
 	hp = maxi(0,hp-incoming)
 	if hp==0:
 		active = false
+		if is_instance_valid(tracer): tracer.hide()
 		visible = false
 		collision_layer = 0
 		velocity = Vector3.ZERO
@@ -307,6 +428,17 @@ func reset_target() -> void:
 	reset_physics_interpolation()
 	hp = 100
 	armor = 0
+	opponent = null
+	rounds = 6
+	reload_left = 0.0
+	shot_left = 0.0
+	shots = 0
+	reloads = 0
+	tracer_left = 0.0
+	if is_instance_valid(tracer): tracer.hide()
+	if weapon_loaded:
+		rival_weapon.clear_effects()
+		rival_weapon.show()
 	tactical_ready = false
 	tactical_pickup = null
 	decision_left = 0.0

@@ -1,0 +1,2 @@
+# Independent R0786 validation
+This branch is an independently tested implementation based on r0785-rival-tactics. The primary continuation is r0787-cover-mobile; do not merge or replace it without comparing implementation and tests. The local full backup is LAST_IMPACT_R0786_Proyecto_Completo(1).zip in Library /LAST_IMPACT. Eight local fixtures passed. The workflow branch filter differs from the ZIP to permit CI on this independent branch. No Android APK or device validation.

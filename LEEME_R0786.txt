@@ -1,0 +1,2 @@
+LAST IMPACT R07.8.6 — Godot 4.6
+Abrir project.godot y acceder a BATTLE ROYALE desde el lobby. Dos operadores humanoides armados con IGNIS X1; enfrentamientos, recarga, destello, trazador visual y cobertura virtual. Conservar recursos originales. Ver docs/R0786.md. Sin APK.
