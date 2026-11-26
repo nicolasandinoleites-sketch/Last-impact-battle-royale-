@@ -28,6 +28,9 @@ var motion_lean := Vector2.ZERO
 var stride_amplitude := 0.0
 const ClipMotion = preload("res://scripts/locomotion_clips.gd")
 var clip_motion := ClipMotion.new()
+const FootContact = preload("res://scripts/foot_contact.gd")
+var foot_contact := FootContact.new()
+var contact_lock_enabled := true
 var ankle_basis: Dictionary = {}
 var visual_ground_error := 0.0
 var right_socket: BoneAttachment3D
@@ -128,6 +131,7 @@ func reset_locomotion() -> void:
 	motion_lean = Vector2.ZERO
 	stride_amplitude = 0.0
 	clip_motion.reset()
+	foot_contact.reset()
 	foot_ik_active = false
 	foot_ik_error = 0.0
 	visual_ground_error = 0.0
@@ -293,6 +297,7 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 		if grounded:
 			var corrected := clampf(model.position.y+foot_rest_height-foot_height(),-0.72,0.20)
 			model.position.y = lerpf(model.position.y,corrected,1.0-exp(-delta*20.0))
+	foot_contact.update(self,clip_motion,delta,contact_lock_enabled and grounded and moving and not low and not combat and landing<=0.0 and local_motion.y< -0.75 and absf(local_motion.x)<absf(local_motion.y)*0.35)
 	visual_ground_error = absf(foot_height()-foot_rest_height) if grounded else 0.0
 
 func dance() -> bool:
