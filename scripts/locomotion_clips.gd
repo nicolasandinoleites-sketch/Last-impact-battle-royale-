@@ -25,6 +25,9 @@ var calibrated := false
 var cadence_hz := 0.0
 var calibration_enabled := true
 var support_masks: Array = []
+# Experimental parameters; neutral defaults preserve the approved gait.
+var sprint_amplitude := 1.0
+var sprint_cadence_multiplier := 1.0
 
 func setup(rig: Skeleton3D) -> bool:
 	if not ResourceLoader.exists(LIBRARY):
@@ -121,6 +124,7 @@ func update(delta: float, speed: float, eligible: bool, local_motion: Vector2) -
 		# Clamp extreme cadence estimates; a calibrated stride still has a physical reach limit.
 		var measured := clampf(speed_blend/maxf(travel,0.35),0.35,2.8)
 		cadence = lerpf(cadence,measured,0.8*calibration_strength(speed_blend))
+	cadence *= lerpf(1.0,sprint_cadence_multiplier,smoothstep(4.4,6.0,speed_blend))
 	cadence_hz = cadence if cadence_hz<=0.0 else lerpf(cadence_hz,cadence,1.0-exp(-delta*10.0))
 	phase = fposmod(phase+delta*cadence_hz,1.0)
 
@@ -156,6 +160,10 @@ func apply(rig: Skeleton3D) -> void:
 		var qa := a.rotation_track_interpolate(tracks[segment][i],pa*a.length)
 		var qb := b.rotation_track_interpolate(tracks[segment+1][i],pb*b.length)
 		var goal := qa.slerp(qb,mix_amount).normalized()
+		var amplitude := lerpf(1.0,sprint_amplitude,smoothstep(4.4,6.0,speed_blend))
+		if amplitude<0.999:
+			var neutral := rig.get_bone_rest(ids[i]).basis.orthonormalized().get_rotation_quaternion()
+			goal = neutral.slerp(goal,amplitude).normalized()
 		var current := rig.get_bone_pose_rotation(ids[i])
 		rig.set_bone_pose_rotation(ids[i],current.slerp(goal,weight).normalized())
 	if torso_weight>0.0:
