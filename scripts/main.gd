@@ -406,9 +406,9 @@ func _process(_delta: float) -> void:
 		storm_exposure = lerpf(storm_exposure,exposure_target,1.0-exp(-_delta*2.6))
 		world_environment.background_color = Color("8cabb8").lerp(Color("7f5937"),storm_exposure)
 		world_environment.ambient_light_color = Color("c9d2d0").lerp(Color("b28e71"),storm_exposure)
-		world_environment.fog_enabled = storm_exposure>0.015
+		world_environment.fog_enabled = false
 		world_environment.fog_light_color = Color("a07850")
-		world_environment.fog_density = pow(storm_exposure,1.15)*0.085
+		world_environment.fog_density = 0.0
 		game_audio.set_storm_exposure(storm_exposure)
 	if not OS.has_feature("android") or not survival_mode or qa_sample_done or qa_sample_start==0:
 		return
