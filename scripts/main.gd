@@ -9,6 +9,12 @@ const DroneScript = preload("res://scripts/survival_drone.gd")
 var zone
 var round_result := ""
 var zone_tick := 0.0
+const InventoryScript = preload("res://scripts/survival_inventory.gd")
+const PickupScript = preload("res://scripts/survival_pickup.gd")
+var inventory = InventoryScript.new()
+var pickups: Array = []
+const PICKUP_RANGE := 1.8
+
 const GameAudio = preload("res://scripts/game_audio.gd")
 var game_audio: Node
 var health := 100
@@ -49,6 +55,7 @@ func _ready() -> void:
 		zone = ZoneScript.new()
 		add_child(zone)
 		message = "Supervivencia: permanece en la zona"
+		spawn_pickups()
 	for p in [Vector3(0,0,-4),Vector3(-8,0,-8),Vector3(9,0,-13),Vector3(-15,0,-20),Vector3(14,0,7),Vector3(-18,0,7)]:
 		var target = DroneScript.new() if survival_mode else TargetScript.new()
 		target.position = p
@@ -205,6 +212,9 @@ func reset_round() -> void:
 	zone_tick = 0.0
 	if survival_mode:
 		zone.reset_zone()
+		inventory.reset()
+		for pickup in pickups:
+			pickup.reset_pickup()
 	for t in targets:
 		t.reset_target()
 	eliminated = 0
@@ -235,7 +245,8 @@ func next_profile() -> void:
 	var config := ConfigFile.new()
 	config.set_value("graphics","profile",profile)
 	config.save("user://lastimpact.cfg")
-	message = ["Bajo seguro · 30 FPS","Medio · 45 FPS","Alto · 60 FPS"][profile]
+	if round_result=="":
+		message = ["Bajo seguro · 30 FPS","Medio · 45 FPS","Alto · 60 FPS"][profile]
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
@@ -275,3 +286,67 @@ func finish_survival(result: String) -> void:
 	hud.clear_controls()
 	player.reset_movement()
 	reload_left = 0.0
+
+func spawn_pickups() -> void:
+	for data in [
+		["MED",1,Vector3(-3,0,10)],["SHIELD",1,Vector3(3,0,10)],["AMMO",40,Vector3(0,0,7)],
+		["MED",2,Vector3(-10,0,3)],["SHIELD",2,Vector3(10,0,5)],["AMMO",50,Vector3(0,0,-7)],
+		["MED",1,Vector3(-7,0,-19)],["SHIELD",1,Vector3(7,0,-20)],["AMMO",40,Vector3(17,0,13)]
+	]:
+		var pickup = PickupScript.new()
+		pickup.kind = data[0]
+		pickup.quantity = data[1]
+		pickup.position = data[2]
+		add_child(pickup)
+		pickups.append(pickup)
+
+func nearest_pickup():
+	if not survival_mode or round_result!="":
+		return null
+	var closest = null
+	var best := PICKUP_RANGE
+	for pickup in pickups:
+		if not pickup.active:
+			continue
+		var distance: float = player.global_position.distance_to(pickup.global_position)
+		if distance<=best:
+			best = distance
+			closest = pickup
+	return closest
+
+func collect_nearby() -> bool:
+	var pickup = nearest_pickup()
+	if pickup==null:
+		return false
+	var taken := 0
+	if pickup.kind=="AMMO":
+		taken = mini(pickup.quantity,maxi(0,InventoryScript.AMMO_MAX-reserve))
+		reserve += taken
+	else:
+		taken = inventory.add_item(pickup.kind,pickup.quantity)
+	if taken<=0:
+		message = "Capacidad completa"
+		return false
+	pickup.collect(taken)
+	message = "Suministro recogido: +%d" % taken
+	return true
+
+func use_medkit() -> bool:
+	if not survival_mode or round_result!="":
+		return false
+	var next: int = inventory.use_med(health)
+	if next==health:
+		return false
+	health = next
+	message = "Salud restaurada"
+	return true
+
+func use_shield_cell() -> bool:
+	if not survival_mode or round_result!="":
+		return false
+	var next: int = inventory.use_shield(armor)
+	if next==armor:
+		return false
+	armor = next
+	message = "Escudo restaurado"
+	return true
