@@ -1,0 +1,51 @@
+name: Deployment asset decoder
+on:
+  pull_request:
+    branches: [r0773-air-motion]
+  push:
+    branches: [r0774-deployment-assets]
+permissions:
+  contents: read
+jobs:
+  decoder:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package pinned decoder for offline asset conversion
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/deployment-decoder
+          npm install --prefix /tmp/deployment-decoder --no-save --no-package-lock meshoptimizer@0.23.0
+          cp /tmp/deployment-decoder/node_modules/meshoptimizer/meshopt_decoder.module.js /tmp/deployment-decoder/meshopt_decoder.mjs
+          find /tmp/deployment-decoder/node_modules/meshoptimizer -maxdepth 1 -iname "license*" -type f -exec cp {} /tmp/deployment-decoder/LICENSE.md \;
+          test -s /tmp/deployment-decoder/LICENSE.md
+          cd /tmp/deployment-decoder
+          sha256sum meshopt_decoder.mjs LICENSE.md > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LastImpact_DeploymentDecoder
+          path: |
+            /tmp/deployment-decoder/meshopt_decoder.mjs
+            /tmp/deployment-decoder/LICENSE.md
+            /tmp/deployment-decoder/SHA256SUMS.txt
+      - name: Test deployment effects in Godot headless
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 https://github.com/godotengine/godot-builds/releases/download/4.6-stable/Godot_v4.6-stable_linux.x86_64.zip -o /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          for fixture in deployment_engine_fx deployment_glider_visual; do
+            timeout 60s /tmp/godot/Godot_v4.6-stable_linux.x86_64 --headless --path . --script "res://tests/$fixture.gd" 2>&1 | tee "/tmp/$fixture.log"
+            if grep -E 'SCRIPT ERROR|Parse Error|Assertion failed' "/tmp/$fixture.log"; then exit 1; fi
+          done
+          grep -F 'DEPLOYMENT ENGINE FX FIXTURE PASS' /tmp/deployment_engine_fx.log
+          grep -F 'DEPLOYMENT GLIDER FIXTURE PASS' /tmp/deployment_glider_visual.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: LastImpact_DeploymentFixtures
+          path: /tmp/deployment_*.log
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LastImpact_OfflineGodot46
+          path: /tmp/godot.zip
