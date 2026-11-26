@@ -19,6 +19,8 @@ var aiming := false
 var capsule: CapsuleShape3D
 var col: CollisionShape3D
 var low_stance := false
+var crouch_requested := false
+var crouched := false
 var slide_cooldown := 0.0
 var jump_buffer := 0.0
 var ground_grace := 0.0
@@ -135,6 +137,11 @@ func update_camera(delta: float) -> void:
 	boom.spring_length = lerpf(boom.spring_length, 2.40 if aiming else 2.85, minf(1.0, delta * 12.0))
 	camera.fov = lerpf(camera.fov, 52.0 if aiming else 60.0, minf(1.0, delta * 12.0))
 
+func toggle_crouch() -> void:
+	if slide_time>0.0 or not is_on_floor():
+		return
+	crouch_requested = not crouch_requested
+
 func request_slide() -> void:
 	if is_on_floor() and slide_time <= 0.0 and slide_cooldown <= 0.0 and not low_stance and move_input.length() > 0.4:
 		slide_direction = Basis(Vector3.UP,yaw) * Vector3(move_input.x,0,move_input.y).normalized()
@@ -176,6 +183,8 @@ func reset_movement() -> void:
 	combat_facing = false
 	combat_hold = 0.0
 	local_motion = Vector2.ZERO
+	crouch_requested = false
+	crouched = false
 	set_stance(false)
 	reload_visual = 0.0
 	view_recoil = 0.0
@@ -195,14 +204,19 @@ func _physics_process(delta: float) -> void:
 	jump_requested = false
 	jump_buffer = maxf(0.0,jump_buffer-delta)
 	ground_grace = 0.10 if is_on_floor() else maxf(0.0,ground_grace-delta)
-	if slide_time > 0.0:
+	var sliding := slide_time>0.0
+	if sliding or crouch_requested:
 		set_stance(true)
 	elif low_stance and can_stand():
 		set_stance(false)
+	var previous_crouched := crouched
+	crouched = low_stance and not sliding
+	if crouched!=previous_crouched and get_parent().has_method("qa_control"):
+		get_parent().qa_control("CROUCH_ON" if crouched else "CROUCH_OFF")
 	combat_hold = 0.36 if aiming or combat_facing else maxf(0.0,combat_hold-delta)
 	update_camera(delta)
 	var direction := Basis(Vector3.UP,yaw) * Vector3(move_input.x,0,move_input.y)
-	var sprint_forward := sprint and move_input.y< -0.45 and -move_input.y>absf(move_input.x)*0.75
+	var sprint_forward := sprint and not low_stance and move_input.y< -0.45 and -move_input.y>absf(move_input.x)*0.75
 	var speed := 6.2 if sprint_forward else 3.8
 	if aiming or combat_facing:
 		speed = 2.8 if aiming else 3.8
@@ -239,7 +253,7 @@ func _physics_process(delta: float) -> void:
 	var body_basis := visual.global_transform.basis.orthonormalized().inverse()
 	var local_accel := body_basis*Vector3(world_accel.x,0,world_accel.y)
 	body_acceleration = body_acceleration.lerp(Vector2(local_accel.x,local_accel.z).limit_length(24.0),1.0-exp(-delta*9.0))
-	locomotion_state = "SLIDE" if low_stance else ("JUMP" if velocity.y>0.0 and not is_on_floor() else ("FALL" if not is_on_floor() else ("SPRINT" if sprint_forward and combat_hold<=0.0 and animation_speed>4.2 else ("AIM_MOVE" if aiming and animation_speed>0.18 else ("AIM" if aiming else ("MOVE" if animation_speed>0.18 else "IDLE"))))))
+	locomotion_state = ("CROUCH_MOVE" if animation_speed>0.18 else "CROUCH") if crouched else ("SLIDE" if low_stance else ("JUMP" if velocity.y>0.0 and not is_on_floor() else ("FALL" if not is_on_floor() else ("SPRINT" if sprint_forward and combat_hold<=0.0 and animation_speed>4.2 else ("AIM_MOVE" if aiming and animation_speed>0.18 else ("AIM" if aiming else ("MOVE" if animation_speed>0.18 else "IDLE")))))))
 	var local_velocity := visual.global_transform.basis.orthonormalized().inverse()*horizontal
 	local_motion = Vector2(local_velocity.x,local_velocity.z)
 	phase += delta * (12.0 if sprint else 9.0)
@@ -247,9 +261,11 @@ func _physics_process(delta: float) -> void:
 	left_leg.rotation.x = stride
 	right_leg.rotation.x = -stride
 	if model_loaded:
-		raze.locomotion(delta,animation_speed,is_on_floor(),low_stance,combat_hold>0.0,sprint_forward,velocity.y,local_motion,body_acceleration)
+		raze.locomotion(delta,animation_speed,is_on_floor(),low_stance,combat_hold>0.0,sprint_forward,velocity.y,local_motion,body_acceleration,crouched)
 		if raze.clip_motion.weight>0.5 and get_parent().has_method("qa_control"):
 			get_parent().qa_control("CLIP_ACTIVE")
+		if raze.crouch_motion.weight>0.5 and get_parent().has_method("qa_control"):
+			get_parent().qa_control("CROUCH_CLIP_ACTIVE")
 	else:
 		visual.scale.y = lerpf(visual.scale.y,0.55 if low_stance else 1.0,minf(1.0,delta*12.0))
 	if weapon_loaded:

@@ -28,6 +28,8 @@ var motion_lean := Vector2.ZERO
 var stride_amplitude := 0.0
 const ClipMotion = preload("res://scripts/locomotion_clips.gd")
 var clip_motion := ClipMotion.new()
+const CrouchMotion = preload("res://scripts/crouch_motion.gd")
+var crouch_motion := CrouchMotion.new()
 const FootContact = preload("res://scripts/foot_contact.gd")
 var foot_contact := FootContact.new()
 var contact_lock_enabled := true
@@ -114,7 +116,10 @@ func bone_motion(joint: String, degrees: Vector3, blend: float) -> void:
 	skeleton.set_bone_pose_rotation(id,(rest * qx * qy * qz).normalized())
 
 func enable_locomotion_clips() -> bool:
-	return clip_motion.setup(skeleton)
+	var ok := clip_motion.setup(skeleton)
+	if ok:
+		crouch_motion.setup(skeleton,clip_motion.library)
+	return ok
 
 func reset_locomotion() -> void:
 	if not ready_model:
@@ -131,6 +136,7 @@ func reset_locomotion() -> void:
 	motion_lean = Vector2.ZERO
 	stride_amplitude = 0.0
 	clip_motion.reset()
+	crouch_motion.reset()
 	foot_contact.reset()
 	foot_ik_active = false
 	foot_ik_error = 0.0
@@ -156,7 +162,7 @@ func update_gait_heading(heading: Vector3, delta: float) -> void:
 		var smoothed := gait_heading.lerp(next,1.0-exp(-delta*18.0))
 		gait_heading = smoothed.normalized() if smoothed.length_squared()>0.01 else next
 
-func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: bool, sprinting: bool = false, vertical_speed: float = 0.0, local_motion: Vector2 = Vector2.ZERO, acceleration: Vector2 = Vector2.ZERO) -> void:
+func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: bool, sprinting: bool = false, vertical_speed: float = 0.0, local_motion: Vector2 = Vector2.ZERO, acceleration: Vector2 = Vector2.ZERO, crouched: bool = false) -> void:
 	if not ready_model or preview_dance:
 		return
 	clock += delta
@@ -217,6 +223,16 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 		arm_l = -15.0
 		arm_r = -12.0
 		height = 0.0
+	elif low and crouched:
+		motion_state = "CROUCH_MOVE" if moving else "CROUCH"
+		left = -40.0
+		right = -40.0
+		lk = 72.0
+		rk = 72.0
+		la = -25.0
+		ra = -25.0
+		lean = 12.0
+		height = -0.38
 	elif low:
 		motion_state = "SLIDE"
 		left = -70.0
@@ -297,6 +313,11 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 		if grounded:
 			var corrected := clampf(model.position.y+foot_rest_height-foot_height(),-0.72,0.20)
 			model.position.y = lerpf(model.position.y,corrected,1.0-exp(-delta*20.0))
+	crouch_motion.update(skeleton,delta,crouched and low,grounded,combat,speed,local_motion)
+	if crouch_motion.weight>0.0:
+		skeleton.force_update_all_bone_transforms()
+		var crouch_height := clampf(model.position.y+foot_rest_height-foot_height(),-0.64,0.12)
+		model.position.y = lerpf(model.position.y,crouch_height,1.0-exp(-delta*20.0))
 	foot_contact.update(self,clip_motion,delta,contact_lock_enabled and grounded and moving and speed<5.5 and not low and not combat and landing<=0.0 and local_motion.y< -0.75 and absf(local_motion.x)<absf(local_motion.y)*0.35)
 	visual_ground_error = absf(foot_height()-foot_rest_height) if grounded else 0.0
 

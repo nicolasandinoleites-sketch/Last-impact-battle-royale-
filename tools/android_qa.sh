@@ -117,7 +117,8 @@ line=open(sys.argv[1]).read().splitlines()[-1]
 d=json.loads(line.split("LAST IMPACT TELEMETRY ",1)[1])
 assert d["frames"]>0 and d["duration_ms"]>=10000 and d["mean_fps"]>0
 assert 0<d["median_ms"]<=d["p95_ms"]<=d["p99_ms"]
-assert d["one_percent_low_fps"]>0 and d["build"]=="0.7.6.6"
+assert d["one_percent_low_fps"]>0 and d["build"]=="0.7.6.7"
+assert d["crouch_clips"] is True
 assert 0<=d["torso_clip_weight"]<=0.41
 assert isinstance(d["gait_calibrated"],bool)
 assert d["locomotion_clips"] is True
@@ -152,6 +153,13 @@ wait_log "LAST IMPACT CONTROL LOOK_RELEASE" 1
 press_fraction 02_frontier 0.66 0.49
 wait_log "LAST IMPACT CONTROL SHOULDER" 1
 capture 04_controls
+reset_verified
+press_fraction 02_frontier 0.29 0.49
+wait_log "LAST IMPACT CONTROL CROUCH_ON" 1
+wait_log "LAST IMPACT CONTROL CROUCH_CLIP_ACTIVE" 1
+capture 05_crouch
+press_fraction 02_frontier 0.29 0.49
+wait_log "LAST IMPACT CONTROL CROUCH_OFF" 1
 adb logcat -d -v brief -s godot:I | grep -F "LAST IMPACT CONTROL " | tee "$OUT/controls.txt"
 echo "QA-04 ADB SINGLE TOUCH VALIDATED"
 press_fraction 02_frontier 0.65 0.10

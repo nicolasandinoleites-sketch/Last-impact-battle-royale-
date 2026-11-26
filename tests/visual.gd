@@ -159,6 +159,25 @@ func run() -> void:
 		inspection.look_at(follow+Vector3(0,0.90,0))
 		await capture("motion_turn_%02d" % sample)
 	scene.mobile_move = Vector2.ZERO
+	scene.reset_round()
+	for tick in range(8):
+		await physics_frame
+	scene.hud.press_button("CROUCH",0)
+	for tick in range(30):
+		await physics_frame
+	var crouch_view: Vector3 = scene.player.global_position
+	inspection.position = crouch_view+Vector3(1.8,1.35,-2.0)
+	inspection.look_at(crouch_view+Vector3(0,0.70,0))
+	await capture("motion_crouch_idle")
+	scene.mobile_move = Vector2(0,-1)
+	for sample in range(4):
+		for tick in range(8):
+			await physics_frame
+		crouch_view = scene.player.global_position
+		inspection.position = crouch_view+Vector3(1.8,1.35,-2.0)
+		inspection.look_at(crouch_view+Vector3(0,0.70,0))
+		await capture("motion_crouch_walk_%02d" % sample)
+	scene.reset_round()
 	# Real Android screen aspect ratio, without changing the safe graphics backend.
 	inspection.current = false
 	scene.player.camera.current = true
