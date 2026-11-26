@@ -12,6 +12,10 @@ const Frontier = preload("res://scripts/frontier_map.gd")
 var frontier
 var round_seed := 7300
 var android_qa_ticks := 0
+const MobileProfile = preload("res://scripts/mobile_profile.gd")
+var qa_sample_start := 0
+var qa_sample_frames := 0
+var qa_sample_done := false
 var round_result := ""
 var zone_tick := 0.0
 const InventoryScript = preload("res://scripts/survival_inventory.gd")
@@ -81,7 +85,7 @@ func _ready() -> void:
 	layer.add_child(hud)
 	hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	if survival_mode and OS.has_feature("android"):
-		print("ANDROID FRONTIER READY | player=",player.model_loaded," weapon=",player.weapon_loaded," rivals=",targets.size())
+		print("ANDROID FRONTIER READY | player=",player.model_loaded," weapon=",player.weapon_loaded," rivals=",targets.size()," viewport=",get_tree().root.content_scale_size)
 
 func mat(hex: String) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
@@ -169,6 +173,8 @@ func _physics_process(delta: float) -> void:
 			android_qa_ticks += 1
 			if android_qa_ticks==120 and player.model_loaded and player.weapon_loaded:
 				print("ANDROID FRONTIER TICKS 120")
+				qa_sample_start = Time.get_ticks_msec()
+				qa_sample_frames = Engine.get_frames_drawn()
 		update_survival(delta)
 		if round_result!="":
 			return
@@ -261,7 +267,10 @@ func reset_round() -> void:
 
 func apply_profile() -> void:
 	Engine.max_fps = [30,45,60][profile]
-	get_viewport().scaling_3d_scale = 1.0 if OS.has_feature("android") else [0.65,0.82,1.0][profile]
+	if OS.has_feature("android"):
+		MobileProfile.apply_android(get_tree().root,profile)
+	else:
+		get_viewport().scaling_3d_scale = [0.65,0.82,1.0][profile]
 	if is_instance_valid(frontier) and is_instance_valid(frontier.decor):
 		# Shared instancing keeps decorative detail cheap; low profile drops roof trim only.
 		if frontier.decor.get_child_count()>2:
@@ -381,3 +390,12 @@ func use_shield_cell() -> bool:
 	armor = next
 	message = "Escudo restaurado"
 	return true
+
+func _process(_delta: float) -> void:
+	if not OS.has_feature("android") or not survival_mode or qa_sample_done or qa_sample_start==0:
+		return
+	var elapsed := Time.get_ticks_msec()-qa_sample_start
+	if elapsed>=10000:
+		qa_sample_done = true
+		var count := Engine.get_frames_drawn()-qa_sample_frames
+		print("ANDROID FRONTIER PERF | frames=",count," ms=",elapsed," fps=",float(count)*1000.0/float(elapsed)," static_mb=",Performance.get_monitor(Performance.MEMORY_STATIC)/1048576.0)
