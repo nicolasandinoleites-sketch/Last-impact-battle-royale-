@@ -87,9 +87,8 @@ func _draw() -> void:
 		draw_rect(Rect2(track.position,Vector2(track.size.x*progress,track.size.y)),ACCENT)
 	var bar := health_rect()
 	draw_rect(bar,DARK)
-	draw_rect(Rect2(bar.position,Vector2(bar.size.x*game.health/100.0,bar.size.y)),Color("68d9a4"))
 	draw_rect(Rect2(bar.position-Vector2(5,18)*u,Vector2(160,29)*u),Color(0.04,0.07,0.09,0.45))
-	draw_rect(Rect2(bar.position,Vector2(bar.size.x*game.health/100.0,bar.size.y)),Color("68d9a4"))
+	draw_rect(Rect2(bar.position,Vector2(bar.size.x*clampf(float(game.health)/100.0,0.0,1.0),bar.size.y)),Color("68d9a4"))
 	centered(bar.get_center()+Vector2(0,-9*u),"VIDA %d / ESCUDO %d" % [game.health,game.armor],int(10*u))
 
 func button_at(pos: Vector2) -> String:
@@ -134,9 +133,14 @@ func clear_controls() -> void:
 		game.mobile_sprint = false
 		game.fire = false
 		game.keys.clear()
+		if is_instance_valid(game.player):
+			game.player.aiming = false
+			game.player.combat_facing = false
+			game.player.jump_requested = false
+			game.player.jump_buffer = 0.0
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_APPLICATION_PAUSED:
 		clear_controls()
 
 func _input(event: InputEvent) -> void:
@@ -144,7 +148,9 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventScreenTouch:
 		var id: int = event.index
-		if event.pressed:
+		if event.pressed and not event.canceled:
+			if id == move_id or id == look_id or id == fire_id:
+				return
 			var name := button_at(event.position)
 			if not name.is_empty():
 				press_button(name,id)
@@ -159,6 +165,8 @@ func _input(event: InputEvent) -> void:
 				move_id = -1
 				knob = Vector2.ZERO
 				game.mobile_move = Vector2.ZERO
+				if event.canceled:
+					game.mobile_sprint = false
 			if id == look_id:
 				look_id = -1
 			if id == fire_id:
