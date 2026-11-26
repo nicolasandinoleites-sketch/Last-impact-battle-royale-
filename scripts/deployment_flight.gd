@@ -22,7 +22,7 @@ func reset() -> void:
 func transition(next: int) -> void:
  phase = next
  time_in_phase = 0.0
-func step(delta: float, input: Vector2, request_jump: bool, request_glide: bool, terrain_y: float = 0.0) -> void:
+func step(delta: float, input: Vector2, request_jump: bool, request_glide: bool, terrain_y: float = 0.0, surface_sampler: Callable = Callable()) -> void:
  var dt := clampf(delta,0.0,0.05)
  elapsed += dt
  time_in_phase += dt
@@ -41,7 +41,12 @@ func step(delta: float, input: Vector2, request_jump: bool, request_glide: bool,
   return
  if phase==Phase.FREEFALL or phase==Phase.GLIDE:
   plane_position.x += dt*15.0
-  var altitude := position.y-terrain_y
+  # Sample beneath the current feet for auto-glide, not the highest surface on the map.
+  if surface_sampler.is_valid():
+   var sampled: float = surface_sampler.call(position)
+   if is_finite(sampled):
+    ground_y = sampled
+  var altitude := position.y-ground_y
   if phase==Phase.FREEFALL and (request_glide or altitude<=16.0):
    transition(Phase.GLIDE)
   var steering := input.limit_length(1.0)
@@ -53,8 +58,13 @@ func step(delta: float, input: Vector2, request_jump: bool, request_glide: bool,
   var next := position+velocity*dt
   next.x = clampf(next.x,-EDGE,EDGE)
   next.z = clampf(next.z,-EDGE,EDGE)
-  if next.y<=terrain_y:
-   next.y = terrain_y
+  # Sample again at the proposed horizontal destination before touchdown.
+  var touchdown_y := terrain_y
+  if surface_sampler.is_valid():
+   touchdown_y = surface_sampler.call(Vector3(next.x,position.y,next.z))
+  if is_finite(touchdown_y) and next.y<=touchdown_y:
+   ground_y = touchdown_y
+   next.y = touchdown_y
    velocity = Vector3.ZERO
    transition(Phase.LAND)
   position = next
