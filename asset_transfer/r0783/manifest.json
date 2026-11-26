@@ -1,0 +1,132 @@
+[
+  {
+    "path": "assets/deployment/aircraft_rig.glb",
+    "sha": "060a8d8128eee772abb33a3730a7074a9373d574",
+    "parts": [
+      {
+        "path": "asset_transfer/r0783/0/000.part",
+        "sha": "2bf38fd3b6b6c1717164511a78fec87dd9ba8562"
+      },
+      {
+        "path": "asset_transfer/r0783/0/001.part",
+        "sha": "505e0277279da42298079a0cd37481de9a170ee3"
+      },
+      {
+        "path": "asset_transfer/r0783/0/002.part",
+        "sha": "20627187869cf7d3a9aba416c353aca75368349b"
+      },
+      {
+        "path": "asset_transfer/r0783/0/003.part",
+        "sha": "e72cc6f73741f3af959136e1c763a23dc4c07d6d"
+      },
+      {
+        "path": "asset_transfer/r0783/0/004.part",
+        "sha": "4dc671ce4936c376c53d2f6301e1c08c06e44262"
+      },
+      {
+        "path": "asset_transfer/r0783/0/005.part",
+        "sha": "bea1a9f41f8e2c19dc63409544e1a4720983343e"
+      },
+      {
+        "path": "asset_transfer/r0783/0/006.part",
+        "sha": "63819fc03448667d8131edc32d2ec7d0b9dbe7a9"
+      }
+    ]
+  },
+  {
+    "path": "assets/deployment/aircraft_rig_tripo_rgb_c45180d9-f687-4ef9-a2c5-ddb9d0beea9d.jpg",
+    "sha": "2b2257999cc8f30d955a06ff802e6e421ce78476",
+    "parts": [
+      {
+        "path": "asset_transfer/r0783/1/000.part",
+        "sha": "dc60075550049d6d13ca31888d94a1be5c941e29"
+      },
+      {
+        "path": "asset_transfer/r0783/1/001.part",
+        "sha": "af961cc3303525476abceda692a44bd182b8c128"
+      },
+      {
+        "path": "asset_transfer/r0783/1/002.part",
+        "sha": "6f02d07c1d44a11c4ed5ab7f4cea046372ccc1b2"
+      },
+      {
+        "path": "asset_transfer/r0783/1/003.part",
+        "sha": "04b2d2f90211e427374543e29ff496548d2c6f1b"
+      },
+      {
+        "path": "asset_transfer/r0783/1/004.part",
+        "sha": "6db69054691b415efb22343b27e73374f01b2b80"
+      }
+    ]
+  },
+  {
+    "path": "assets/deployment/jetpack_rig.glb",
+    "sha": "12160cdfcc2aa2b537a26049d665387b37be25d8",
+    "parts": [
+      {
+        "path": "asset_transfer/r0783/2/000.part",
+        "sha": "a96990158a5729ab17ea168edac5d543830599c1"
+      },
+      {
+        "path": "asset_transfer/r0783/2/001.part",
+        "sha": "dfcd6a66a5f406cb23fd150eb6b37400cffa72e0"
+      },
+      {
+        "path": "asset_transfer/r0783/2/002.part",
+        "sha": "c8411842561018e2cabe909bf883558f2f60960c"
+      },
+      {
+        "path": "asset_transfer/r0783/2/003.part",
+        "sha": "5e7f4540d0714ec88e6fe680a9d4eef2b5afb4d2"
+      },
+      {
+        "path": "asset_transfer/r0783/2/004.part",
+        "sha": "d71a194b84c731a3b5b54bdd81123ab1892e048e"
+      },
+      {
+        "path": "asset_transfer/r0783/2/005.part",
+        "sha": "b31fc3b3d957c682962a59579dd252374fc07950"
+      }
+    ]
+  },
+  {
+    "path": "assets/deployment/jetpack_rig_tripo_rgb_88ebbfdc-ec04-4c5f-b4c6-3aa1eb2a00bd.jpg",
+    "sha": "c64cdbe766ea2c0b6b79a3c855b3749e6d98c6ef",
+    "parts": [
+      {
+        "path": "asset_transfer/r0783/3/000.part",
+        "sha": "acadf6b935b1d2ae81b346dbae0d75027e327bf6"
+      },
+      {
+        "path": "asset_transfer/r0783/3/001.part",
+        "sha": "8ddc4a4e65474f8124c5e4bb3a11a4f11046e172"
+      },
+      {
+        "path": "asset_transfer/r0783/3/002.part",
+        "sha": "7dd8cb19ee974410559876e496dd26923cdfd182"
+      },
+      {
+        "path": "asset_transfer/r0783/3/003.part",
+        "sha": "dad8f7e61c2540582681754886f4fe13ad3c7cf8"
+      },
+      {
+        "path": "asset_transfer/r0783/3/004.part",
+        "sha": "1bb5cab1d8501b5ba600a1facb1357fb04e38621"
+      }
+    ]
+  },
+  {
+    "path": "assets/tripo/ignis_x1.glb",
+    "sha": "de75fd8a3fedc7dcea408b67875a507a48d1c802",
+    "parts": [
+      {
+        "path": "asset_transfer/r0783/4/000.part",
+        "sha": "cd95474028bbc55019db84347d590fecabceec12"
+      },
+      {
+        "path": "asset_transfer/r0783/4/001.part",
+        "sha": "494ab2df0b7795d84f794c34eaee25fa666e71a6"
+      }
+    ]
+  }
+]

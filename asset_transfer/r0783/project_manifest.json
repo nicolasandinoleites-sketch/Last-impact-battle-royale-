@@ -1,0 +1,1107 @@
+[
+  {
+    "path": "LEEME_R0781.txt",
+    "sha": "40d64c06a4d58db275c1a1db48b2b10838c511bd",
+    "size": 827
+  },
+  {
+    "path": "LEEME_R0782.txt",
+    "sha": "207b10778e04b8a5ec766d3025f76c25106ec363",
+    "size": 706
+  },
+  {
+    "path": "LEEME_R0783.txt",
+    "sha": "2b5cdf239cdf62e62bc206b1aae2ec46644e01fc",
+    "size": 1196
+  },
+  {
+    "path": "README.md",
+    "sha": "fa284631573ee70474351a9fae0c80881f411fff",
+    "size": 100
+  },
+  {
+    "path": "assets/animations/raze_locomotion.tres",
+    "sha": "74a796a18263c87b94df60b1a22e1b65a216b280",
+    "size": 698814
+  },
+  {
+    "path": "assets/audio/deployment/airflow.wav",
+    "sha": "c7c411fb59eb71f32aa8567cf2ce8ad4ee24fc94",
+    "size": 176444
+  },
+  {
+    "path": "assets/audio/deployment/airflow.wav.import",
+    "sha": "b0af83fd3a329a3cccad1852c51eba992fba24cb",
+    "size": 503
+  },
+  {
+    "path": "assets/audio/deployment/ramp.wav",
+    "sha": "bef26f315ddaacc6fdad4162bb987ca6f7745e78",
+    "size": 37970
+  },
+  {
+    "path": "assets/audio/deployment/ramp.wav.import",
+    "sha": "26f2348641c99ab5e2be61aa1bb6a15f294daf6f",
+    "size": 494
+  },
+  {
+    "path": "assets/audio/deployment/ready.wav",
+    "sha": "8392ec7b22ed0281c89454e28c7dec301a2e62c4",
+    "size": 15920
+  },
+  {
+    "path": "assets/audio/deployment/ready.wav.import",
+    "sha": "c40567feb05af28bfdd90d6888b9de399909b295",
+    "size": 497
+  },
+  {
+    "path": "assets/audio/deployment/touchdown.wav",
+    "sha": "f945f692b959f10ee90bab8b05dceb0e7bacf290",
+    "size": 12392
+  },
+  {
+    "path": "assets/audio/deployment/touchdown.wav.import",
+    "sha": "cd3cfb1752e85b02b2b3110488b3b8320111a43d",
+    "size": 508
+  },
+  {
+    "path": "assets/audio/deployment/turbines.wav",
+    "sha": "9cfaccdf1e2fd35bd7c78466b76f10bd7de82254",
+    "size": 176444
+  },
+  {
+    "path": "assets/audio/deployment/turbines.wav.import",
+    "sha": "10dd03e7099c9f589ac6f5dd9d98491bea97e37f",
+    "size": 506
+  },
+  {
+    "path": "assets/audio/deployment/wings.wav",
+    "sha": "783c1adad7e5c7ad61dc50e95d0b969c5a655b6e",
+    "size": 21212
+  },
+  {
+    "path": "assets/audio/deployment/wings.wav.import",
+    "sha": "0e30b397c9c5aba6a3a2bf6bca8a3e7e75050e6c",
+    "size": 497
+  },
+  {
+    "path": "assets/deployment/aircraft_rig.glb",
+    "sha": "060a8d8128eee772abb33a3730a7074a9373d574",
+    "size": 4554300
+  },
+  {
+    "path": "assets/deployment/aircraft_rig.glb.import",
+    "sha": "0f6e0a37a23108f8475a62f12d1c4cd8f1fcfa45",
+    "size": 1059
+  },
+  {
+    "path": "assets/deployment/aircraft_rig_tripo_rgb_c45180d9-f687-4ef9-a2c5-ddb9d0beea9d.jpg",
+    "sha": "2b2257999cc8f30d955a06ff802e6e421ce78476",
+    "size": 3183666
+  },
+  {
+    "path": "assets/deployment/aircraft_rig_tripo_rgb_c45180d9-f687-4ef9-a2c5-ddb9d0beea9d.jpg.import",
+    "sha": "158afb4b17610c95c383f2829fc70a3028cb452b",
+    "size": 1168
+  },
+  {
+    "path": "assets/deployment/jetpack_rig.glb",
+    "sha": "12160cdfcc2aa2b537a26049d665387b37be25d8",
+    "size": 3675804
+  },
+  {
+    "path": "assets/deployment/jetpack_rig.glb.import",
+    "sha": "acb88f9b6eade549a748f95ea7614014411b8607",
+    "size": 1057
+  },
+  {
+    "path": "assets/deployment/jetpack_rig_tripo_rgb_88ebbfdc-ec04-4c5f-b4c6-3aa1eb2a00bd.jpg",
+    "sha": "c64cdbe766ea2c0b6b79a3c855b3749e6d98c6ef",
+    "size": 3093588
+  },
+  {
+    "path": "assets/deployment/jetpack_rig_tripo_rgb_88ebbfdc-ec04-4c5f-b4c6-3aa1eb2a00bd.jpg.import",
+    "sha": "3876b384226052e0bb19a86ffdcd1a6cd43a6abe",
+    "size": 1165
+  },
+  {
+    "path": "assets/tripo/README.md",
+    "sha": "67a633e285c5d03f81e8edb09c23ce9543864fc1",
+    "size": 446
+  },
+  {
+    "path": "assets/tripo/ignis_x1.glb",
+    "sha": "de75fd8a3fedc7dcea408b67875a507a48d1c802",
+    "size": 939916
+  },
+  {
+    "path": "assets/tripo/ignis_x1.glb.import",
+    "sha": "f46769ca4cdc27540e839b25e1c3654b6d5f7ccf",
+    "size": 1043
+  },
+  {
+    "path": "assets/tripo/ignis_x1_tripo_rgb_e202ef29-cff3-42c1-af73-e90f5603960b.jpg",
+    "sha": "151bf84aeb39acec1d21cf04cd5acc4bc6f67038",
+    "size": 273677
+  },
+  {
+    "path": "assets/tripo/ignis_x1_tripo_rgb_e202ef29-cff3-42c1-af73-e90f5603960b.jpg.import",
+    "sha": "895a4e87eee8fb30ccab47d0146cbe839033f912",
+    "size": 1148
+  },
+  {
+    "path": "assets/tripo/raze.glb",
+    "sha": "de77d9f7260dbe1f57f8a9ee08ff3eb977409910",
+    "size": 1608808
+  },
+  {
+    "path": "assets/tripo/raze.glb.import",
+    "sha": "0b7a5344f380067c4a9214cf62cc64819047cd70",
+    "size": 1031
+  },
+  {
+    "path": "assets/tripo/raze_sci-fi_warrior_3d_model_basecolor.jpg",
+    "sha": "51e5cff2192752992a221d3b40b2e8f411460ccd",
+    "size": 459864
+  },
+  {
+    "path": "assets/tripo/raze_sci-fi_warrior_3d_model_basecolor.jpg.import",
+    "sha": "49f4831b104527974ab7ff46bf1018e1488ab04c",
+    "size": 1096
+  },
+  {
+    "path": "battle_royale.tscn",
+    "sha": "c441634cfef4b460a4a6d4228354d6b5f7c5db22",
+    "size": 227
+  },
+  {
+    "path": "deployment_preview.tscn",
+    "sha": "08f07f6e286c27828e0f527cf5e743187fcf102a",
+    "size": 232
+  },
+  {
+    "path": "diagnostic.tscn",
+    "sha": "3c4ec0fffa3321d08b34f0da8c70d73e57410e79",
+    "size": 169
+  },
+  {
+    "path": "docs/ANIMATION_PIPELINE.md",
+    "sha": "d726d61371d1eb9f8ddcec60f956a27dc29ced72",
+    "size": 4738
+  },
+  {
+    "path": "docs/MASTER_PROMPT.md",
+    "sha": "a6111326fadabdf0cd067c0220c820148b0925c8",
+    "size": 4182
+  },
+  {
+    "path": "docs/PRODUCTION_BACKLOG.md",
+    "sha": "8d2df0f3c7b999c0db32285bc0c03035b569b137",
+    "size": 54849
+  },
+  {
+    "path": "docs/QA_DEVICE_PROTOCOL.md",
+    "sha": "c683cf889e888fc14a2120cac858d0a5c3e93efe",
+    "size": 2810
+  },
+  {
+    "path": "docs/R02.md",
+    "sha": "1f0570282c4c8773777315dd8f161b8632977310",
+    "size": 1006
+  },
+  {
+    "path": "docs/R03.md",
+    "sha": "22ef67b1aab5d4ec275e84e4df420a099e4e45ea",
+    "size": 627
+  },
+  {
+    "path": "docs/R04.md",
+    "sha": "cdc8b88d1be3b8f136bb6a1260aed8c5335a535e",
+    "size": 620
+  },
+  {
+    "path": "docs/R05.md",
+    "sha": "9eadd568b5430166f58ebea0eeca184915185d55",
+    "size": 550
+  },
+  {
+    "path": "docs/R06.md",
+    "sha": "219517a2b6f5e8f574491b8b5cc53db7f28e243d",
+    "size": 532
+  },
+  {
+    "path": "docs/R061.md",
+    "sha": "c8b282da8c5167c823b31188523b2204ae204255",
+    "size": 2713
+  },
+  {
+    "path": "docs/R062.md",
+    "sha": "ba6b2c4882f97b94f373b1b729cf1bb010d8eb0f",
+    "size": 2327
+  },
+  {
+    "path": "docs/R063.md",
+    "sha": "1f5fc7283af68ae57adefbb20fc933c4f1da933f",
+    "size": 1941
+  },
+  {
+    "path": "docs/R070.md",
+    "sha": "1b176e2670c96b5ef7dc812fc7a3e3c883f47f40",
+    "size": 1137
+  },
+  {
+    "path": "docs/R071.md",
+    "sha": "28467dc1fa69dd84ea8b6d22bbd86de2d03e54c6",
+    "size": 1103
+  },
+  {
+    "path": "docs/R072.md",
+    "sha": "96a97f1b629886b089f5ac21d7716fa6fe457843",
+    "size": 1099
+  },
+  {
+    "path": "docs/R073.md",
+    "sha": "f3525b8d38cd7cb6aaed99dd970ff84f704757c9",
+    "size": 2494
+  },
+  {
+    "path": "docs/R074.md",
+    "sha": "61cb2ad131dfda1a9e0cfbcb514c31e5a2edb213",
+    "size": 908
+  },
+  {
+    "path": "docs/R075.md",
+    "sha": "d637525bafaafd21d1d639adb5494c446eec3339",
+    "size": 1219
+  },
+  {
+    "path": "docs/R0777.md",
+    "sha": "1660925ea84677356db4e561c63a1bc0beb097ed",
+    "size": 940
+  },
+  {
+    "path": "docs/R0778.md",
+    "sha": "a78382718e402ed969eebef6e22b6ddecaea6086",
+    "size": 1542
+  },
+  {
+    "path": "docs/R0779.md",
+    "sha": "f9f7da1b820ed0438a51d80f2cc08847a28e76ca",
+    "size": 758
+  },
+  {
+    "path": "docs/R0780.md",
+    "sha": "e64217dd6b2a32616e0f79d1ce15b6a42a8ba43d",
+    "size": 1267
+  },
+  {
+    "path": "docs/R0781.md",
+    "sha": "39bd7f42a50a4234071b9f2ff674c65c1890df98",
+    "size": 1120
+  },
+  {
+    "path": "export_presets.cfg",
+    "sha": "a3fae11c16f1a28de977b4d8c3e4908a32375eae",
+    "size": 950
+  },
+  {
+    "path": "icon.svg",
+    "sha": "22ad5fbc1887e747d0bbd17f68b5a2546a55ffa5",
+    "size": 1149
+  },
+  {
+    "path": "icon.svg.import",
+    "sha": "c25140eb1a009aac1661c6fdbb703ef51d47716f",
+    "size": 1013
+  },
+  {
+    "path": "lobby.tscn",
+    "sha": "79bf5419c4ff208a2896748ef81b26587b91ed67",
+    "size": 273
+  },
+  {
+    "path": "main.tscn",
+    "sha": "8b0f713efeb62c4de73b983293000d98e5961237",
+    "size": 163
+  },
+  {
+    "path": "operator.tscn",
+    "sha": "972ee358d10643d04a5814760ff29d9b1ef84a04",
+    "size": 172
+  },
+  {
+    "path": "project.godot",
+    "sha": "a6adc55249ad1708ee9518a766d34048acf5104a",
+    "size": 969
+  },
+  {
+    "path": "scripts/adaptive_resolution.gd",
+    "sha": "0e6b982634a22ba22c04727809afd255d6a8c6ee",
+    "size": 1359
+  },
+  {
+    "path": "scripts/adaptive_resolution.gd.uid",
+    "sha": "e40b8d64b7153882e91ee7071048741822d70b44",
+    "size": 20
+  },
+  {
+    "path": "scripts/air_motion.gd",
+    "sha": "1fc415718dad7534a83a1b5c336864d057387ad4",
+    "size": 2926
+  },
+  {
+    "path": "scripts/air_motion.gd.uid",
+    "sha": "a23090d45a0e4eb3461db0e037fe0ac31a1a2ac6",
+    "size": 20
+  },
+  {
+    "path": "scripts/arena_art.gd",
+    "sha": "38be7e9c0172abbc178b558cd3831f066a1596df",
+    "size": 5117
+  },
+  {
+    "path": "scripts/arena_art.gd.uid",
+    "sha": "527cab5eb3134aa4faea22f5c54dd7dc1df9eda9",
+    "size": 20
+  },
+  {
+    "path": "scripts/camera_guard.gd",
+    "sha": "ea4023aaa818dc8fd1a96258c0f51730e29cc2e9",
+    "size": 464
+  },
+  {
+    "path": "scripts/camera_guard.gd.uid",
+    "sha": "f37ae9ddeeda880c59411e07ab3edda7a70f56df",
+    "size": 20
+  },
+  {
+    "path": "scripts/crouch_motion.gd",
+    "sha": "d5eaabc3ea3d9e1cd62534f8645aa4376244c0f6",
+    "size": 2519
+  },
+  {
+    "path": "scripts/crouch_motion.gd.uid",
+    "sha": "78b9bebd8d27afae0b4403d0c233dd590b434973",
+    "size": 20
+  },
+  {
+    "path": "scripts/deployment_asset_rig.gd",
+    "sha": "82bec5d8128af7f2aba4736df2841ae52e21380e",
+    "size": 2554
+  },
+  {
+    "path": "scripts/deployment_asset_rig.gd.uid",
+    "sha": "6e86e29fac954599f25314110161a40444e1f41c",
+    "size": 20
+  },
+  {
+    "path": "scripts/deployment_audio.gd",
+    "sha": "9ba376a80d31c4f2ecd067d7a0aa7fc2c81d1625",
+    "size": 2934
+  },
+  {
+    "path": "scripts/deployment_audio.gd.uid",
+    "sha": "0e166efa3d8eddca2826e5fb8da4fc1b7f1d7b9c",
+    "size": 20
+  },
+  {
+    "path": "scripts/deployment_back_socket.gd",
+    "sha": "2058237057522eec39e23eef81187d2e59f44303",
+    "size": 725
+  },
+  {
+    "path": "scripts/deployment_back_socket.gd.uid",
+    "sha": "fe25afb5e57d8bd94cd14b8ab230824a0d5cf231",
+    "size": 20
+  },
+  {
+    "path": "scripts/deployment_cabin.gd",
+    "sha": "a3cb7296e461664ad2f34e9f6e41383c1cb2d215",
+    "size": 4386
+  },
+  {
+    "path": "scripts/deployment_cabin.gd.uid",
+    "sha": "863dd43c74b6c3a3c45350fc6674c33b33368441",
+    "size": 20
+  },
+  {
+    "path": "scripts/deployment_cabin_timeline.gd",
+    "sha": "d00c076756956dd5234f3aba381e0d625f49fff6",
+    "size": 1690
+  },
+  {
+    "path": "scripts/deployment_cabin_timeline.gd.uid",
+    "sha": "9f4f3ae603bdc3babefe77ff96f5bc04be61df80",
+    "size": 20
+  },
+  {
+    "path": "scripts/deployment_camera.gd",
+    "sha": "9c1ec202310fe50437674fcda189a6d6e2b697b8",
+    "size": 1429
+  },
+  {
+    "path": "scripts/deployment_camera.gd.uid",
+    "sha": "ae7d710eb0dfec909500aef95098fe5ed547253b",
+    "size": 20
+  },
+  {
+    "path": "scripts/deployment_engine_fx.gd",
+    "sha": "06e02a9e9887d350af402d19df82ecabe6d4987f",
+    "size": 6038
+  },
+  {
+    "path": "scripts/deployment_engine_fx.gd.uid",
+    "sha": "6b46f295efa43c6c12363a99a80d4b0d1814186c",
+    "size": 20
+  },
+  {
+    "path": "scripts/deployment_flight.gd",
+    "sha": "f896850f3322236d3df291d69eee226bd78b8c15",
+    "size": 2857
+  },
+  {
+    "path": "scripts/deployment_flight.gd.uid",
+    "sha": "0a07d0ce9cde78be671d5f60bdb1048da41bc89e",
+    "size": 20
+  },
+  {
+    "path": "scripts/deployment_glider_visual.gd",
+    "sha": "05b635c7c1563de030f65393e6405247cc0d0e3a",
+    "size": 2786
+  },
+  {
+    "path": "scripts/deployment_glider_visual.gd.uid",
+    "sha": "29c1bf29ce9ebd9553cc57f61b046321d221dcc7",
+    "size": 19
+  },
+  {
+    "path": "scripts/deployment_passengers.gd",
+    "sha": "bc9bb6bfc9effc24765a4d169f6b3f341f0fb6fc",
+    "size": 1531
+  },
+  {
+    "path": "scripts/deployment_passengers.gd.uid",
+    "sha": "ef379fb32ae5bb4d423834eb04625df066a72b1f",
+    "size": 20
+  },
+  {
+    "path": "scripts/deployment_pose.gd",
+    "sha": "86441a86836de99ca877149b0f6d303d8256a562",
+    "size": 2925
+  },
+  {
+    "path": "scripts/deployment_pose.gd.uid",
+    "sha": "140a80b2738bff8555c9c7753aced2788ebfbdb7",
+    "size": 20
+  },
+  {
+    "path": "scripts/deployment_surface.gd",
+    "sha": "8a018434ffdde5a4a8f26d2bc41d15ddbb49e48c",
+    "size": 1246
+  },
+  {
+    "path": "scripts/deployment_surface.gd.uid",
+    "sha": "b24c22a071baca47df25102fc3f36cbb576f2285",
+    "size": 20
+  },
+  {
+    "path": "scripts/diagnostic.gd",
+    "sha": "ac079b4d5acddabd51478ec40f89bc07970e2015",
+    "size": 1859
+  },
+  {
+    "path": "scripts/diagnostic.gd.uid",
+    "sha": "10858978454597a8af87aa53cb9c677cc727fd26",
+    "size": 19
+  },
+  {
+    "path": "scripts/foot_contact.gd",
+    "sha": "34d90b32f9a5d3b0a12533198dc3ea6e85b79f9c",
+    "size": 1645
+  },
+  {
+    "path": "scripts/foot_contact.gd.uid",
+    "sha": "9e58c3822480e471b15a6ef857e76f5b4aeb15ad",
+    "size": 19
+  },
+  {
+    "path": "scripts/frame_telemetry.gd",
+    "sha": "125888d08addd3d23fe730973b5b9184c11761e7",
+    "size": 2089
+  },
+  {
+    "path": "scripts/frame_telemetry.gd.uid",
+    "sha": "5c3e2ae3363517f1d61ff39f9191877286c3cfe6",
+    "size": 20
+  },
+  {
+    "path": "scripts/frontier_deployment.gd",
+    "sha": "7cb2e50a82d7e369fbdf74a1df2d9ff29599549e",
+    "size": 8662
+  },
+  {
+    "path": "scripts/frontier_deployment.gd.uid",
+    "sha": "bdbfabb8d7c55e49c7e513ecbbdba991faeac2d8",
+    "size": 20
+  },
+  {
+    "path": "scripts/frontier_deployment_assets.gd",
+    "sha": "1780764ea717552ddcf57499c5555fe9e6f0ae68",
+    "size": 2499
+  },
+  {
+    "path": "scripts/frontier_deployment_assets.gd.uid",
+    "sha": "b58987d0b68020979c5007c2e90ac74c998e1c0f",
+    "size": 20
+  },
+  {
+    "path": "scripts/frontier_deployment_cinematic.gd",
+    "sha": "803cb975a8d134e20b5059b8114030733e2e0a1a",
+    "size": 2798
+  },
+  {
+    "path": "scripts/frontier_deployment_cinematic.gd.uid",
+    "sha": "95967ff0a721181482370e3622f7374eae27c539",
+    "size": 20
+  },
+  {
+    "path": "scripts/frontier_map.gd",
+    "sha": "a5f47df67ba28430fcde6f7aeac7d2dd6b3098c9",
+    "size": 10445
+  },
+  {
+    "path": "scripts/frontier_map.gd.uid",
+    "sha": "002aaca2d75e395748d9ec7c64ebe55848df8a24",
+    "size": 20
+  },
+  {
+    "path": "scripts/game_audio.gd",
+    "sha": "2dab0a27c8b2e566ccdd8710b287f05399f28b60",
+    "size": 2412
+  },
+  {
+    "path": "scripts/game_audio.gd.uid",
+    "sha": "b4834e49c15795a9e0c9b178fa1c5c8493c3e48b",
+    "size": 20
+  },
+  {
+    "path": "scripts/hud.gd",
+    "sha": "7f34bf2ecd3e7aef8f720beb330be96aee5aded8",
+    "size": 16996
+  },
+  {
+    "path": "scripts/hud.gd.uid",
+    "sha": "78742e473717f9352e111e7936eab62fc676156a",
+    "size": 20
+  },
+  {
+    "path": "scripts/ignis.gd",
+    "sha": "d5ab90b0a381dd9453e402b309405e218090bd14",
+    "size": 7233
+  },
+  {
+    "path": "scripts/ignis.gd.uid",
+    "sha": "b83bb87b2b1cc716f9ea6981a912d8f37adc4d08",
+    "size": 19
+  },
+  {
+    "path": "scripts/lobby.gd",
+    "sha": "6acb2bd49b4e2add839c008e1efd26bd84a8625f",
+    "size": 10565
+  },
+  {
+    "path": "scripts/lobby.gd.uid",
+    "sha": "2fd700fd293c7daab8191d458d2bbd350ef9396e",
+    "size": 20
+  },
+  {
+    "path": "scripts/lobby_preview.gd",
+    "sha": "2d0ff43e82a30414c8d3a80b173dbea0e86b8bf4",
+    "size": 1527
+  },
+  {
+    "path": "scripts/lobby_preview.gd.uid",
+    "sha": "da3323a6bd300014ccd70d983ea9b66a4fe4b96e",
+    "size": 20
+  },
+  {
+    "path": "scripts/locomotion_clips.gd",
+    "sha": "7ec6dc6d29b08b00bdd86cb195e31c6d140659fe",
+    "size": 9017
+  },
+  {
+    "path": "scripts/locomotion_clips.gd.uid",
+    "sha": "fed5de3b6b97a513c6ec2a9b29b72d402596834a",
+    "size": 19
+  },
+  {
+    "path": "scripts/locomotion_controller.gd",
+    "sha": "4a69122f3a7c931cfbf662ef735e2eba273c67d4",
+    "size": 1584
+  },
+  {
+    "path": "scripts/locomotion_controller.gd.uid",
+    "sha": "2163786cdf099ae63fdc82d002672010547361e6",
+    "size": 20
+  },
+  {
+    "path": "scripts/main.gd",
+    "sha": "c82ebd22d09fc63aba465d97164c4a0770c42040",
+    "size": 19896
+  },
+  {
+    "path": "scripts/main.gd.uid",
+    "sha": "9c2bc229bdca026f9523b8ab2c45dfb4077352bc",
+    "size": 19
+  },
+  {
+    "path": "scripts/mobile_profile.gd",
+    "sha": "abc490911c15ac1d185fc836a0ba8ffecfb550a5",
+    "size": 560
+  },
+  {
+    "path": "scripts/mobile_profile.gd.uid",
+    "sha": "2ffa6edb08c7e8267747ab7889d16f1727bffcb3",
+    "size": 20
+  },
+  {
+    "path": "scripts/operator.gd",
+    "sha": "2995cfce70fcb6ed8536cb785ddfb1eff4da30e8",
+    "size": 2326
+  },
+  {
+    "path": "scripts/operator.gd.uid",
+    "sha": "1543ddccdeb79cace04a7dcea9f128b55e5dbc97",
+    "size": 20
+  },
+  {
+    "path": "scripts/player.gd",
+    "sha": "c350377cd5749a88ccc661c1350ce3f8b826f249",
+    "size": 11990
+  },
+  {
+    "path": "scripts/player.gd.uid",
+    "sha": "e4a962ac829ab2f34ed25ae9f951bdb8d018e5c3",
+    "size": 20
+  },
+  {
+    "path": "scripts/raze.gd",
+    "sha": "6f4774a5c870bc24f78fb87cd97b003d73a13036",
+    "size": 21148
+  },
+  {
+    "path": "scripts/raze.gd.uid",
+    "sha": "8ff62a1a832ce47ac05c932cb89e31f8eda8d103",
+    "size": 20
+  },
+  {
+    "path": "scripts/survival_drone.gd",
+    "sha": "d00e97be749bfcd80134f2614469f912341bbfcb",
+    "size": 4136
+  },
+  {
+    "path": "scripts/survival_drone.gd.uid",
+    "sha": "fac12f9a852e3f56be496d45b06fde1b17cb9d6f",
+    "size": 19
+  },
+  {
+    "path": "scripts/survival_inventory.gd",
+    "sha": "715fb244d936740255ca6b25695ef0438a779fe4",
+    "size": 805
+  },
+  {
+    "path": "scripts/survival_inventory.gd.uid",
+    "sha": "9fc121505793e2c33f78feb72d3aad105663f764",
+    "size": 20
+  },
+  {
+    "path": "scripts/survival_operator.gd",
+    "sha": "1a2080d23726c1032a228f508b8f0e728b578433",
+    "size": 7293
+  },
+  {
+    "path": "scripts/survival_operator.gd.uid",
+    "sha": "38062db7d9a6d513b7298f09ca2b88195bae8390",
+    "size": 20
+  },
+  {
+    "path": "scripts/survival_pickup.gd",
+    "sha": "2cfd2bcfcb8dfa1088fd1a38d2ba976cccba12c2",
+    "size": 1735
+  },
+  {
+    "path": "scripts/survival_pickup.gd.uid",
+    "sha": "997534af90f8031416820c80a5aea72d6dacf457",
+    "size": 20
+  },
+  {
+    "path": "scripts/survival_zone.gd",
+    "sha": "2781f1d5f7e1297dfe565e2ee50dd1ddd951c249",
+    "size": 6553
+  },
+  {
+    "path": "scripts/survival_zone.gd.uid",
+    "sha": "8decab1aad0b1bb1cc26b6a2358f1481e831d924",
+    "size": 19
+  },
+  {
+    "path": "scripts/target.gd",
+    "sha": "13b02c53c40951317c34642ef242ef59f7bd737b",
+    "size": 1571
+  },
+  {
+    "path": "scripts/target.gd.uid",
+    "sha": "498cb1e6d60926773b465a927963a425e056c5e3",
+    "size": 20
+  },
+  {
+    "path": "shaders/storm_volume.gdshader",
+    "sha": "e0046d58186d9eff11d792aaf7142cbf02a62c01",
+    "size": 3159
+  },
+  {
+    "path": "shaders/storm_volume.gdshader.uid",
+    "sha": "870bef35d46f965ef8515d6087ab6147f3976e41",
+    "size": 19
+  },
+  {
+    "path": "shaders/storm_wall.gdshader",
+    "sha": "35da828590e74455271b8dc3f2b3761447b0a671",
+    "size": 1673
+  },
+  {
+    "path": "shaders/storm_wall.gdshader.uid",
+    "sha": "add9630d2ec1cc4fd4c4ac9d26a33d0dec48a6b5",
+    "size": 20
+  },
+  {
+    "path": "survival.tscn",
+    "sha": "57cd985d6dacbef538cb8b0024642df275ba0524",
+    "size": 192
+  },
+  {
+    "path": "tests/adaptive_resolution.gd",
+    "sha": "78fff5a5dbcfb15b5dcac19b2cd25b8f4b840c46",
+    "size": 1093
+  },
+  {
+    "path": "tests/adaptive_resolution.gd.uid",
+    "sha": "e3eda6c233fbd77a727bfe92e9d5b6a9355d6087",
+    "size": 19
+  },
+  {
+    "path": "tests/air_motion.gd",
+    "sha": "509919b7da226402b10ca518d3b0bf99182f64b2",
+    "size": 2307
+  },
+  {
+    "path": "tests/air_motion.gd.uid",
+    "sha": "89ccaf1cb9733fde3ce6641c5d2b7a33ed6abab8",
+    "size": 18
+  },
+  {
+    "path": "tests/clip_gameplay.gd",
+    "sha": "bc8eb656e5e01dfe19e3addaa92bb92697fbbfc9",
+    "size": 4954
+  },
+  {
+    "path": "tests/clip_gameplay.gd.uid",
+    "sha": "5ac4e5fe8621a1ae407e50bd4bb915f6b559a28f",
+    "size": 19
+  },
+  {
+    "path": "tests/deployment_cabin_timeline.gd",
+    "sha": "dab152a75400ef678907a09688a468c00d1a9921",
+    "size": 1287
+  },
+  {
+    "path": "tests/deployment_cabin_timeline.gd.uid",
+    "sha": "e750788418c4fd6a008e0258224fed0aeccfdd20",
+    "size": 20
+  },
+  {
+    "path": "tests/deployment_camera.gd",
+    "sha": "7421a6b76d61d7bd9f5f69f4b7807fd217a66efe",
+    "size": 958
+  },
+  {
+    "path": "tests/deployment_camera.gd.uid",
+    "sha": "4535933f91cef6fc2e083b6b5195a8b431867f0e",
+    "size": 20
+  },
+  {
+    "path": "tests/deployment_engine_fx.gd",
+    "sha": "76183ba658eaaf561f7de2d6ca6a57eb2103ccad",
+    "size": 1086
+  },
+  {
+    "path": "tests/deployment_engine_fx.gd.uid",
+    "sha": "78e7359f205e15ea79c1f2f6e4e001a04d670e14",
+    "size": 20
+  },
+  {
+    "path": "tests/deployment_flight.gd",
+    "sha": "ab17c9244572b37d805ee07557ec66c1c17d5254",
+    "size": 1015
+  },
+  {
+    "path": "tests/deployment_flight.gd.uid",
+    "sha": "e3d448d9efdf85cb97718547ca059b50aee98ae4",
+    "size": 20
+  },
+  {
+    "path": "tests/deployment_glider_visual.gd",
+    "sha": "50264f50ede85ebb85fe1826ecf0b717162f4c29",
+    "size": 1381
+  },
+  {
+    "path": "tests/deployment_glider_visual.gd.uid",
+    "sha": "770396c059b2b658d3b1b1bcfd1a4f4f21931b56",
+    "size": 20
+  },
+  {
+    "path": "tests/deployment_r0783.gd",
+    "sha": "07d75b1262d77fff34b328175058953280ab5187",
+    "size": 2067
+  },
+  {
+    "path": "tests/deployment_r0783.gd.uid",
+    "sha": "b78f61cf6d6f82642a7d330f95060f3c1baa4cb4",
+    "size": 20
+  },
+  {
+    "path": "tests/deployment_surface.gd",
+    "sha": "c5ecabf6c4e306f6b2051d729695b2ea2ea38ef5",
+    "size": 1691
+  },
+  {
+    "path": "tests/deployment_surface.gd.uid",
+    "sha": "a87679337cc6313740571abd07369d087b18d1cd",
+    "size": 19
+  },
+  {
+    "path": "tests/deployment_visual_actual.gd",
+    "sha": "e9fc18243e88a9a538c27c6d817f1b41bf7dba93",
+    "size": 996
+  },
+  {
+    "path": "tests/deployment_visual_actual.gd.uid",
+    "sha": "8c9c395e4f1a70ee2c611c051e180f1c4e14b193",
+    "size": 20
+  },
+  {
+    "path": "tests/deployment_visual_budget.gd",
+    "sha": "9b470a79dc9aa3d7ee42498b2b82aac8157fb206",
+    "size": 1565
+  },
+  {
+    "path": "tests/deployment_visual_budget.gd.uid",
+    "sha": "af61c94f5f4e9e9f6a49657c5233897c76d0e4d1",
+    "size": 20
+  },
+  {
+    "path": "tests/frontier_deployment.gd",
+    "sha": "2c8f851960c709072d6b6316272554892774acb8",
+    "size": 1936
+  },
+  {
+    "path": "tests/frontier_deployment.gd.uid",
+    "sha": "adad61b3ecf2c93f84a098f93375971f6cbfe012",
+    "size": 20
+  },
+  {
+    "path": "tests/frontier_real_deployment.gd",
+    "sha": "340a5ffdc6e162379af20c3cd913cd9f0f124d3a",
+    "size": 2181
+  },
+  {
+    "path": "tests/frontier_real_deployment.gd.uid",
+    "sha": "5b5811dded3b509d01a123398008cb285ab776f5",
+    "size": 20
+  },
+  {
+    "path": "tests/gait_ab.gd",
+    "sha": "8da4c46d86af85da1dfb7c974ce68c092a8879e3",
+    "size": 3630
+  },
+  {
+    "path": "tests/gait_ab.gd.uid",
+    "sha": "388d24ab367407da61643fce92ab4395a889e06b",
+    "size": 20
+  },
+  {
+    "path": "tests/lobby_battle_royale.gd",
+    "sha": "9df95433fc0126fbced4442dec0d440a8b2139f6",
+    "size": 623
+  },
+  {
+    "path": "tests/render_cost_ab.gd",
+    "sha": "7b918105a6e9f66a6be7ae276c635da1b115acdc",
+    "size": 3052
+  },
+  {
+    "path": "tests/render_cost_ab.gd.uid",
+    "sha": "0a25147d2c8cb1a0cd86ec5fcbd6d24e927e78ff",
+    "size": 20
+  },
+  {
+    "path": "tests/retarget_math.gd",
+    "sha": "bccdbcbc5c468b2717beb7fa505500da3bbea412",
+    "size": 2877
+  },
+  {
+    "path": "tests/retarget_math.gd.uid",
+    "sha": "1cd731f17fe8315272b834b05c7bcfd672e5f943",
+    "size": 20
+  },
+  {
+    "path": "tests/retarget_preview.gd",
+    "sha": "df50de7a1dbe2c154efa4f70019946a5452403a0",
+    "size": 11044
+  },
+  {
+    "path": "tests/retarget_preview.gd.uid",
+    "sha": "5ab9f4699830e6d050ab3175c662f87ed9c1137b",
+    "size": 19
+  },
+  {
+    "path": "tests/rig_audit.gd",
+    "sha": "a7c91bc0156e148b3d21bda2948c4b256f537811",
+    "size": 1713
+  },
+  {
+    "path": "tests/rig_audit.gd.uid",
+    "sha": "e0c41197f90673ce98befec317bac6a2cba6244f",
+    "size": 20
+  },
+  {
+    "path": "tests/safe_visual.gd",
+    "sha": "97146fbaa7b68edc2eaf5dd2aa1ee4c1875e9ef2",
+    "size": 1735
+  },
+  {
+    "path": "tests/safe_visual.gd.uid",
+    "sha": "a2ffa89e35165cf0f6984c0f83105b545699329b",
+    "size": 20
+  },
+  {
+    "path": "tests/smoke.gd",
+    "sha": "a9278e14d9156045f98f58438d00a40cd3daa5da",
+    "size": 23017
+  },
+  {
+    "path": "tests/smoke.gd.uid",
+    "sha": "e5ef162e1a63fe3d748fec73cee8a02d43ea408e",
+    "size": 20
+  },
+  {
+    "path": "tests/sprint_calibration.gd",
+    "sha": "ece7014d00544989eebbc2dc39c257ff59d45ba4",
+    "size": 5699
+  },
+  {
+    "path": "tests/sprint_calibration.gd.uid",
+    "sha": "9d5fc5273f4e38598a491c417ef364f453c2a292",
+    "size": 20
+  },
+  {
+    "path": "tests/sprint_candidate_gameplay.gd",
+    "sha": "280277184a22d52b3e8be04ea409aa422f2b41b9",
+    "size": 2540
+  },
+  {
+    "path": "tests/sprint_candidate_gameplay.gd.uid",
+    "sha": "7e9f1bf5ad2eddde34c66dea21bdb2cb9ec0732a",
+    "size": 20
+  },
+  {
+    "path": "tests/static_batch_ab.gd",
+    "sha": "d265f0df0b1141a118e0cf1f5aa72647c163d32d",
+    "size": 2269
+  },
+  {
+    "path": "tests/static_batch_ab.gd.uid",
+    "sha": "8bba1f6f40f2c1e97de19673150acfb1b49e6dd5",
+    "size": 20
+  },
+  {
+    "path": "tests/storm_shader_ab.gd",
+    "sha": "047a284d16a000b6911d5d37a06851ad25a6d067",
+    "size": 4283
+  },
+  {
+    "path": "tests/storm_shader_ab.gd.uid",
+    "sha": "5ef96bd3fa8c3a0ada80ad5359dae1c42954df95",
+    "size": 20
+  },
+  {
+    "path": "tests/storm_volume_reference.gdshader",
+    "sha": "cfab9b4e14cc2d9b0ce67943f46c4b65a2ffaaa0",
+    "size": 2641
+  },
+  {
+    "path": "tests/storm_volume_reference.gdshader.uid",
+    "sha": "1c5770effbcc96a7b09c5bce421cfab2d1770af5",
+    "size": 20
+  },
+  {
+    "path": "tests/touch_qa.gd",
+    "sha": "9b64e11b740d94e9210e680d41ccaf36577719f5",
+    "size": 2919
+  },
+  {
+    "path": "tests/touch_qa.gd.uid",
+    "sha": "17b47379f921ac8d89c2376a79704788cf22c8b2",
+    "size": 20
+  },
+  {
+    "path": "tests/visual.gd",
+    "sha": "0d3acb111e3f03b162d0786d347c407c5433c675",
+    "size": 12348
+  },
+  {
+    "path": "tests/visual.gd.uid",
+    "sha": "079a9180c79dae322e1128008bf584bd6c8e7177",
+    "size": 20
+  },
+  {
+    "path": "tools/android_qa.sh",
+    "sha": "67fbea5e29d39fa3f20b2692a5d1b834cbf8a3bd",
+    "size": 6899
+  },
+  {
+    "path": "tools/audit_animation_source.py",
+    "sha": "774d42e2848dd01dbffb0eeef61edadb2c13d5e4",
+    "size": 3619
+  },
+  {
+    "path": "tools/decode_ignis.mjs",
+    "sha": "db746392492c5ced928e5df6daf789194858b153",
+    "size": 6484
+  },
+  {
+    "path": "tools/gait_calibration.gd",
+    "sha": "82c8a38525244e98dc5e2930b7a0213781061747",
+    "size": 2387
+  },
+  {
+    "path": "tools/gait_calibration.gd.uid",
+    "sha": "ccc0a034c19ea27714ee03db4c2acca0601890c2",
+    "size": 20
+  },
+  {
+    "path": "tools/generate_deployment_audio.py",
+    "sha": "d1b6ae9ccf2154ced8b78f525dd37477f14bf816",
+    "size": 1458
+  },
+  {
+    "path": "tools/rotation_retarget.gd",
+    "sha": "9bbbfc9122f9f7269a6911fcd7081deac8d9f72c",
+    "size": 3978
+  },
+  {
+    "path": "tools/rotation_retarget.gd.uid",
+    "sha": "fd5bc5250e84619c5459ee81b12182dd2c4fb503",
+    "size": 20
+  }
+]

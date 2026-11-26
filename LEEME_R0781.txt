@@ -1,0 +1,7 @@
+LAST IMPACT R07.8.1 - fuente Godot 4.6 + GLB reales
+GitHub revision 228b52ac2d4c18e36fa85ad14df2cef0e78fc9ab; copia local incluye recursos GLB y pruebas/capturas.
+Abrir project.godot con Godot 4.6. Ejecutar deployment_preview.tscn con F6. Espacio o SALIR/ALAS: saltar / desplegar.
+Prueba real de despliegue aprobada: tests/frontier_real_deployment.gd. Smoke de supervivencia aprobado.
+Capturas en qa_r0781/previews. OpenGL software no equivale a Android. Cabina independiente y corte de camara intencional por puerta fusionada.
+No incluye APK, ni la biblioteca de locomocion retarget generada por CI de R0773: utiliza el fallback del proyecto. Restaurar biblioteca de clips antes de exportar.
+Pendiente: pulir tamaño y despliegue de alas, efectos de motores, calidad de cabina, continuidad visual y validacion fisica Android.
