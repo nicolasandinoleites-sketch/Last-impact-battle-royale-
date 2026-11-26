@@ -23,6 +23,7 @@ func run() -> void:
  game.request_jump()
  await physics_frame
  await physics_frame
+ prior_fov = game.player.camera.fov
  game.request_jump()
  for i in range(1500):
   await physics_frame

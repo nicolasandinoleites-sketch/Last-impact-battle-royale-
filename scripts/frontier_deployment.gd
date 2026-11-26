@@ -7,6 +7,8 @@ const Pose = preload("res://scripts/deployment_pose.gd")
 const CameraMotion = preload("res://scripts/deployment_camera.gd")
 var camera_motion := CameraMotion.new()
 var body_tilt := Vector2.ZERO
+const DeploymentAssets = preload("res://scripts/frontier_deployment_assets.gd")
+var assets: Node3D
 var flight := Flight.new()
 var surface := Surface.new()
 var pose := Pose.new()
@@ -33,6 +35,11 @@ func begin(actor) -> void:
   player.weapon.hide()
  if player.model_loaded:
   pose_ready = pose.setup(player.raze.skeleton)
+ if not is_instance_valid(assets):
+  assets = DeploymentAssets.new()
+  add_child(assets)
+  assets.configure(player,int(get_parent().profile))
+ assets.reset()
  flight.reset()
  active = true
  landing_clear = false
@@ -116,6 +123,15 @@ func step(delta: float, stick: Vector2) -> void:
  player.boom.position.x = camera_motion.shoulder*player.shoulder
  player.boom.spring_length = camera_motion.distance
  player.camera.fov = camera_motion.fov
+ if assets.available:
+  var aboard: bool = flight.phase in [Flight.Phase.INTRO,Flight.Phase.IN_PLANE]
+  player.visual.visible = not aboard
+  if aboard:
+   # Exterior fly-by until the separate cabin sequence is connected.
+   player.boom.spring_length = 17.0
+   player.boom.position.x = 5.0
+   player.camera.fov = 68.0
+  assets.step(delta,flight.phase,flight.plane_position,stick)
  if previous!=flight.phase:
   print("LAST IMPACT DEPLOYMENT PHASE ",Flight.Phase.keys()[flight.phase])
  last_phase = flight.phase
@@ -128,6 +144,9 @@ func step(delta: float, stick: Vector2) -> void:
 func finish() -> void:
  active = false
  action_requested = false
+ if is_instance_valid(assets):
+  assets.finish()
+ player.visual.show()
  if pose_ready:
   pose.restore(player.raze.skeleton)
  player.visual.rotation = Vector3(0,player.yaw,0)

@@ -1,7 +1,7 @@
 name: FRONTIER deployment integration QA
 on:
   push:
-    branches: [r0779-air-presentation]
+    branches: [r0780-deployment-assets]
   workflow_dispatch:
 permissions:
   contents: read
