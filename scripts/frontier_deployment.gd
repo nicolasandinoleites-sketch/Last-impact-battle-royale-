@@ -97,7 +97,9 @@ func step(delta: float, stick: Vector2) -> void:
    if pose_ready:
     pose.restore(player.raze.skeleton)
    player.raze.reset_locomotion()
-   player.yaw = PI*0.5
+   # Cut to a trailing camera facing the aircraft travel direction, away from the fused hull.
+   player.yaw = -PI*0.5
+   player.visual.rotation.y = player.yaw
   player.global_position = flight.position
   player.reset_physics_interpolation()
  elif previous in [Flight.Phase.FREEFALL,Flight.Phase.GLIDE]:
