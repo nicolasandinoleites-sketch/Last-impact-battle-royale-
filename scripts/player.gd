@@ -31,6 +31,7 @@ var weapon: Node3D
 var weapon_loaded := false
 var reload_visual := 0.0
 var view_recoil := 0.0
+var contact_shadow: MeshInstance3D
 const STANDING_HEIGHT := 1.8
 const LOW_HEIGHT := 1.0
 
@@ -78,6 +79,7 @@ func _ready() -> void:
 		weapon_loaded = weapon.equip(raze.right_socket,visual)
 		raze.armed = weapon_loaded
 		weapon.actor = raze
+	create_contact_shadow()
 	pivot = Node3D.new()
 	pivot.position = Vector3(0,1.52,0)
 	add_child(pivot)
@@ -196,6 +198,8 @@ func _physics_process(delta: float) -> void:
 		jump_buffer = 0.0
 		ground_grace = 0.0
 	move_and_slide()
+	contact_shadow.visible = is_on_floor()
+	contact_shadow.position.y = 0.018
 	if direction.length() > 0.12:
 		var angle := atan2(-direction.x,-direction.z)
 		visual.rotation.y = lerp_angle(visual.rotation.y,yaw if aiming or combat_facing else angle,minf(1.0,delta*14.0))
@@ -214,3 +218,24 @@ func _physics_process(delta: float) -> void:
 	if position.y < -8.0:
 		position = Vector3(0,0.1,12)
 		reset_movement()
+
+# Low-cost contact cue independent of dynamic shadow support.
+func create_contact_shadow() -> void:
+	var img := Image.create(64,64,false,Image.FORMAT_RGBA8)
+	for y in range(64):
+		for x in range(64):
+			var d := Vector2((x-31.5)/31.5,(y-31.5)/31.5).length()
+			var opacity := 0.35*pow(maxf(0.0,1.0-d*d),2.0)
+			img.set_pixel(x,y,Color(0.05,0.06,0.07,opacity))
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_texture = ImageTexture.create_from_image(img)
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(1.4,1.4)
+	contact_shadow = MeshInstance3D.new()
+	contact_shadow.mesh = plane
+	contact_shadow.material_override = mat
+	contact_shadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	contact_shadow.position.y = 0.018
+	add_child(contact_shadow)

@@ -111,6 +111,7 @@ func run() -> void:
 		var follow: Vector3 = scene.player.global_position
 		inspection.position = follow+Vector3(2.6,1.45,-1.2)
 		inspection.look_at(follow+Vector3(0,0.90,0))
+		print("SLIDE CONTACT ",scene.player.raze.visual_ground_error," | ROOT ",scene.player.raze.model.position.y)
 		await capture("motion_slide_%02d" % sample)
 	scene.mobile_move = Vector2.ZERO
 	scene.mobile_sprint = false

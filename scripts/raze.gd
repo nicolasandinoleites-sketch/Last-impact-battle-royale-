@@ -17,6 +17,9 @@ var axes: Dictionary = {}
 var joints: Dictionary = {}
 var offsets: Dictionary = {}
 var finger_axes: Dictionary = {}
+var foot_ids: Array[int] = []
+var foot_rest_height := 0.0
+var visual_ground_error := 0.0
 var right_socket: BoneAttachment3D
 var left_socket: BoneAttachment3D
 const JOINTS = ["L_Thigh","R_Thigh","L_Calf","R_Calf","L_Foot","R_Foot","L_Upperarm","R_Upperarm","L_Forearm","R_Forearm","Waist","Spine01","Spine02","Head"]
@@ -71,6 +74,12 @@ func load_model() -> bool:
 	left_socket.bone_name = "L_Hand"
 	skeleton.add_child(left_socket)
 	prepare_fingers()
+	for name in ["L_ToeBase","R_ToeBase"]:
+		var id := skeleton.find_bone(name)
+		if id>=0:
+			foot_ids.append(id)
+	skeleton.force_update_all_bone_transforms()
+	foot_rest_height = foot_height()
 	ready_model = true
 	return true
 
@@ -102,14 +111,14 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 		cycle = fposmod(cycle+delta*TAU*cadence,TAU)
 	var stride := sin(cycle)
 	var amplitude := minf(1.0,speed_blend*1.65)
-	var flex := 28.0 if fast else 19.0
+	var flex := 38.0 if fast else 24.0
 	var left := -stride*flex*amplitude
 	var right := stride*flex*amplitude
-	var lk := maxf(0.0,stride)*33.0*amplitude
-	var rk := maxf(0.0,-stride)*33.0*amplitude
+	var lk := maxf(0.0,stride)*(54.0 if fast else 37.0)*amplitude
+	var rk := maxf(0.0,-stride)*(54.0 if fast else 37.0)*amplitude
 	var la := -left*0.6
 	var ra := -right*0.6
-	var lean := -5.0*speed_blend
+	var lean := (15.0 if fast else 5.0)*speed_blend
 	var yaw_twist := stride*4.0*amplitude
 	var arm_l := right*0.65
 	var arm_r := left*0.65
@@ -141,14 +150,14 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 		height = 0.0
 	elif low:
 		motion_state = "SLIDE"
-		left = -48.0
-		right = -28.0
-		lk = 82.0
-		rk = 57.0
-		la = -30.0
-		ra = -24.0
-		lean = -22.0
-		height = -0.28
+		left = -70.0
+		right = -78.0
+		lk = 25.0
+		rk = 98.0
+		la = 27.0
+		ra = -12.0
+		lean = -31.0
+		height = -0.54
 	elif landing > 0.0:
 		motion_state = "LAND"
 		var compress := landing/0.22
@@ -185,7 +194,13 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 	bone_motion("Spine01",Vector3(lean*0.5+breathe,-yaw_twist*0.5,0),blend)
 	bone_motion("Spine02",Vector3(breathe,-yaw_twist*0.5,0),blend)
 	bone_motion("Head",Vector3(-lean*0.5,0,0),blend)
+	# Align the lowest toe marker to its calibrated rest height on flat training ground.
+	if grounded and not foot_ids.is_empty():
+		skeleton.force_update_all_bone_transforms()
+		var measured := foot_height()
+		height = clampf(model.position.y+foot_rest_height-measured,-0.72,0.20)
 	model.position.y = lerpf(model.position.y,height,blend)
+	visual_ground_error = absf(foot_height()-foot_rest_height) if grounded else 0.0
 
 func dance() -> bool:
 	if animator == null:
@@ -294,3 +309,12 @@ func close_fingers(strength: float) -> void:
 		var rest: Quaternion = base[id]
 		var angle := 0.14 if skeleton.get_bone_name(id).ends_with("3") else 0.20
 		skeleton.set_bone_pose_rotation(id,(rest*Quaternion(axis.normalized(),angle*strength)).normalized())
+
+func foot_height() -> float:
+	if foot_ids.is_empty():
+		return 0.0
+	var result := INF
+	for id in foot_ids:
+		var p := to_local(skeleton.to_global(skeleton.get_bone_global_pose(id).origin))
+		result = minf(result,p.y)
+	return result

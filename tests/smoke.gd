@@ -77,6 +77,10 @@ func run() -> void:
 		return
 	if not check(actor.joints.size()==14 and actor.right_socket.bone_name=="R_Hand" and actor.left_socket.bone_name=="L_Hand", "locomotion joint map and sockets"):
 		return
+	if not check(actor.foot_ids.size()==2 and is_finite(actor.foot_rest_height), "calibrated toe contact markers"):
+		return
+	if not check(is_instance_valid(scene.player.contact_shadow), "lightweight contact shadow"):
+		return
 	var leg_id: int = actor.skeleton.find_bone("L_Thigh")
 	var initial: Quaternion = actor.skeleton.get_bone_pose_rotation(leg_id)
 	for i in range(12):
@@ -96,6 +100,10 @@ func run() -> void:
 	if not check(actor.motion_state=="LAND", "landing animation state"):
 		return
 	actor.locomotion(0.1,5.0,true,true,false)
+	for i in range(15):
+		actor.locomotion(1.0/60.0,5.0,true,true,false)
+	if not check(actor.visual_ground_error<0.12 and actor.model.position.y< -0.15, "slide lowered with bounded toe height"):
+		return
 	if not check(actor.motion_state=="SLIDE", "slide animation state"):
 		return
 	actor.locomotion(0.3,0.0,true,false,true)

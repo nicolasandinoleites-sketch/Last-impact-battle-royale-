@@ -77,11 +77,14 @@ func update_pose(delta: float, aiming: bool, reload: float, low: bool = false, p
 	update_reload_cell(reload)
 	var frame := facing.global_transform.basis.orthonormalized()
 	var body_origin := facing.global_position
-	var lower := -0.29 if low else 0.0
+	var lower := -0.48 if low else 0.0
+	if is_instance_valid(actor):
+		lower = actor.model.position.y if low else actor.model.position.y*0.55
 	var desired := body_origin + frame * Vector3(0.065,1.33+lower,-0.19+kick)
 	var tilt := sin(reload*PI) if reload>0.0 else 0.0
 	aim_pitch = lerpf(aim_pitch,clampf(pitch,-0.48,0.40) if aiming else -0.18,1.0-exp(-delta*16.0))
-	var local_basis := Basis.from_euler(Vector3(aim_pitch-tilt*0.15,0.0,tilt*0.50))
+	var sprint_tilt := -0.24 if is_instance_valid(actor) and actor.motion_state=="SPRINT" else 0.0
+	var local_basis := Basis.from_euler(Vector3(aim_pitch-tilt*0.15+sprint_tilt,0.0,tilt*0.50))
 	global_transform = Transform3D(frame*local_basis,desired)
 	flash.position = Vector3(0,0.045,-0.34)
 	if is_instance_valid(actor):
