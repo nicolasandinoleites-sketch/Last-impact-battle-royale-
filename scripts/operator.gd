@@ -47,7 +47,7 @@ func _process(delta: float) -> void:
 			actor.locomotion(delta,0.0,true,false,false)
 
 func _input(event: InputEvent) -> void:
-	if (event is InputEventScreenTouch and event.pressed) or (event is InputEventMouseButton and event.pressed):
+	if (event is InputEventScreenTouch and event.pressed and not event.canceled) or (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and not OS.has_feature("android")):
 		if event.position.x < get_viewport().get_visible_rect().size.x*0.5 and loaded:
 			if actor.dance():
 				caption.text = "RAZE / Animacion original Tripo" if actor.preview_dance else "RAZE / Reposo"
