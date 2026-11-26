@@ -126,12 +126,12 @@ func nearest_open(id: Vector2i) -> Vector2i:
 					return candidate
 	return id
 
-func route(from: Vector3, to: Vector3) -> PackedVector3Array:
+func route(start_pos: Vector3, end_pos: Vector3) -> PackedVector3Array:
 	var result := PackedVector3Array()
 	if not routes_ready:
 		return result
-	var start := nearest_open(cell_at(from))
-	var goal := nearest_open(cell_at(to))
+	var start := nearest_open(cell_at(start_pos))
+	var goal := nearest_open(cell_at(end_pos))
 	if grid.is_point_solid(start) or grid.is_point_solid(goal):
 		return result
 	for id in grid.get_id_path(start,goal):
