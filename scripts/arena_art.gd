@@ -77,8 +77,10 @@ func decorate(_arena: Node3D) -> void:
 		lines.append(piece(Vector3(x,0.017,28),Vector3(2.3,0.016,0.09)))
 	# Distant industrial skyline outside the playable boundary, no new collisions.
 	for x in range(-36,37,12):
-		steel.append(piece(Vector3(x,3.2,-43),Vector3(8,6.4,3)))
-		trim.append(piece(Vector3(x,6.35,-43),Vector3(8.1,0.16,3.1)))
+		var h := 6.4+float(posmod(int(x/12.0),3))*1.2
+		steel.append(piece(Vector3(x,h*0.5,-43),Vector3(8,h,3)))
+		trim.append(piece(Vector3(x,h-0.05,-43),Vector3(8.1,0.16,3.1)))
+		steel.append(piece(Vector3(x+1.7,h+0.55,-43),Vector3(2.4,1.1,1.8)))
 		for dx in [-2.5,0.0,2.5]:
 			pale.append(piece(Vector3(x+dx,4.5,-41.48),Vector3(1.2,0.65,0.045)))
 	for z in range(-30,31,12):
@@ -89,3 +91,20 @@ func decorate(_arena: Node3D) -> void:
 	batch("d78b41",trim)
 	batch("b4b7a6",lines)
 	batch("728c97",pale)
+
+static func panel_texture() -> ImageTexture:
+	var img := Image.create(128,128,false,Image.FORMAT_RGB8)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 921
+	for y in range(128):
+		for x in range(128):
+			var value := 0.91+rng.randf_range(-0.028,0.028)
+			if x<3 or y<3:
+				value *= 0.73
+			elif x==3 or y==3:
+				value *= 1.04
+			if y>110:
+				value *= lerpf(1.0,0.83,float(y-110)/18.0)
+			img.set_pixel(x,y,Color(value,value,value))
+	img.generate_mipmaps()
+	return ImageTexture.create_from_image(img)

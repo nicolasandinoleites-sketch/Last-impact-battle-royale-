@@ -19,6 +19,9 @@ var offsets: Dictionary = {}
 var finger_axes: Dictionary = {}
 var foot_ids: Array[int] = []
 var foot_rest_height := 0.0
+var ankle_rest: Dictionary = {}
+var foot_ik_active := false
+var foot_ik_error := 0.0
 var visual_ground_error := 0.0
 var right_socket: BoneAttachment3D
 var left_socket: BoneAttachment3D
@@ -54,7 +57,7 @@ func load_model() -> bool:
 			var original := mesh_node.get_active_material(i) as StandardMaterial3D
 			if original != null:
 				var material := original.duplicate() as StandardMaterial3D
-				if OS.has_feature("android"):
+				if OS.has_feature("android") or OS.get_environment("LASTIMPACT_SAFE_RENDER")=="1":
 					material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 				mesh_node.set_surface_override_material(i,material)
 	for joint in JOINTS:
@@ -80,6 +83,10 @@ func load_model() -> bool:
 			foot_ids.append(id)
 	skeleton.force_update_all_bone_transforms()
 	foot_rest_height = foot_height()
+	for side in ["L","R"]:
+		var id := skeleton.find_bone(side+"_Foot")
+		if id>=0:
+			ankle_rest[side] = to_local(skeleton.to_global(skeleton.get_bone_global_pose(id).origin))
 	ready_model = true
 	return true
 
@@ -205,6 +212,15 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 		var measured := foot_height()
 		height = clampf(model.position.y+foot_rest_height-measured,-0.72,0.20)
 	model.position.y = lerpf(model.position.y,height,blend)
+	foot_ik_active = grounded and not low and landing<=0.0 and moving and local_motion.length()>0.18 and ankle_rest.size()==2
+	foot_ik_error = 0.0
+	if foot_ik_active:
+		var heading := Vector3(local_motion.x,0.0,local_motion.y).normalized()
+		var half_step := clampf(speed*0.52/cadence*0.5,0.06,0.34)
+		for side in ["L","R"]:
+			var p := fposmod(cycle/TAU+(0.5 if side=="R" else 0.0),1.0)
+			var goal := gait_goal(side,p,heading,half_step,fast)
+			foot_ik_error = maxf(foot_ik_error,solve_leg(side,to_global(goal),global_transform.basis*Vector3.FORWARD))
 	visual_ground_error = absf(foot_height()-foot_rest_height) if grounded else 0.0
 
 func dance() -> bool:
@@ -323,3 +339,48 @@ func foot_height() -> float:
 		var p := to_local(skeleton.to_global(skeleton.get_bone_global_pose(id).origin))
 		result = minf(result,p.y)
 	return result
+
+# Direction-aware foot trajectory: stance moves backward relative to body, swing lifts.
+func gait_goal(side: String,p: float,heading: Vector3,half_step: float,fast: bool) -> Vector3:
+	var rest: Vector3 = ankle_rest[side]
+	var duty := 0.54 if fast else 0.62
+	var travel: float
+	var lift := 0.0
+	if p<duty:
+		travel = lerpf(half_step,-half_step,p/duty)
+	else:
+		var swing := (p-duty)/(1.0-duty)
+		travel = lerpf(-half_step,half_step,smoothstep(0.0,1.0,swing))
+		lift = sin(swing*PI)*(0.15 if fast else 0.09)
+	return rest+heading*travel+Vector3.UP*lift
+
+func solve_leg(side: String,world_goal: Vector3,world_pole: Vector3) -> float:
+	var thigh := skeleton.find_bone(side+"_Thigh")
+	var calf := skeleton.find_bone(side+"_Calf")
+	var foot := skeleton.find_bone(side+"_Foot")
+	if mini(thigh,mini(calf,foot))<0:
+		return 1.0
+	skeleton.force_update_all_bone_transforms()
+	var a := skeleton.get_bone_global_pose(thigh).origin
+	var b := skeleton.get_bone_global_pose(calf).origin
+	var c := skeleton.get_bone_global_pose(foot).origin
+	var goal := skeleton.to_local(world_goal)
+	var l1 := a.distance_to(b)
+	var l2 := b.distance_to(c)
+	var dir := (goal-a).normalized()
+	if minf(l1,l2)<0.001 or dir.length_squared()<0.5:
+		return 1.0
+	var d := clampf(a.distance_to(goal),absf(l1-l2)+0.001,l1+l2-0.001)
+	var pole := skeleton.global_transform.basis.inverse()*world_pole
+	pole -= dir*dir.dot(pole)
+	if pole.length_squared()<0.0001:
+		pole = dir.cross(Vector3.RIGHT)
+	if pole.length_squared()<0.0001:
+		pole = dir.cross(Vector3.UP)
+	var along := (l1*l1+d*d-l2*l2)/(2.0*d)
+	var knee := a+dir*along+pole.normalized()*sqrt(maxf(0.0,l1*l1-along*along))
+	rotate_bone_toward(thigh,b-a,knee-a)
+	b = skeleton.get_bone_global_pose(calf).origin
+	c = skeleton.get_bone_global_pose(foot).origin
+	rotate_bone_toward(calf,c-b,a+dir*d-b)
+	return skeleton.to_global(skeleton.get_bone_global_pose(foot).origin).distance_to(world_goal)

@@ -56,7 +56,7 @@ func mat(hex: String) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = Color(hex)
 	m.roughness = 1.0
-	if OS.has_feature("android"):
+	if OS.has_feature("android") or OS.get_environment("LASTIMPACT_SAFE_RENDER")=="1":
 		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	return m
 
@@ -97,6 +97,12 @@ func build_arena() -> void:
 	var concrete := mat("a7a596")
 	var dark := mat("49575a")
 	var orange := mat("b87942")
+	var panel_tex := ArenaArt.panel_texture()
+	concrete.albedo_texture = panel_tex
+	concrete.uv1_scale = Vector3(4,2,1)
+	dark.albedo_texture = panel_tex
+	dark.uv1_scale = Vector3(6,2,1)
+	orange.albedo_texture = panel_tex
 	block(Vector3(0,-0.3,0),Vector3(80,0.6,80),floor_mat)
 	for p in [Vector3(-40,1.5,0),Vector3(40,1.5,0)]:
 		block(p,Vector3(0.5,3,80),dark)

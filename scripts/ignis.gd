@@ -46,7 +46,7 @@ func equip(hand: Node3D, body_visual: Node3D) -> bool:
 			var original := mesh.get_active_material(i) as StandardMaterial3D
 			if original != null:
 				var mat := original.duplicate() as StandardMaterial3D
-				if OS.has_feature("android"):
+				if OS.has_feature("android") or OS.get_environment("LASTIMPACT_SAFE_RENDER")=="1":
 					mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 				mesh.set_surface_override_material(i,mat)
 	build_energy_cell()

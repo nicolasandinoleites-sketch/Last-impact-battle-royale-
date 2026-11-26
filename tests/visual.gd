@@ -18,6 +18,10 @@ func run() -> void:
 	var lobby = load("res://lobby.tscn").instantiate()
 	root.add_child(lobby)
 	await wait_frames(30)
+	for i in range(240):
+		if is_instance_valid(lobby.preview) and lobby.preview.loaded:
+			break
+		await process_frame
 	if not is_instance_valid(lobby.preview) or not lobby.preview.loaded:
 		push_error("VISUAL CAPTURE FAILED: actual lobby character")
 		quit(1)
@@ -148,6 +152,11 @@ func run() -> void:
 	for tick in range(24):
 		await physics_frame
 	await capture("13_mobile_strafe")
+	print("LEG IK DIAGNOSTIC ",scene.player.raze.foot_ik_error)
+	if not scene.player.raze.foot_ik_active or not is_finite(scene.player.raze.foot_ik_error):
+		push_error("VISUAL CAPTURE FAILED: leg IK inactive")
+		quit(1)
+		return
 	scene.mobile_move = Vector2.ZERO
 	print("VISUAL MOTION COMPLETE")
 	print("VISUAL CAPTURE COMPLETE")

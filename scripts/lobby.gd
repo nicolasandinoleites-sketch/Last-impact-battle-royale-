@@ -15,6 +15,9 @@ var status := ""
 var launching := false
 var info := ""
 var refresh_left := 0.0
+var preview_pending := false
+var preview_resources: Array[Resource] = []
+const PREVIEW_PATHS = ["res://assets/tripo/raze.glb","res://assets/tripo/ignis_x1.glb"]
 
 func _ready() -> void:
 	Engine.max_fps = 30
@@ -25,11 +28,14 @@ func _ready() -> void:
 	info = "%s | %s" % [RenderingServer.get_video_adapter_name(),RenderingServer.get_video_adapter_api_version()]
 	print("LAST IMPACT R062 LOBBY READY | ",info)
 	if DisplayServer.get_name() != "headless":
-		preview = Preview.new()
-		add_child(preview)
+		preview_pending = true
+		for path in PREVIEW_PATHS:
+			if ResourceLoader.load_threaded_request(path)!=OK:
+				preview_pending = false
 	queue_redraw()
 
 func _process(delta: float) -> void:
+	poll_preview()
 	if is_instance_valid(preview):
 		preview.active_preview = (mode=="home" or mode=="loadout") and not launching
 		if not preview.active_preview:
@@ -159,8 +165,17 @@ func launch(path: String) -> void:
 	launching = true
 	queue_redraw()
 	await get_tree().process_frame
-	await get_tree().process_frame
-	var error := get_tree().change_scene_to_file(path)
+	var error := ResourceLoader.load_threaded_request(path)
+	if error == OK:
+		while ResourceLoader.load_threaded_get_status(path)==ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+			await get_tree().process_frame
+		if ResourceLoader.load_threaded_get_status(path)==ResourceLoader.THREAD_LOAD_LOADED:
+			var packed := ResourceLoader.load_threaded_get(path) as PackedScene
+			error = get_tree().change_scene_to_packed(packed) if packed!=null else ERR_CANT_OPEN
+		else:
+			error = ERR_CANT_OPEN
+	else:
+		error = get_tree().change_scene_to_file(path)
 	if error != OK:
 		launching = false
 		status = "No se pudo cargar el escenario: %s" % error
@@ -192,7 +207,7 @@ func activate(pos: Vector2) -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch and event.pressed:
 		activate(event.position)
-	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and not OS.has_feature("android"):
 		activate(event.position)
 	elif event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		mode = "home"
@@ -223,3 +238,23 @@ func draw_stage() -> void:
 	draw_arc(Vector2.ZERO,75.0,0.0,TAU,48,Color("91643f"),2.0,true)
 	draw_set_transform(Vector2.ZERO)
 	draw_rect(area,EDGE,false,1.0)
+
+func poll_preview() -> void:
+	if not preview_pending or launching:
+		return
+	for path in PREVIEW_PATHS:
+		var state := ResourceLoader.load_threaded_get_status(path)
+		if state==ResourceLoader.THREAD_LOAD_FAILED or state==ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+			preview_pending = false
+			status = "Vista previa no disponible"
+			return
+		if state!=ResourceLoader.THREAD_LOAD_LOADED:
+			return
+	for path in PREVIEW_PATHS:
+		var resource := ResourceLoader.load_threaded_get(path)
+		if resource!=null:
+			preview_resources.append(resource)
+	preview_pending = false
+	preview = Preview.new()
+	add_child(preview)
+	queue_redraw()

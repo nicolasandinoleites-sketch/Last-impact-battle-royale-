@@ -120,6 +120,17 @@ func run() -> void:
 		return
 	if not check(is_instance_valid(scene.player.contact_shadow), "lightweight contact shadow"):
 		return
+	if not check(actor.ankle_rest.size()==2, "ankle calibration"):
+		return
+	var rest_l: Vector3 = actor.ankle_rest["L"]
+	var support: Vector3 = actor.gait_goal("L",0.2,Vector3.FORWARD,0.2,false)
+	var swing: Vector3 = actor.gait_goal("L",0.8,Vector3.FORWARD,0.2,false)
+	if not check(is_equal_approx(support.y,rest_l.y) and swing.y>rest_l.y+0.04, "stance and swing foot trajectory"):
+		return
+	for direction in [Vector2(0,-1),Vector2(1,0),Vector2(0,1),Vector2(-1,0)]:
+		actor.locomotion(0.016,2.8,true,false,true,false,0.0,direction*2.8)
+		if not check(actor.foot_ik_active and is_finite(actor.foot_ik_error) and actor.foot_ik_error<0.35, "directional leg IK "+str(direction)):
+			return
 	var leg_id: int = actor.skeleton.find_bone("L_Thigh")
 	var initial: Quaternion = actor.skeleton.get_bone_pose_rotation(leg_id)
 	for i in range(12):
