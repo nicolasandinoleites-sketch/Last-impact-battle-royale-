@@ -16,6 +16,19 @@ func check(ok: bool, label: String) -> bool:
 	return true
 
 func run() -> void:
+	var telemetry = preload("res://scripts/frame_telemetry.gd").new()
+	var values := PackedFloat64Array()
+	for i in range(99):
+		values.append(20.0)
+	values.append(100.0)
+	var report: Dictionary = telemetry.summarize(values)
+	if not check(report["frames"]==100 and is_equal_approx(report["median_ms"],20.0) and is_equal_approx(report["p95_ms"],20.0) and is_equal_approx(report["p99_ms"],20.0) and is_equal_approx(report["one_percent_low_fps"],10.0) and is_equal_approx(report["mean_fps"],100000.0/2080.0), "telemetry percentiles and one percent low"):
+		return
+	telemetry.record(1000,0)
+	telemetry.record(21000,0)
+	telemetry.record(41000,1)
+	if not check(telemetry.samples.is_empty() and telemetry.profile==1 and telemetry.latest.is_empty(), "telemetry does not mix graphics profiles"):
+		return
 	var lobby = load("res://lobby.tscn").instantiate()
 	root.add_child(lobby)
 	await frames(5)
