@@ -25,6 +25,23 @@ var calibrated := false
 var cadence_hz := 0.0
 var calibration_enabled := true
 var support_masks: Array = []
+# Experimental parameters; neutral defaults preserve the approved gait.
+var sprint_amplitude := 1.0
+var sprint_cadence_multiplier := 1.0
+# Experimental support masks learned from replayed candidate poses, not the source clip.
+var sprint_support_masks: Array = []
+var sprint_lock_enabled := false
+
+# Calibrated from CI 169, artifact 15149963736, trial 0.70/1.15.
+# Remains opt-in until visual and gameplay comparison are reviewed.
+func configure_sprint_candidate(enabled: bool) -> void:
+	sprint_amplitude = 0.7 if enabled else 1.0
+	sprint_cadence_multiplier = 1.15 if enabled else 1.0
+	sprint_lock_enabled = enabled
+	sprint_support_masks.clear()
+	if enabled:
+		sprint_support_masks.append(PackedFloat32Array([0.875,0.2857143,0.375,1,1,1,1,1,1,0.125,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.125]))
+		sprint_support_masks.append(PackedFloat32Array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.85714287,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0]))
 
 func setup(rig: Skeleton3D) -> bool:
 	if not ResourceLoader.exists(LIBRARY):
@@ -121,6 +138,7 @@ func update(delta: float, speed: float, eligible: bool, local_motion: Vector2) -
 		# Clamp extreme cadence estimates; a calibrated stride still has a physical reach limit.
 		var measured := clampf(speed_blend/maxf(travel,0.35),0.35,2.8)
 		cadence = lerpf(cadence,measured,0.8*calibration_strength(speed_blend))
+	cadence *= lerpf(1.0,sprint_cadence_multiplier,smoothstep(4.4,6.0,speed_blend))
 	cadence_hz = cadence if cadence_hz<=0.0 else lerpf(cadence_hz,cadence,1.0-exp(-delta*10.0))
 	phase = fposmod(phase+delta*cadence_hz,1.0)
 
@@ -135,6 +153,12 @@ func mask_at(clip_index: int, side_index: int) -> float:
 	return lerpf(mask[i%mask.size()],mask[(i+1)%mask.size()],p-float(i))
 
 func support_confidence(side: String) -> float:
+	if sprint_lock_enabled and speed_blend>=5.9 and sprint_support_masks.size()==2:
+		var mask: PackedFloat32Array = sprint_support_masks[0 if side=="L" else 1]
+		if not mask.is_empty():
+			var p := fposmod(phase,1.0)*mask.size()
+			var i := floori(p)
+			return lerpf(mask[i%mask.size()],mask[(i+1)%mask.size()],p-float(i))
 	if not calibrated or not calibration_enabled or not available:
 		return 0.0
 	var segment := 0 if speed_blend<=3.8 else 1
@@ -156,6 +180,10 @@ func apply(rig: Skeleton3D) -> void:
 		var qa := a.rotation_track_interpolate(tracks[segment][i],pa*a.length)
 		var qb := b.rotation_track_interpolate(tracks[segment+1][i],pb*b.length)
 		var goal := qa.slerp(qb,mix_amount).normalized()
+		var amplitude := lerpf(1.0,sprint_amplitude,smoothstep(4.4,6.0,speed_blend))
+		if amplitude<0.999:
+			var neutral := rig.get_bone_rest(ids[i]).basis.orthonormalized().get_rotation_quaternion()
+			goal = neutral.slerp(goal,amplitude).normalized()
 		var current := rig.get_bone_pose_rotation(ids[i])
 		rig.set_bone_pose_rotation(ids[i],current.slerp(goal,weight).normalized())
 	if torso_weight>0.0:

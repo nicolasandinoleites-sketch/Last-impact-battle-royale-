@@ -159,6 +159,25 @@ func run() -> void:
 		inspection.look_at(follow+Vector3(0,0.90,0))
 		await capture("motion_turn_%02d" % sample)
 	scene.mobile_move = Vector2.ZERO
+	# Matched camera and fixed physics ticks; phase differs because cadence differs.
+	for candidate in [false,true]:
+		scene.reset_round()
+		scene.player.raze.clip_motion.configure_sprint_candidate(candidate)
+		for tick in range(8):
+			await physics_frame
+		scene.mobile_move = Vector2(0,-1)
+		scene.mobile_sprint = true
+		for tick in range(60):
+			await physics_frame
+		for sample in range(8):
+			for tick in range(4):
+				await physics_frame
+			var follow: Vector3 = scene.player.global_position
+			inspection.position = follow+Vector3(2.6,1.45,-1.2)
+			inspection.look_at(follow+Vector3(0,0.90,0))
+			inspection.fov = 45.0
+			await capture("sprint_compare_%s_%02d" % ["candidate" if candidate else "reference",sample])
+	scene.player.raze.clip_motion.configure_sprint_candidate(false)
 	scene.reset_round()
 	for tick in range(8):
 		await physics_frame

@@ -318,7 +318,7 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 		skeleton.force_update_all_bone_transforms()
 		var crouch_height := clampf(model.position.y+foot_rest_height-foot_height(),-0.64,0.12)
 		model.position.y = lerpf(model.position.y,crouch_height,1.0-exp(-delta*20.0))
-	foot_contact.update(self,clip_motion,delta,contact_lock_enabled and grounded and moving and speed<5.5 and not low and not combat and landing<=0.0 and local_motion.y< -0.75 and absf(local_motion.x)<absf(local_motion.y)*0.35)
+	foot_contact.update(self,clip_motion,delta,contact_lock_enabled and grounded and moving and (speed<5.5 or (clip_motion.sprint_lock_enabled and speed>=5.9)) and not low and not combat and landing<=0.0 and local_motion.y< -0.75 and absf(local_motion.x)<absf(local_motion.y)*0.35)
 	visual_ground_error = absf(foot_height()-foot_rest_height) if grounded else 0.0
 
 func dance() -> bool:
