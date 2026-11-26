@@ -26,6 +26,8 @@ var gait_heading := Vector3.FORWARD
 var gait_weight := 0.0
 var motion_lean := Vector2.ZERO
 var stride_amplitude := 0.0
+const ClipMotion = preload("res://scripts/locomotion_clips.gd")
+var clip_motion := ClipMotion.new()
 var ankle_basis: Dictionary = {}
 var visual_ground_error := 0.0
 var right_socket: BoneAttachment3D
@@ -108,6 +110,9 @@ func bone_motion(joint: String, degrees: Vector3, blend: float) -> void:
 	var qz := Quaternion((axis_map * Vector3.BACK).normalized(),deg_to_rad(current.z))
 	skeleton.set_bone_pose_rotation(id,(rest * qx * qy * qz).normalized())
 
+func enable_locomotion_clips() -> bool:
+	return clip_motion.setup(skeleton)
+
 func reset_locomotion() -> void:
 	if not ready_model:
 		return
@@ -122,6 +127,7 @@ func reset_locomotion() -> void:
 	gait_weight = 0.0
 	motion_lean = Vector2.ZERO
 	stride_amplitude = 0.0
+	clip_motion.reset()
 	foot_ik_active = false
 	foot_ik_error = 0.0
 	visual_ground_error = 0.0
@@ -280,6 +286,13 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 			align_ankle(side,gait_weight*(1.0 if p<(0.54 if fast else 0.62) else 0.65))
 	else:
 		gait_weight = 0.0
+	clip_motion.update(delta,speed,grounded and not low and not combat and landing<=0.0,local_motion)
+	if clip_motion.weight>0.0:
+		clip_motion.apply(skeleton)
+		skeleton.force_update_all_bone_transforms()
+		if grounded:
+			var corrected := clampf(model.position.y+foot_rest_height-foot_height(),-0.72,0.20)
+			model.position.y = lerpf(model.position.y,corrected,1.0-exp(-delta*20.0))
 	visual_ground_error = absf(foot_height()-foot_rest_height) if grounded else 0.0
 
 func dance() -> bool:

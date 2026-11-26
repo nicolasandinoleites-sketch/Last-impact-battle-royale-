@@ -19,3 +19,6 @@ tools/audit_animation_source.py verifies archive SHA-256, parses GLB v2 JSON, li
 5. Implement BlendSpace2D / AnimationTree after clip coverage is established; compare mobile frame time. Test stop/reversal/jump/slide and Android controls.
 Docs: https://docs.godotengine.org/en/4.6/tutorials/assets_pipeline/retargeting_3d_skeletons.html and https://docs.godotengine.org/en/4.6/tutorials/animation/animation_tree.html
 Status: audit code and CI wiring implemented, source download and mapping evidence pending. No new commercial-quality clip integrated yet.
+
+## Evidence and first runtime integration — R0762
+CI 111 preview successful: 9 clips, 22 mapped roles, 36 images and 696072-byte AnimationLibrary. Artifact 15139473274. Visual inspection of contact sheet: walk/jog/sprint have distinct leg cycles, crouch/jump need vertical root correction. No crouch/jump clips enabled. R0762 generates the library at build time from the pinned CC0 archive, samples three cycles using speed-normalized phase and masks six leg bones; retains existing upper-body weapon IK and procedural combat/air/slide fallback. Phase matching and foot slip still need further refinement; the full AnimationTree is not implemented. CI requires clip gameplay tests, actual ADB joystick activation and regression suite before ARM export. No promise of physical FPS improvement.
