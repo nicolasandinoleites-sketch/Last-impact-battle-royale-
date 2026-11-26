@@ -173,5 +173,42 @@ func run() -> void:
 			if image==null or image.is_empty() or image.save_png(OUT+"/"+clip_name+"_%d.png" % frame)!=OK:
 				fail("capture "+clip_name)
 				return
+	# Offline only: pose compression with measured lowest toe correction.
+	# Do not apply this grounded correction to airborne clips.
+	var grounded_report: Array[Dictionary] = []
+	for clip_name in ["Idle_Loop","Crouch_Idle_Loop","Crouch_Fwd_Loop","Jump_Land"]:
+		preview_player.play(clip_name)
+		preview_player.pause()
+		var original: Animation = library.get_animation(clip_name)
+		var rows: Array = pelvis_report[clip_name]
+		var peak_residual := 0.0
+		for i in range(rows.size()):
+			var row: Dictionary = rows[i]
+			actor.model.position.y = 0.0
+			preview_player.seek(minf(float(row["seconds"]),maxf(0.0,original.length-0.0001)),true)
+			target.force_update_all_bone_transforms()
+			var uncorrected: float = actor.foot_height()-actor.foot_rest_height
+			var source_shift := float(row["source_vertical_scaled_m"])
+			var residual_correction := clampf(-uncorrected-source_shift,-0.20,0.20)
+			var shift := clampf(source_shift+residual_correction,-0.64,0.12)
+			actor.model.position.y = shift
+			target.force_update_all_bone_transforms()
+			var residual: float = absf(actor.foot_height()-actor.foot_rest_height)
+			peak_residual = maxf(peak_residual,residual)
+			if i%maxi(1,floori(float(rows.size())/4.0))==0:
+				await RenderingServer.frame_post_draw
+				var image := root.get_texture().get_image()
+				if image==null or image.is_empty() or image.save_png(OUT+"/grounded_"+clip_name+"_%03d.png" % i)!=OK:
+					fail("corrected grounded capture "+clip_name)
+					return
+		grounded_report.append({"clip":clip_name,"samples":rows.size(),"max_toe_residual_m":peak_residual,"acceptance_m":0.025,"pass":peak_residual<=0.025})
+	actor.model.position.y = 0.0
+	var corrected_file := FileAccess.open(OUT+"/grounded_pose_report.json",FileAccess.WRITE)
+	if corrected_file==null:
+		fail("grounded pose report")
+		return
+	corrected_file.store_string(JSON.stringify(grounded_report,"  "))
+	corrected_file.close()
+	print("GROUNDED POSE AUDIT ",JSON.stringify(grounded_report))
 	print("RAZE RETARGET PREVIEW COMPLETE | clips=",report.size()," mapped=",calibration["pairs"].size())
 	quit(0)
