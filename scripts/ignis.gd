@@ -84,7 +84,7 @@ func update_pose(delta: float, aiming: bool, reload: float, low: bool = false, p
 	if is_instance_valid(actor):
 		lower = actor.model.position.y if low else actor.model.position.y*0.55
 	# Sway only during free locomotion; ADS, shots and reload use the stable pose.
-	var free_carry := is_instance_valid(actor) and not aiming and reload<=0.0 and not low and actor.clip_motion.available and actor.clip_motion.weight>0.05
+	var free_carry: bool = is_instance_valid(actor) and not aiming and reload<=0.0 and not low and actor.clip_motion.available and actor.clip_motion.weight>0.05
 	var sway_target := Vector3.ZERO
 	var roll_target := 0.0
 	if free_carry:
