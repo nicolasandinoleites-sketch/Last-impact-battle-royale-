@@ -58,10 +58,11 @@ func _ready() -> void:
 		message = "Supervivencia: permanece en la zona"
 		spawn_pickups()
 	for p in [Vector3(0,0,-4),Vector3(-8,0,-8),Vector3(9,0,-13),Vector3(-15,0,-20),Vector3(14,0,7),Vector3(-18,0,7)]:
-		var target = TargetScript.new()
+		var target
 		if survival_mode:
-			target.free()
 			target = OperatorScript.new() if targets.size() in [2,4] else DroneScript.new()
+		else:
+			target = TargetScript.new()
 		target.position = p
 		if survival_mode:
 			target.game = self
