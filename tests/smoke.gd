@@ -116,7 +116,7 @@ func run() -> void:
 	scene.player.jump_requested = true
 	scene.player.jump_buffer = 0.1
 	scene.mobile_sprint = true
-	scene.hud._notification(NOTIFICATION_APPLICATION_PAUSED)
+	scene.hud._notification(Node.NOTIFICATION_APPLICATION_PAUSED)
 	if not check(not scene.player.aiming and not scene.player.jump_requested and scene.player.jump_buffer==0.0 and not scene.mobile_sprint, "pause clears transient inputs"):
 		return
 	var actor = scene.player.raze
