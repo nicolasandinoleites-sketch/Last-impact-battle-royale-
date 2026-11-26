@@ -47,6 +47,17 @@ PY
 )
   adb shell input swipe "$x1" "$y1" "$x2" "$y2" "$6"
 }
+# Hold a single OS touch long enough for the slow software renderer.
+press_fraction() {
+  swipe_fraction "$1" "$2" "$3" "$2" "$3" 550
+}
+reset_verified() {
+  local before
+  before="$(adb logcat -d -v brief -s godot:I | grep -F -c 'ANDROID ROUND RESET |' || true)"
+  press_fraction 02_frontier 0.77 0.10
+  wait_log "ANDROID ROUND RESET |" "$((before+1))"
+  sleep 1
+}
 dismiss_launcher_anr() {
   adb shell uiautomator dump /sdcard/lastimpact_window.xml >/dev/null 2>&1 || return 0
   adb pull /sdcard/lastimpact_window.xml "$OUT/launcher_window.xml" >/dev/null 2>&1 || return 0
@@ -119,17 +130,18 @@ capture 02_frontier
 adb shell dumpsys meminfo "$PKG" > "$OUT/frontier_meminfo.txt"
 adb shell pidof "$PKG" | grep -E '[0-9]+'
 # OS-injected single-finger events; separate engine fixtures cover simultaneous contacts.
-tap_fraction 02_frontier 0.77 0.10
-sleep 2
+reset_verified
 swipe_fraction 02_frontier 0.91 0.59 0.91 0.59 1600
 wait_log "LAST IMPACT CONTROL SHOT" 1
-tap_fraction 02_frontier 0.68 0.82
+press_fraction 02_frontier 0.68 0.82
 wait_log "LAST IMPACT CONTROL RELOAD_COMPLETE" 1
-tap_fraction 02_frontier 0.79 0.48
+capture 04_reload_complete
+reset_verified
+press_fraction 02_frontier 0.79 0.48
 wait_log "LAST IMPACT CONTROL AIM_ON" 1
-tap_fraction 02_frontier 0.79 0.48
+press_fraction 02_frontier 0.79 0.48
 wait_log "LAST IMPACT CONTROL AIM_OFF" 1
-tap_fraction 02_frontier 0.92 0.80
+press_fraction 02_frontier 0.92 0.80
 wait_log "LAST IMPACT CONTROL JUMP" 1
 tap_fraction 02_frontier 0.77 0.10
 sleep 2
@@ -138,12 +150,12 @@ wait_log "LAST IMPACT CONTROL MOVE_RELEASE" 1
 wait_log "LAST IMPACT CONTROL CLIP_ACTIVE" 1
 swipe_fraction 02_frontier 0.52 0.45 0.62 0.45 1000
 wait_log "LAST IMPACT CONTROL LOOK_RELEASE" 1
-tap_fraction 02_frontier 0.66 0.49
+press_fraction 02_frontier 0.66 0.49
 wait_log "LAST IMPACT CONTROL SHOULDER" 1
 capture 04_controls
 adb logcat -d -v brief -s godot:I | grep -F "LAST IMPACT CONTROL " | tee "$OUT/controls.txt"
 echo "QA-04 ADB SINGLE TOUCH VALIDATED"
-tap_fraction 02_frontier 0.65 0.10
+press_fraction 02_frontier 0.65 0.10
 wait_log "LAST IMPACT R073 LOBBY READY" 2
 sleep 2
 capture 03_return_lobby
