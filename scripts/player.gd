@@ -202,7 +202,8 @@ func _physics_process(delta: float) -> void:
 	combat_hold = 0.36 if aiming or combat_facing else maxf(0.0,combat_hold-delta)
 	update_camera(delta)
 	var direction := Basis(Vector3.UP,yaw) * Vector3(move_input.x,0,move_input.y)
-	var speed := 6.2 if sprint else 3.8
+	var sprint_forward := sprint and move_input.y< -0.45 and -move_input.y>absf(move_input.x)*0.75
+	var speed := 6.2 if sprint_forward else 3.8
 	if aiming or combat_facing:
 		speed = 2.8 if aiming else 3.8
 	if low_stance:
@@ -213,7 +214,7 @@ func _physics_process(delta: float) -> void:
 		speed = lerpf(3.0,8.0,slide_time/0.65)
 	var desired := Vector2(direction.x,direction.z)*speed
 	var horizontal_velocity := Vector2(velocity.x,velocity.z)
-	var next_velocity := LocomotionController.step(horizontal_velocity,desired,is_on_floor(),sprint and not aiming and not combat_facing,delta)
+	var next_velocity := LocomotionController.step(horizontal_velocity,desired,is_on_floor(),sprint_forward and not aiming and not combat_facing,delta)
 	velocity.x = next_velocity.x
 	velocity.z = next_velocity.y
 	if not is_on_floor():
@@ -238,7 +239,7 @@ func _physics_process(delta: float) -> void:
 	var body_basis := visual.global_transform.basis.orthonormalized().inverse()
 	var local_accel := body_basis*Vector3(world_accel.x,0,world_accel.y)
 	body_acceleration = body_acceleration.lerp(Vector2(local_accel.x,local_accel.z).limit_length(24.0),1.0-exp(-delta*9.0))
-	locomotion_state = "SLIDE" if low_stance else ("JUMP" if velocity.y>0.0 and not is_on_floor() else ("FALL" if not is_on_floor() else ("SPRINT" if sprint and combat_hold<=0.0 and animation_speed>4.2 else ("AIM_MOVE" if aiming and animation_speed>0.18 else ("AIM" if aiming else ("MOVE" if animation_speed>0.18 else "IDLE"))))))
+	locomotion_state = "SLIDE" if low_stance else ("JUMP" if velocity.y>0.0 and not is_on_floor() else ("FALL" if not is_on_floor() else ("SPRINT" if sprint_forward and combat_hold<=0.0 and animation_speed>4.2 else ("AIM_MOVE" if aiming and animation_speed>0.18 else ("AIM" if aiming else ("MOVE" if animation_speed>0.18 else "IDLE"))))))
 	var local_velocity := visual.global_transform.basis.orthonormalized().inverse()*horizontal
 	local_motion = Vector2(local_velocity.x,local_velocity.z)
 	phase += delta * (12.0 if sprint else 9.0)
@@ -246,7 +247,7 @@ func _physics_process(delta: float) -> void:
 	left_leg.rotation.x = stride
 	right_leg.rotation.x = -stride
 	if model_loaded:
-		raze.locomotion(delta,animation_speed,is_on_floor(),low_stance,combat_hold>0.0,sprint,velocity.y,local_motion,body_acceleration)
+		raze.locomotion(delta,animation_speed,is_on_floor(),low_stance,combat_hold>0.0,sprint_forward,velocity.y,local_motion,body_acceleration)
 		if raze.clip_motion.weight>0.5 and get_parent().has_method("qa_control"):
 			get_parent().qa_control("CLIP_ACTIVE")
 	else:
