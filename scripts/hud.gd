@@ -58,12 +58,12 @@ func _draw() -> void:
 	var font := int(12*u)
 	draw_minimap(u)
 	draw_rect(Rect2(at(0.145,0.025),Vector2(180,62)*u),DARK)
-	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R071",int(14*u),ACCENT)
+	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R072",int(14*u),ACCENT)
 	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d   ·   MEM %.0f MB" % [cached_fps,cached_mem],font)
 	label_at(at(0.145,0.025)+Vector2(9,50)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
 	centered(at(0.49,0.16),game.message,int(15*u))
 	if game.survival_mode:
-		var zone_label := "ZONA %d m · %ds · %d/%d drones" % [roundi(game.zone.radius),game.zone.seconds_remaining(),game.targets.size()-game.eliminated,game.targets.size()]
+		var zone_label := "ZONA %d m · %ds · %d/%d rivales" % [roundi(game.zone.radius),game.zone.seconds_remaining(),game.targets.size()-game.eliminated,game.targets.size()]
 		if game.zone.outside(game.player.global_position):
 			zone_label += " · FUERA"
 		centered(at(0.49,0.205),zone_label,int(12*u),Color("ffb26b") if game.zone.outside(game.player.global_position) else Color("5ecdf2"))
