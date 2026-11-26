@@ -135,6 +135,17 @@ func run() -> void:
 		inspection.look_at(follow+Vector3(0,1.28,-0.18))
 		inspection.fov = 42.0
 		await capture("motion_reload_%02d" % sample)
+	# Observe direction reversals and aimed lateral movement with the same follow camera.
+	scene.reset_round()
+	for sample in range(12):
+		scene.mobile_move = Vector2(1,0) if sample<4 else (Vector2(-1,0) if sample<8 else Vector2.ZERO)
+		for tick in range(5):
+			await physics_frame
+		var follow: Vector3 = scene.player.global_position
+		inspection.position = follow+Vector3(2.6,1.45,-1.2)
+		inspection.look_at(follow+Vector3(0,0.90,0))
+		await capture("motion_turn_%02d" % sample)
+	scene.mobile_move = Vector2.ZERO
 	# Real Android screen aspect ratio, without changing the safe graphics backend.
 	inspection.current = false
 	scene.player.camera.current = true

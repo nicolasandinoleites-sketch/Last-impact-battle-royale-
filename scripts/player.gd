@@ -27,6 +27,10 @@ var combat_hold := 0.0
 var local_motion := Vector2.ZERO
 var animation_speed := 0.0
 const Raze = preload("res://scripts/raze.gd")
+const LocomotionController = preload("res://scripts/locomotion_controller.gd")
+var previous_horizontal := Vector2.ZERO
+var body_acceleration := Vector2.ZERO
+var locomotion_state := "IDLE"
 var raze: Node3D
 var model_loaded := false
 const Ignis = preload("res://scripts/ignis.gd")
@@ -157,6 +161,9 @@ func set_stance(low: bool) -> void:
 func reset_movement() -> void:
 	velocity = Vector3.ZERO
 	animation_speed = 0.0
+	previous_horizontal = Vector2.ZERO
+	body_acceleration = Vector2.ZERO
+	locomotion_state = "IDLE"
 	sprint = false
 	move_input = Vector2.ZERO
 	slide_time = 0.0
@@ -203,8 +210,11 @@ func _physics_process(delta: float) -> void:
 		slide_time = maxf(0.0,slide_time-delta)
 		direction = slide_direction
 		speed = lerpf(3.0,8.0,slide_time/0.65)
-	velocity.x = move_toward(velocity.x,direction.x*speed,delta*24.0)
-	velocity.z = move_toward(velocity.z,direction.z*speed,delta*24.0)
+	var desired := Vector2(direction.x,direction.z)*speed
+	var horizontal_velocity := Vector2(velocity.x,velocity.z)
+	var next_velocity := LocomotionController.step(horizontal_velocity,desired,is_on_floor(),sprint and not aiming and not combat_facing,delta)
+	velocity.x = next_velocity.x
+	velocity.z = next_velocity.y
 	if not is_on_floor():
 		velocity.y -= 18.0*delta
 	if jump_buffer > 0.0 and ground_grace > 0.0 and not low_stance:
@@ -216,11 +226,18 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	contact_shadow.visible = is_on_floor()
 	contact_shadow.position.y = 0.018
-	update_facing(direction,delta)
 	# Animate actual horizontal displacement, not requested movement against a wall.
 	var real_motion := get_real_velocity()
 	var horizontal := Vector3(real_motion.x,0.0,real_motion.z)
 	animation_speed = horizontal.length()
+	update_facing(horizontal if animation_speed>0.18 else Vector3.ZERO,delta)
+	var planar := Vector2(horizontal.x,horizontal.z)
+	var world_accel := (planar-previous_horizontal)/maxf(delta,0.001)
+	previous_horizontal = planar
+	var body_basis := visual.global_transform.basis.orthonormalized().inverse()
+	var local_accel := body_basis*Vector3(world_accel.x,0,world_accel.y)
+	body_acceleration = body_acceleration.lerp(Vector2(local_accel.x,local_accel.z).limit_length(24.0),1.0-exp(-delta*9.0))
+	locomotion_state = "SLIDE" if low_stance else ("JUMP" if velocity.y>0.0 and not is_on_floor() else ("FALL" if not is_on_floor() else ("SPRINT" if sprint and combat_hold<=0.0 and animation_speed>4.2 else ("AIM_MOVE" if aiming and animation_speed>0.18 else ("AIM" if aiming else ("MOVE" if animation_speed>0.18 else "IDLE"))))))
 	var local_velocity := visual.global_transform.basis.orthonormalized().inverse()*horizontal
 	local_motion = Vector2(local_velocity.x,local_velocity.z)
 	phase += delta * (12.0 if sprint else 9.0)
@@ -228,7 +245,7 @@ func _physics_process(delta: float) -> void:
 	left_leg.rotation.x = stride
 	right_leg.rotation.x = -stride
 	if model_loaded:
-		raze.locomotion(delta,animation_speed,is_on_floor(),low_stance,combat_hold>0.0,sprint,velocity.y,local_motion)
+		raze.locomotion(delta,animation_speed,is_on_floor(),low_stance,combat_hold>0.0,sprint,velocity.y,local_motion,body_acceleration)
 	else:
 		visual.scale.y = lerpf(visual.scale.y,0.55 if low_stance else 1.0,minf(1.0,delta*12.0))
 	if weapon_loaded:
@@ -260,10 +277,7 @@ func create_contact_shadow() -> void:
 	add_child(contact_shadow)
 
 func update_facing(direction: Vector3,delta: float) -> void:
-	# Keep the normal tactical stance aligned with the camera; free sprint turns toward movement.
-	var goal := yaw
-	if sprint and combat_hold<=0.0 and direction.length()>0.12:
-		goal = atan2(-direction.x,-direction.z)
-	if slide_time>0.0 and slide_direction.length()>0.1:
-		goal = atan2(-slide_direction.x,-slide_direction.z)
-	visual.rotation.y = lerp_angle(visual.rotation.y,goal,1.0-exp(-delta*(18.0 if combat_hold>0.0 else 12.0)))
+	var in_combat := aiming or combat_facing or combat_hold>0.0
+	var goal := LocomotionController.facing_target(yaw,visual.rotation.y,slide_direction if slide_time>0.0 else direction,in_combat,slide_time>0.0)
+	var rate := 22.0 if in_combat else 10.0
+	visual.rotation.y = lerp_angle(visual.rotation.y,goal,1.0-exp(-delta*rate))

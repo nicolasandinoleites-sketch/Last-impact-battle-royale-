@@ -24,6 +24,8 @@ var foot_ik_active := false
 var foot_ik_error := 0.0
 var gait_heading := Vector3.FORWARD
 var gait_weight := 0.0
+var motion_lean := Vector2.ZERO
+var stride_amplitude := 0.0
 var ankle_basis: Dictionary = {}
 var visual_ground_error := 0.0
 var right_socket: BoneAttachment3D
@@ -118,6 +120,8 @@ func reset_locomotion() -> void:
 	was_grounded = true
 	gait_heading = Vector3.FORWARD
 	gait_weight = 0.0
+	motion_lean = Vector2.ZERO
+	stride_amplitude = 0.0
 	foot_ik_active = false
 	foot_ik_error = 0.0
 	visual_ground_error = 0.0
@@ -142,7 +146,7 @@ func update_gait_heading(heading: Vector3, delta: float) -> void:
 		var smoothed := gait_heading.lerp(next,1.0-exp(-delta*18.0))
 		gait_heading = smoothed.normalized() if smoothed.length_squared()>0.01 else next
 
-func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: bool, sprinting: bool = false, vertical_speed: float = 0.0, local_motion: Vector2 = Vector2.ZERO) -> void:
+func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: bool, sprinting: bool = false, vertical_speed: float = 0.0, local_motion: Vector2 = Vector2.ZERO, acceleration: Vector2 = Vector2.ZERO) -> void:
 	if not ready_model or preview_dance:
 		return
 	clock += delta
@@ -162,7 +166,10 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 	if local_motion.length()>0.18:
 		strafe = clampf(local_motion.x/local_motion.length(),-1.0,1.0)
 		backward = -1.0 if local_motion.y>0.2 else 1.0
-	var amplitude := minf(1.0,speed_blend*1.65)
+	stride_amplitude = lerpf(stride_amplitude,minf(1.0,speed_blend*1.65) if moving else 0.0,1.0-exp(-delta*12.0))
+	var amplitude := stride_amplitude
+	var lean_target := Vector2(clampf(acceleration.x*0.18,-4.0,4.0),clampf(-acceleration.y*0.18,-4.0,4.0)) if grounded and not low else Vector2.ZERO
+	motion_lean = motion_lean.lerp(lean_target,1.0-exp(-delta*8.0))
 	var flex := 38.0 if fast else 24.0
 	var left := -stride*flex*amplitude*backward*(1.0-0.45*absf(strafe))
 	var right := stride*flex*amplitude*backward*(1.0-0.45*absf(strafe))
@@ -170,8 +177,8 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 	var rk := maxf(0.0,-stride)*(54.0 if fast else 37.0)*amplitude
 	var la := -left*0.6
 	var ra := -right*0.6
-	var lean := (15.0 if fast else 5.0)*speed_blend
-	var yaw_twist := stride*4.0*amplitude
+	var lean := (15.0 if fast else 5.0)*speed_blend+motion_lean.y
+	var yaw_twist := stride*5.0*amplitude
 	var arm_l := right*0.65
 	var arm_r := left*0.65
 	var elbow_l := -8.0-maxf(0.0,-arm_l)*0.7
@@ -232,6 +239,8 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 		elbow_r = -35.0
 	var blend := 1.0-exp(-delta*14.0)
 	var breathe := sin(clock*2.2)*1.4
+	var weight_shift := sin(cycle)*2.2*amplitude if grounded and moving and not low else 0.0
+	var lateral_lean := motion_lean.x*(0.45 if combat else 1.0)
 	bone_motion("L_Thigh",Vector3(left,0,strafe*stride*10.0*amplitude if grounded and not low else 0.0),blend)
 	bone_motion("R_Thigh",Vector3(right,0,-strafe*stride*10.0*amplitude if grounded and not low else 0.0),blend)
 	bone_motion("L_Calf",Vector3(lk,0,0),blend)
@@ -242,10 +251,10 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 	bone_motion("R_Upperarm",Vector3(arm_r,0,7 if combat else 0),blend)
 	bone_motion("L_Forearm",Vector3(elbow_l,0,0),blend)
 	bone_motion("R_Forearm",Vector3(elbow_r,0,0),blend)
-	bone_motion("Waist",Vector3(lean*0.5,yaw_twist,0),blend)
-	bone_motion("Spine01",Vector3(lean*0.5+breathe,-yaw_twist*0.5,0),blend)
+	bone_motion("Waist",Vector3(lean*0.5,yaw_twist,weight_shift+lateral_lean*0.55),blend)
+	bone_motion("Spine01",Vector3(lean*0.5+breathe,-yaw_twist*0.5,-weight_shift*0.6+lateral_lean*0.45),blend)
 	bone_motion("Spine02",Vector3(breathe,-yaw_twist*0.5,0),blend)
-	bone_motion("Head",Vector3(-lean*0.5,0,0),blend)
+	bone_motion("Head",Vector3(-lean*0.5,0,-lateral_lean*0.35),blend)
 	# Align the lowest toe marker to its calibrated rest height on flat training ground.
 	if grounded and not foot_ids.is_empty():
 		skeleton.force_update_all_bone_transforms()
