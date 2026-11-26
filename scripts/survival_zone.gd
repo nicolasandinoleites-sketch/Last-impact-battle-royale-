@@ -5,6 +5,9 @@ const GRACE := 25.0
 const SHRINK_TIME := 180.0
 const STORM_HEIGHT := 38.0
 const StormShader = preload("res://shaders/storm_wall.gdshader")
+const VolumeShader = preload("res://shaders/storm_volume.gdshader")
+var volume: MeshInstance3D
+var volume_material: ShaderMaterial
 var radius := START_RADIUS
 var elapsed := 0.0
 var phase := 0
@@ -35,7 +38,8 @@ func _ready() -> void:
 	ring.hide()
 	storm_material = ShaderMaterial.new()
 	storm_material.shader = StormShader
-	storm_material.set_shader_parameter("cloud_tex",make_cloud_texture())
+	var cloud := make_cloud_texture()
+	storm_material.set_shader_parameter("cloud_tex",cloud)
 	wall = MeshInstance3D.new()
 	wall.mesh = make_wall()
 	wall.material_override = storm_material
@@ -48,6 +52,20 @@ func _ready() -> void:
 	outer_cloud.material_override = outer_material
 	outer_cloud.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(outer_cloud)
+	wall.hide()
+	outer_cloud.hide()
+	volume_material = ShaderMaterial.new()
+	volume_material.shader = VolumeShader
+	volume_material.render_priority = 100
+	volume_material.set_shader_parameter("cloud_tex",cloud)
+	volume = MeshInstance3D.new()
+	var quad := QuadMesh.new()
+	quad.size = Vector2(2.0,2.0)
+	volume.mesh = quad
+	volume.material_override = volume_material
+	volume.extra_cull_margin = 16384.0
+	volume.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(volume)
 	set_profile(quality)
 	reset_zone()
 
@@ -106,8 +124,10 @@ func set_profile(value: int) -> void:
 	if is_instance_valid(storm_material):
 		storm_material.set_shader_parameter("density",[0.89,0.94,0.97][quality])
 	if is_instance_valid(outer_cloud):
-		outer_cloud.visible = quality>0
+		outer_cloud.visible = false
 		outer_material.set_shader_parameter("density",[0.0,0.31,0.42][quality])
+	if is_instance_valid(volume_material):
+		volume_material.set_shader_parameter("sample_count",1 if quality==0 else 2)
 
 func _process(delta: float) -> void:
 	wind_clock = fmod(wind_clock+delta,1000.0)
@@ -115,6 +135,8 @@ func _process(delta: float) -> void:
 		storm_material.set_shader_parameter("wind_time",wind_clock)
 	if is_instance_valid(outer_material):
 		outer_material.set_shader_parameter("wind_time",wind_clock*0.68+37.0)
+	if is_instance_valid(volume_material):
+		volume_material.set_shader_parameter("wind_time",wind_clock)
 
 func reset_zone() -> void:
 	elapsed = 0.0
@@ -136,6 +158,9 @@ func update_ring() -> void:
 		wall.scale = Vector3(radius,1.0,radius)
 	if is_instance_valid(outer_cloud):
 		outer_cloud.scale = Vector3(radius+5.0,1.12,radius+5.0)
+	if is_instance_valid(volume_material):
+		volume_material.set_shader_parameter("safe_radius",radius)
+		volume_material.set_shader_parameter("storm_center",Vector2(global_position.x,global_position.z))
 
 func signed_distance(world_position: Vector3) -> float:
 	var p := to_local(world_position)
