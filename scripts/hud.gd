@@ -93,10 +93,14 @@ func _draw() -> void:
 
 func button_at(pos: Vector2) -> String:
 	var positions := buttons()
+	var best := ""
+	var nearest := INF
 	for name in positions:
-		if pos.distance_to(positions[name]) <= radius(name)+5*unit():
-			return name
-	return ""
+		var distance := pos.distance_to(positions[name])
+		if distance <= radius(name)+5*unit() and distance < nearest:
+			best = name
+			nearest = distance
+	return best
 
 func press_button(name: String, index: int) -> void:
 	match name:
