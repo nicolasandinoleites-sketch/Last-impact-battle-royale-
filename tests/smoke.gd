@@ -63,6 +63,15 @@ func run() -> void:
 	weapon.clear_effects()
 	if not check(weapon.cell_stage=="DOCKED" and weapon.energy_cell.position.is_equal_approx(weapon.cell_dock), "reload module reset"):
 		return
+	if not check(scene.arena_art.batch_count==4 and scene.arena_art.decoration_count>80, "batched arena decoration"):
+		return
+	var old_yaw: float = scene.player.yaw
+	scene.player.visual.rotation.y = 0.8
+	scene.player.sprint = false
+	scene.player.update_facing(Vector3.RIGHT,1.0)
+	if not check(absf(angle_difference(scene.player.visual.rotation.y,old_yaw))<0.01, "strafe keeps camera orientation"):
+		return
+	scene.player.visual.rotation.y = old_yaw
 	var actor = scene.player.raze
 	scene.player.weapon.update_pose(0.1,true,0.0)
 	if not check(is_instance_valid(scene.player.weapon.right_goal) and is_instance_valid(scene.player.weapon.left_goal), "dual wrist targets"):
@@ -150,5 +159,5 @@ func run() -> void:
 	scene.reset_round()
 	if not check(scene.eliminated==0 and scene.ammo==30 and scene.targets[0].active, "reset"):
 		return
-	print("LAST IMPACT R061 SMOKE PASS")
+	print("LAST IMPACT R062 SMOKE PASS")
 	quit(0)

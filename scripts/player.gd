@@ -23,6 +23,8 @@ var slide_cooldown := 0.0
 var jump_buffer := 0.0
 var ground_grace := 0.0
 var combat_facing := false
+var combat_hold := 0.0
+var local_motion := Vector2.ZERO
 const Raze = preload("res://scripts/raze.gd")
 var raze: Node3D
 var model_loaded := false
@@ -122,9 +124,9 @@ func look_delta(relative: Vector2) -> void:
 func update_camera(delta: float) -> void:
 	view_recoil = move_toward(view_recoil,0.0,delta*0.45)
 	pivot.rotation = Vector3(clampf(pitch+view_recoil,-0.85,0.48),yaw,0)
-	pivot.position.y = lerpf(pivot.position.y, 0.95 if low_stance else 1.52, minf(1.0,delta*10.0))
-	boom.position.x = lerpf(boom.position.x, shoulder * (0.72 if aiming else 0.52), minf(1.0, delta * 12.0))
-	boom.spring_length = lerpf(boom.spring_length, 1.95 if aiming else 2.75, minf(1.0, delta * 12.0))
+	pivot.position.y = lerpf(pivot.position.y, 0.98 if low_stance else 1.48, minf(1.0,delta*10.0))
+	boom.position.x = lerpf(boom.position.x, shoulder * (0.86 if aiming else 0.72), minf(1.0, delta * 12.0))
+	boom.spring_length = lerpf(boom.spring_length, 2.15 if aiming else 3.0, minf(1.0, delta * 12.0))
 	camera.fov = lerpf(camera.fov, 51.0 if aiming else 65.0, minf(1.0, delta * 12.0))
 
 func request_slide() -> void:
@@ -161,6 +163,8 @@ func reset_movement() -> void:
 	ground_grace = 0.0
 	aiming = false
 	combat_facing = false
+	combat_hold = 0.0
+	local_motion = Vector2.ZERO
 	set_stance(false)
 	reload_visual = 0.0
 	view_recoil = 0.0
@@ -178,6 +182,7 @@ func _physics_process(delta: float) -> void:
 		set_stance(true)
 	elif low_stance and can_stand():
 		set_stance(false)
+	combat_hold = 0.36 if aiming or combat_facing else maxf(0.0,combat_hold-delta)
 	update_camera(delta)
 	var direction := Basis(Vector3.UP,yaw) * Vector3(move_input.x,0,move_input.y)
 	var speed := 6.2 if sprint else 3.8
@@ -200,17 +205,15 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	contact_shadow.visible = is_on_floor()
 	contact_shadow.position.y = 0.018
-	if direction.length() > 0.12:
-		var angle := atan2(-direction.x,-direction.z)
-		visual.rotation.y = lerp_angle(visual.rotation.y,yaw if aiming or combat_facing else angle,minf(1.0,delta*14.0))
-	elif aiming or combat_facing:
-		visual.rotation.y = lerp_angle(visual.rotation.y,yaw,minf(1.0,delta*14.0))
+	update_facing(direction,delta)
+	var local_velocity := visual.global_transform.basis.orthonormalized().inverse()*Vector3(velocity.x,0.0,velocity.z)
+	local_motion = Vector2(local_velocity.x,local_velocity.z)
 	phase += delta * (12.0 if sprint else 9.0)
 	var stride := sin(phase)*0.45 if direction.length()>0.12 and is_on_floor() else 0.0
 	left_leg.rotation.x = stride
 	right_leg.rotation.x = -stride
 	if model_loaded:
-		raze.locomotion(delta,Vector2(velocity.x,velocity.z).length(),is_on_floor(),low_stance,aiming or combat_facing,sprint,velocity.y)
+		raze.locomotion(delta,Vector2(velocity.x,velocity.z).length(),is_on_floor(),low_stance,combat_hold>0.0,sprint,velocity.y,local_motion)
 	else:
 		visual.scale.y = lerpf(visual.scale.y,0.55 if low_stance else 1.0,minf(1.0,delta*12.0))
 	if weapon_loaded:
@@ -239,3 +242,12 @@ func create_contact_shadow() -> void:
 	contact_shadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	contact_shadow.position.y = 0.018
 	add_child(contact_shadow)
+
+func update_facing(direction: Vector3,delta: float) -> void:
+	# Keep the normal tactical stance aligned with the camera; free sprint turns toward movement.
+	var goal := yaw
+	if sprint and combat_hold<=0.0 and direction.length()>0.12:
+		goal = atan2(-direction.x,-direction.z)
+	if slide_time>0.0 and slide_direction.length()>0.1:
+		goal = atan2(-slide_direction.x,-slide_direction.z)
+	visual.rotation.y = lerp_angle(visual.rotation.y,goal,1.0-exp(-delta*(18.0 if combat_hold>0.0 else 12.0)))

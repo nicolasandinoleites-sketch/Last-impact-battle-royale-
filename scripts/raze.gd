@@ -95,7 +95,7 @@ func bone_motion(joint: String, degrees: Vector3, blend: float) -> void:
 	var qz := Quaternion((axis_map * Vector3.BACK).normalized(),deg_to_rad(current.z))
 	skeleton.set_bone_pose_rotation(id,(rest * qx * qy * qz).normalized())
 
-func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: bool, sprinting: bool = false, vertical_speed: float = 0.0) -> void:
+func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: bool, sprinting: bool = false, vertical_speed: float = 0.0, local_motion: Vector2 = Vector2.ZERO) -> void:
 	if not ready_model or preview_dance:
 		return
 	clock += delta
@@ -110,10 +110,15 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 	if moving and grounded and not low:
 		cycle = fposmod(cycle+delta*TAU*cadence,TAU)
 	var stride := sin(cycle)
+	var strafe := 0.0
+	var backward := 1.0
+	if local_motion.length()>0.18:
+		strafe = clampf(local_motion.x/local_motion.length(),-1.0,1.0)
+		backward = -1.0 if local_motion.y>0.2 else 1.0
 	var amplitude := minf(1.0,speed_blend*1.65)
 	var flex := 38.0 if fast else 24.0
-	var left := -stride*flex*amplitude
-	var right := stride*flex*amplitude
+	var left := -stride*flex*amplitude*backward*(1.0-0.45*absf(strafe))
+	var right := stride*flex*amplitude*backward*(1.0-0.45*absf(strafe))
 	var lk := maxf(0.0,stride)*(54.0 if fast else 37.0)*amplitude
 	var rk := maxf(0.0,-stride)*(54.0 if fast else 37.0)*amplitude
 	var la := -left*0.6
@@ -180,8 +185,8 @@ func locomotion(delta: float, speed: float, grounded: bool, low: bool, combat: b
 		elbow_r = -35.0
 	var blend := 1.0-exp(-delta*14.0)
 	var breathe := sin(clock*2.2)*1.4
-	bone_motion("L_Thigh",Vector3(left,0,0),blend)
-	bone_motion("R_Thigh",Vector3(right,0,0),blend)
+	bone_motion("L_Thigh",Vector3(left,0,strafe*stride*10.0*amplitude if grounded and not low else 0.0),blend)
+	bone_motion("R_Thigh",Vector3(right,0,-strafe*stride*10.0*amplitude if grounded and not low else 0.0),blend)
 	bone_motion("L_Calf",Vector3(lk,0,0),blend)
 	bone_motion("R_Calf",Vector3(rk,0,0),blend)
 	bone_motion("L_Foot",Vector3(la,0,0),blend)

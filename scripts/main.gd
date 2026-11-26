@@ -22,6 +22,8 @@ var mobile_sprint := false
 var profile := 0
 var sun: DirectionalLight3D
 var message := "Campo de entrenamiento"
+const ArenaArt = preload("res://scripts/arena_art.gd")
+var arena_art: Node3D
 
 func _ready() -> void:
 	var config := ConfigFile.new()
@@ -30,6 +32,9 @@ func _ready() -> void:
 	game_audio = GameAudio.new()
 	add_child(game_audio)
 	build_arena()
+	arena_art = ArenaArt.new()
+	add_child(arena_art)
+	arena_art.decorate(self)
 	apply_profile()
 	player = PlayerScript.new()
 	player.position = Vector3(0,0.1,12)
@@ -75,7 +80,7 @@ func build_arena() -> void:
 	var world := WorldEnvironment.new()
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color("81959e")
+	env.background_color = Color("8cabb8")
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color("c9d2d0")
 	env.ambient_light_energy = 0.78
@@ -87,6 +92,8 @@ func build_arena() -> void:
 	sun.shadow_enabled = false
 	add_child(sun)
 	var floor_mat := mat("65736c")
+	floor_mat.albedo_texture = ArenaArt.floor_texture()
+	floor_mat.uv1_scale = Vector3(20,20,20)
 	var concrete := mat("a7a596")
 	var dark := mat("49575a")
 	var orange := mat("b87942")
@@ -192,6 +199,9 @@ func apply_profile() -> void:
 func next_profile() -> void:
 	profile = (profile+1)%3
 	apply_profile()
+	var config := ConfigFile.new()
+	config.set_value("graphics","profile",profile)
+	config.save("user://lastimpact.cfg")
 	message = ["Bajo seguro · 30 FPS","Medio · 45 FPS","Alto · 60 FPS"][profile]
 
 func _notification(what: int) -> void:

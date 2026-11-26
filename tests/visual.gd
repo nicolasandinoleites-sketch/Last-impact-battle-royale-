@@ -128,6 +128,22 @@ func run() -> void:
 		inspection.look_at(follow+Vector3(0,1.28,-0.18))
 		inspection.fov = 42.0
 		await capture("motion_reload_%02d" % sample)
+	# Real Android screen aspect ratio, without changing the safe graphics backend.
+	inspection.current = false
+	scene.player.camera.current = true
+	scene.hud.show()
+	root.size = Vector2i(1280,570)
+	scene.reset_round()
+	await wait_frames(30)
+	await capture("11_mobile_idle")
+	scene.player.aiming = true
+	await wait_frames(30)
+	await capture("12_mobile_aim")
+	scene.mobile_move = Vector2(1,0)
+	for tick in range(24):
+		await physics_frame
+	await capture("13_mobile_strafe")
+	scene.mobile_move = Vector2.ZERO
 	print("VISUAL MOTION COMPLETE")
 	print("VISUAL CAPTURE COMPLETE")
 	quit(0)

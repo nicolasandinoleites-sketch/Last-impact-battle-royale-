@@ -45,14 +45,15 @@ func _draw() -> void:
 	var font := int(12*u)
 	draw_minimap(u)
 	draw_rect(Rect2(at(0.145,0.025),Vector2(180,62)*u),DARK)
-	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R061",int(14*u),ACCENT)
+	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R062",int(14*u),ACCENT)
 	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d   ·   MEM %.0f MB" % [Engine.get_frames_per_second(),Performance.get_monitor(Performance.MEMORY_STATIC)/1048576.0],font)
 	label_at(at(0.145,0.025)+Vector2(9,50)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
 	centered(at(0.49,0.16),game.message,int(15*u))
 	var center := size*0.5
+	var spread := 1.0 if game.player.aiming else 1.45
 	var c := ACCENT if game.hit_left>0.0 else WHITE
 	for v in [Vector2.LEFT,Vector2.RIGHT,Vector2.UP,Vector2.DOWN]:
-		draw_line(center+v*4*u,center+v*12*u,c,2*u,true)
+		draw_line(center+v*4*u*spread,center+v*12*u*spread,c,2*u,true)
 	var joystick := move_center if move_id>=0 else at(0.14,0.80)
 	draw_circle(joystick,58*u,Color(0.04,0.07,0.09,0.38))
 	draw_arc(joystick,58*u,0,TAU,40,Color(1,1,1,0.55),2*u,true)
@@ -66,16 +67,16 @@ func _draw() -> void:
 		draw_arc(p,r,0,TAU,32,Color(1,1,1,0.68),1.5*u,true)
 		draw_button_icon(name,p,u)
 		centered(p+Vector2(0,13*u),names[name],int(9*u))
-	var ammo_pos := at(0.54,0.91)
-	draw_rect(Rect2(ammo_pos-Vector2(85,20)*u,Vector2(170,48)*u),DARK)
-	centered(ammo_pos, "%02d / %03d" % [game.ammo,game.reserve],int(24*u))
-	centered(ammo_pos+Vector2(0,20)*u,"IGNIS X1",int(10*u),ACCENT)
+	var ammo_pos := ammo_anchor()
+	draw_rect(Rect2(ammo_pos-Vector2(70,17)*u,Vector2(140,39)*u),DARK)
+	centered(ammo_pos, "%02d / %03d" % [game.ammo,game.reserve],int(20*u))
+	centered(ammo_pos+Vector2(0,14)*u,"IGNIS X1",int(10*u),ACCENT)
 	if game.reload_left>0.0:
 		var progress := 1.0-clampf(float(game.reload_left)/1.4,0.0,1.0)
 		var track := Rect2(ammo_pos+Vector2(-72,-27)*u,Vector2(144,4)*u)
 		draw_rect(track,DARK)
 		draw_rect(Rect2(track.position,Vector2(track.size.x*progress,track.size.y)),ACCENT)
-	var bar := Rect2(at(0.45,0.81),Vector2(160,6)*u)
+	var bar := health_rect()
 	draw_rect(bar,DARK)
 	draw_rect(Rect2(bar.position,Vector2(bar.size.x*game.health/100.0,bar.size.y)),Color("68d9a4"))
 	centered(bar.get_center()+Vector2(0,-11*u),"VIDA %d / ESCUDO %d" % [game.health,game.armor],int(10*u))
@@ -169,6 +170,8 @@ func _input(event: InputEvent) -> void:
 				KEY_F2: game.reset_round()
 				KEY_ESCAPE: get_tree().change_scene_to_file("res://lobby.tscn")
 	elif event is InputEventMouseButton:
+		if OS.has_feature("android"):
+			return
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
 				var name := button_at(event.position)
@@ -222,3 +225,10 @@ func draw_button_icon(name: String,p: Vector2,u: float) -> void:
 			draw_line(q+Vector2(s,-s*0.65),q+Vector2(s,0),WHITE,2*u,true)
 		_:
 			draw_rect(Rect2(q-Vector2(s,s)*0.65,Vector2(s,s)*1.3),WHITE,false,1.5*u)
+
+func ammo_anchor() -> Vector2:
+	return at(0.83,0.94)
+
+func health_rect() -> Rect2:
+	var u := unit()
+	return Rect2(at(0.27,0.96)-Vector2(65,0)*u,Vector2(130,6)*u)
