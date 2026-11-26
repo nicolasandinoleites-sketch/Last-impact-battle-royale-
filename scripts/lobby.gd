@@ -43,7 +43,7 @@ func _process(delta: float) -> void:
 		preview_elapsed += delta
 	poll_preview()
 	if is_instance_valid(preview):
-		preview.active_preview = (mode=="home" or mode=="loadout") and not launching
+		preview.active_preview = (mode=="home" or mode=="loadout" or mode=="operator") and not launching
 		if not preview.active_preview:
 			preview.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	refresh_left -= delta
@@ -150,7 +150,7 @@ func _draw() -> void:
 		operator_art()
 		text_at(35,186,"OPERADOR 01",20,GOLD)
 		text_at(35,214,"Recluta de pruebas",17,MUTED)
-		text_at(35,242,"Modelo Tripo: pendiente",16,MUTED)
+		text_at(35,242,"Modelo RAZE",16,MUTED)
 		action(rect(710,450,226,62),"VOLVER")
 	if launching:
 		panel(rect(290,465,380,52),Color("27333d"))
@@ -268,5 +268,10 @@ func poll_preview() -> void:
 	preview = Preview.new()
 	add_child(preview)
 	preview_load_ms = Time.get_ticks_msec()-preview_started_ms
-	print("LOBBY PREVIEW READY MS ",preview_load_ms)
+	if preview.loaded:
+		print("LOBBY PREVIEW READY MS ",preview_load_ms)
+	else:
+		status = "Vista previa no disponible: modo seguro"
+		preview.queue_free()
+		preview = null
 	queue_redraw()
