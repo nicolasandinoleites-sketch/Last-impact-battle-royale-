@@ -55,10 +55,12 @@ func _draw() -> void:
 	if game == null:
 		return
 	var u := unit()
+	if game.survival_mode:
+		draw_storm_exposure()
 	var font := int(12*u)
 	draw_minimap(u)
 	draw_rect(Rect2(at(0.145,0.025),Vector2(180,62)*u),DARK)
-	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R073",int(14*u),ACCENT)
+	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R075",int(14*u),ACCENT)
 	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d   ·   MEM %.0f MB" % [cached_fps,cached_mem],font)
 	label_at(at(0.145,0.025)+Vector2(9,50)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
 	if game.survival_mode:
@@ -67,7 +69,9 @@ func _draw() -> void:
 	if game.survival_mode:
 		var zone_label := "ZONA %d m · %ds · %d/%d rivales" % [roundi(game.zone.radius),game.zone.seconds_remaining(),game.targets.size()-game.eliminated,game.targets.size()]
 		if game.zone.outside(game.player.global_position):
-			zone_label += " · FUERA"
+			zone_label += " · TORMENTA: SAL DE AHI"
+		elif game.zone.signed_distance(game.player.global_position)>-7.0:
+			zone_label += " · FRENTE PROXIMO"
 		centered(at(0.49,0.205),zone_label,int(12*u),Color("ffb26b") if game.zone.outside(game.player.global_position) else Color("5ecdf2"))
 	var center := size*0.5
 	var spread := 1.0 if game.player.aiming else 1.45
@@ -322,3 +326,17 @@ func ammo_anchor() -> Vector2:
 func health_rect() -> Rect2:
 	var u := unit()
 	return Rect2(at(0.145,0.025)+Vector2(9,83)*u,Vector2(150,6)*u)
+
+func draw_storm_exposure() -> void:
+	var intensity: float = game.storm_exposure
+	if intensity<0.005:
+		return
+	# Cheap translucent dust tint and graduated edges behind the HUD.
+	draw_rect(Rect2(Vector2.ZERO,size),Color(0.53,0.34,0.18,intensity*0.19))
+	for i in range(5):
+		var width := float(5-i)*size.y*0.018
+		var c := Color(0.29,0.17,0.09,intensity*0.065)
+		draw_rect(Rect2(0,0,size.x,width),c)
+		draw_rect(Rect2(0,size.y-width,size.x,width),c)
+		draw_rect(Rect2(0,width,width,size.y-width*2.0),c)
+		draw_rect(Rect2(size.x-width,width,width,size.y-width*2.0),c)

@@ -42,6 +42,8 @@ var mobile_move := Vector2.ZERO
 var mobile_sprint := false
 var profile := 0
 var sun: DirectionalLight3D
+var world_environment: Environment
+var storm_exposure := 0.0
 var message := "Campo de entrenamiento"
 const ArenaArt = preload("res://scripts/arena_art.gd")
 var arena_art: Node3D
@@ -64,6 +66,7 @@ func _ready() -> void:
 	if survival_mode:
 		zone = ZoneScript.new()
 		add_child(zone)
+		zone.set_profile(profile)
 		message = "Supervivencia: permanece en la zona"
 		spawn_pickups()
 	for p in [Vector3(0,0,-4),Vector3(-8,0,-8),Vector3(9,0,-13),Vector3(-15,0,-20),Vector3(14,0,7),Vector3(-18,0,7)]:
@@ -119,6 +122,7 @@ func build_arena() -> void:
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color("c9d2d0")
 	env.ambient_light_energy = 0.78
+	world_environment = env
 	world.environment = env
 	add_child(world)
 	sun = DirectionalLight3D.new()
@@ -275,6 +279,8 @@ func apply_profile() -> void:
 		# Shared instancing keeps decorative detail cheap; low profile drops roof trim only.
 		if frontier.decor.get_child_count()>2:
 			frontier.decor.get_child(2).visible = profile>0
+	if is_instance_valid(zone):
+		zone.set_profile(profile)
 	sun.shadow_enabled = profile == 2 and not OS.has_feature("android")
 
 func next_profile() -> void:
@@ -392,6 +398,10 @@ func use_shield_cell() -> bool:
 	return true
 
 func _process(_delta: float) -> void:
+	if survival_mode and is_instance_valid(zone) and is_instance_valid(player):
+		storm_exposure = lerpf(storm_exposure,zone.exposure(player.global_position),1.0-exp(-_delta*3.0))
+		world_environment.background_color = Color("8cabb8").lerp(Color("79614e"),storm_exposure)
+		world_environment.ambient_light_color = Color("c9d2d0").lerp(Color("b28e71"),storm_exposure)
 	if not OS.has_feature("android") or not survival_mode or qa_sample_done or qa_sample_start==0:
 		return
 	var elapsed := Time.get_ticks_msec()-qa_sample_start

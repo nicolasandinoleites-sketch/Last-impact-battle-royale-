@@ -220,6 +220,22 @@ func run() -> void:
 	survival.zone.advance(100.0)
 	await wait_frames(10)
 	await capture("18_survival_zone")
+	var saved_position: Vector3 = survival.player.position
+	var saved_yaw: float = survival.player.yaw
+	survival.player.position = Vector3(0,0.1,survival.zone.radius-6.0)
+	survival.player.yaw = PI
+	survival.player.reset_movement()
+	survival.player.reset_physics_interpolation()
+	await wait_frames(35)
+	await capture("26_storm_approaching")
+	survival.player.position = Vector3(0,0.1,survival.zone.radius+5.0)
+	survival.player.yaw = 0.0
+	survival.player.reset_movement()
+	survival.player.reset_physics_interpolation()
+	await wait_frames(35)
+	await capture("27_storm_exposure")
+	survival.player.position = saved_position
+	survival.player.yaw = saved_yaw
 	survival.damage_player(200)
 	await wait_frames(10)
 	await capture("19_survival_result")

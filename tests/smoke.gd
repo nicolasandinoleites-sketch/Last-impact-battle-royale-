@@ -286,6 +286,11 @@ func run() -> void:
 		return
 	if not check(survival.pickups.size()==9 and survival.inventory.medkits==0, "survival loot startup"):
 		return
+	var storm = survival.zone
+	if not check(is_instance_valid(storm.wall) and storm.wall.mesh.get_surface_count()==1 and is_equal_approx(storm.wall.scale.x,storm.radius), "storm geometry synchronized with safe radius"):
+		return
+	if not check(storm.exposure(Vector3.ZERO)<0.01 and storm.exposure(Vector3(54,0,0))>0.2 and storm.exposure(Vector3(63,0,0))>0.99, "storm exposure increases across boundary"):
+		return
 	var frontier = survival.frontier
 	if not check(frontier.routes_ready and frontier.sectors.size()==4 and frontier.buildings.size()==4 and frontier.decor.batch_count==3, "frontier sectors, buildings and instanced decoration"):
 		return
@@ -339,7 +344,7 @@ func run() -> void:
 	if not check(survival.targets[0].position.distance_to(drone_start)>0.1, "arcade drone moves"):
 		return
 	survival.zone.advance(84.0)
-	if not check(survival.zone.radius<54.0 and survival.zone.radius>6.0, "zone contracts"):
+	if not check(survival.zone.radius<54.0 and survival.zone.radius>6.0 and is_equal_approx(survival.zone.wall.scale.x,survival.zone.radius), "zone contracts with storm front"):
 		return
 	survival.zone.advance(200.0)
 	if not check(is_equal_approx(survival.zone.radius,6.0) and survival.zone.phase==2, "zone reaches final size"):
