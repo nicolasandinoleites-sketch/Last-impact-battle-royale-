@@ -59,6 +59,8 @@ func run() -> void:
 	var left_error: float = actor.solve_arm("L",scene.player.weapon.left_goal.global_position,Vector3(-1,-1,0))
 	if not check(is_finite(right_error) and is_finite(left_error) and right_error<0.18 and left_error<0.18, "two arm IK bounded error"):
 		return
+	if not check(actor.finger_axes.size()>=18, "finger articulation map"):
+		return
 	if not check(scene.game_audio.fire_player.stream != null and scene.game_audio.reload_player.stream != null, "synthetic game audio"):
 		return
 	if not check(actor.joints.size()==14 and actor.right_socket.bone_name=="R_Hand" and actor.left_socket.bone_name=="L_Hand", "locomotion joint map and sockets"):

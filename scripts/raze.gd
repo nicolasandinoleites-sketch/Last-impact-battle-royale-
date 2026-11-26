@@ -16,6 +16,7 @@ var was_grounded := true
 var axes: Dictionary = {}
 var joints: Dictionary = {}
 var offsets: Dictionary = {}
+var finger_axes: Dictionary = {}
 var right_socket: BoneAttachment3D
 var left_socket: BoneAttachment3D
 const JOINTS = ["L_Thigh","R_Thigh","L_Calf","R_Calf","L_Foot","R_Foot","L_Upperarm","R_Upperarm","L_Forearm","R_Forearm","Waist","Spine01","Spine02","Head"]
@@ -69,6 +70,7 @@ func load_model() -> bool:
 	left_socket.name = "LeftHandSocket"
 	left_socket.bone_name = "L_Hand"
 	skeleton.add_child(left_socket)
+	prepare_fingers()
 	ready_model = true
 	return true
 
@@ -252,3 +254,43 @@ func solve_arm(side: String, world_goal: Vector3, world_pole: Vector3) -> float:
 	c = skeleton.get_bone_global_pose(hand).origin
 	rotate_bone_toward(fore,c-b,a+dir*d-b)
 	return skeleton.to_global(skeleton.get_bone_global_pose(hand).origin).distance_to(world_goal)
+
+func arm_reach_correction(side: String, world_goal: Vector3) -> Vector3:
+	var upper := skeleton.find_bone(side+"_Upperarm")
+	var fore := skeleton.find_bone(side+"_Forearm")
+	var hand := skeleton.find_bone(side+"_Hand")
+	if mini(upper,mini(fore,hand))<0:
+		return Vector3.ZERO
+	var a := skeleton.to_global(skeleton.get_bone_global_pose(upper).origin)
+	var b := skeleton.to_global(skeleton.get_bone_global_pose(fore).origin)
+	var c := skeleton.to_global(skeleton.get_bone_global_pose(hand).origin)
+	var reach := a.distance_to(b)+b.distance_to(c)-0.012
+	var diff := world_goal-a
+	return -diff.normalized()*maxf(0.0,diff.length()-reach)
+
+func prepare_fingers() -> void:
+	# Infer the natural flexion plane from each finger's existing rest curvature.
+	for side in ["L","R"]:
+		for digit in ["Index","Mid","Ring","Pinky"]:
+			var one := skeleton.find_bone(side+"_"+digit+"1")
+			var two := skeleton.find_bone(side+"_"+digit+"2")
+			var three := skeleton.find_bone(side+"_"+digit+"3")
+			if mini(one,mini(two,three))<0:
+				continue
+			var a := skeleton.get_bone_global_rest(one).origin
+			var b := skeleton.get_bone_global_rest(two).origin
+			var c := skeleton.get_bone_global_rest(three).origin
+			var bend := (b-a).cross(c-b)
+			if bend.length_squared()<0.0000000001:
+				continue
+			for id in [one,two,three]:
+				finger_axes[id] = skeleton.get_bone_global_rest(id).basis.orthonormalized().inverse()*bend.normalized()
+
+func close_fingers(strength: float) -> void:
+	if preview_dance:
+		return
+	for id in finger_axes:
+		var axis: Vector3 = finger_axes[id]
+		var rest: Quaternion = base[id]
+		var angle := 0.14 if skeleton.get_bone_name(id).ends_with("3") else 0.20
+		skeleton.set_bone_pose_rotation(id,(rest*Quaternion(axis.normalized(),angle*strength)).normalized())

@@ -48,7 +48,8 @@ const project=p=>p[0]*ax+p[2]*az;
 let lo=Math.min(...pts.map(project)),hi=Math.max(...pts.map(project));
 const spread=(list)=>{if(!list.length)return Infinity;const ys=list.map(p=>p[1]),xs=list.map(p=>-az*p[0]+ax*p[2]);return (Math.max(...ys)-Math.min(...ys))*(Math.max(...xs)-Math.min(...xs));};
 const endA=spread(pts.filter(p=>project(p)<lo+(hi-lo)*.15)),endB=spread(pts.filter(p=>project(p)>hi-(hi-lo)*.15));
-if(endA<endB){ax=-ax;az=-az;[lo,hi]=[-hi,-lo];}
+// Visual review 2: the prior extent heuristic points the stock forward for this asset.
+if(endA>=endB){ax=-ax;az=-az;[lo,hi]=[-hi,-lo];}
 const mid=(lo+hi)/2, factor=.68/(hi-lo);
 const cross=p=>-az*p[0]+ax*p[2];
 const cx=(Math.min(...pts.map(cross))+Math.max(...pts.map(cross)))/2;

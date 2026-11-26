@@ -54,5 +54,19 @@ func run() -> void:
 	await wait_frames(20)
 	await capture("06_grip_left")
 	print("GRIP DIAGNOSTIC ",scene.player.weapon.right_error," / ",scene.player.weapon.left_error)
+	if maxf(scene.player.weapon.right_error,scene.player.weapon.left_error)>0.025:
+		push_error("VISUAL CAPTURE FAILED: grip distance exceeds 25 mm")
+		quit(1)
+		return
+	# Inspect the isolated imported cosmetic asset at full render resolution.
+	root.scaling_3d_scale = 1.0
+	scene.player.visual.hide()
+	var center: Vector3 = scene.player.weapon.global_position
+	var side: Vector3 = scene.player.weapon.global_transform.basis.x.normalized()
+	inspection.position = center+side*1.05+Vector3(0,0.13,0)
+	inspection.look_at(center)
+	inspection.fov = 42.0
+	await wait_frames(20)
+	await capture("07_weapon_isolated")
 	print("VISUAL CAPTURE COMPLETE")
 	quit(0)

@@ -71,7 +71,7 @@ func update_pose(delta: float, aiming: bool, reload: float, low: bool = false, p
 	var frame := facing.global_transform.basis.orthonormalized()
 	var body_origin := facing.global_position
 	var lower := -0.29 if low else 0.0
-	var desired := body_origin + frame * Vector3(0.10,1.31+lower,-0.24+kick)
+	var desired := body_origin + frame * Vector3(0.065,1.33+lower,-0.19+kick)
 	var tilt := sin(reload*PI) if reload>0.0 else 0.0
 	aim_pitch = lerpf(aim_pitch,clampf(pitch,-0.48,0.40) if aiming else -0.18,1.0-exp(-delta*16.0))
 	var local_basis := Basis.from_euler(Vector3(aim_pitch,0.0,tilt*0.34))
@@ -81,8 +81,16 @@ func update_pose(delta: float, aiming: bool, reload: float, low: bool = false, p
 		var support := left_goal.global_position
 		if reload>0.0:
 			support += frame*Vector3(-0.045,-0.10*tilt,0.09*tilt)
+		# Shift the shared cosmetic pose minimally toward reachable wrist targets.
+		for pass_index in range(2):
+			var correction: Vector3 = actor.arm_reach_correction("L",support)
+			if correction.length() < 0.002:
+				break
+			global_position += correction.limit_length(0.045)
+			support += correction.limit_length(0.045)
 		right_error = actor.solve_arm("R",right_goal.global_position,frame*Vector3(0.65,-0.7,0.25))
 		left_error = actor.solve_arm("L",support,frame*Vector3(-0.65,-0.7,0.10))
+		actor.close_fingers(clampf(1.0-reload*0.45,0.0,1.0))
 
 func pulse() -> void:
 	if not loaded:
