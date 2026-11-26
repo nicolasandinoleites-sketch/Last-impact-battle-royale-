@@ -9,6 +9,7 @@ func measure(game, speed: float, calibrated: bool, lock_feet: bool = false) -> D
 	var actor = game.player.raze
 	actor.reset_locomotion()
 	actor.clip_motion.calibration_enabled = calibrated
+	actor.clip_motion.configure_sprint_candidate(calibrated and lock_feet)
 	actor.contact_lock_enabled = lock_feet
 	game.player.position = Vector3.ZERO
 	var points: Array[PackedVector3Array] = [PackedVector3Array(),PackedVector3Array()]
@@ -61,7 +62,7 @@ func run() -> void:
 		var candidate := measure(game,speed,true)
 		var locked := measure(game,speed,true,true)
 		print("GAIT AB ",JSON.stringify({"baseline":baseline,"candidate":candidate,"locked":locked}))
-		if (speed<5.5 and locked["contacts"]<1) or locked["samples"]<1 or not is_finite(locked["stance_slip_proxy_m_s"]) or locked["ik_residual_m"]>0.20:
+		if (locked["contacts"]<1) or locked["samples"]<1 or not is_finite(locked["stance_slip_proxy_m_s"]) or locked["ik_residual_m"]>0.20:
 			push_error("TEST FAILED: contact lock never activated or exceeded IK residual budget")
 			quit(1)
 			return

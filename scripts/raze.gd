@@ -118,6 +118,7 @@ func bone_motion(joint: String, degrees: Vector3, blend: float) -> void:
 func enable_locomotion_clips() -> bool:
 	var ok := clip_motion.setup(skeleton)
 	if ok:
+		clip_motion.configure_sprint_candidate(clip_motion.calibrated)
 		crouch_motion.setup(skeleton,clip_motion.library)
 	return ok
 

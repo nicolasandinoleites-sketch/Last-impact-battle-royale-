@@ -33,7 +33,8 @@ var sprint_support_masks: Array = []
 var sprint_lock_enabled := false
 
 # Calibrated from CI 169, artifact 15149963736, trial 0.70/1.15.
-# Remains opt-in until visual and gameplay comparison are reviewed.
+# R0772 enables this candidate after successful calibrated library setup.
+# Neutral initialization and explicit disable remain available for fallback and tests.
 func configure_sprint_candidate(enabled: bool) -> void:
 	sprint_amplitude = 0.7 if enabled else 1.0
 	sprint_cadence_multiplier = 1.15 if enabled else 1.0

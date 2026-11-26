@@ -17,9 +17,8 @@ func run() -> void:
 		await physics_frame
 	var actor = game.player.raze
 	var clips = actor.clip_motion
-	if not check(clips.available and not clips.sprint_lock_enabled,"candidate opt-in only"):
+	if not check(clips.available and clips.sprint_lock_enabled,"calibrated candidate enabled by default"):
 		return
-	clips.configure_sprint_candidate(true)
 	game.reset_round()
 	for i in range(8):
 		await physics_frame
