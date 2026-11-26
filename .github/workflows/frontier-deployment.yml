@@ -66,3 +66,15 @@ jobs:
         with:
           name: LastImpact_R0781_SourceOverlay
           path: /tmp/r0781-overlay/
+
+      - name: Stage full Godot project for local real-asset validation
+        if: always()
+        run: |
+          mkdir -p /tmp/r0781-project
+          tar --exclude=.git --exclude=.godot --exclude=.github --exclude=tools/node_modules -cf - . | tar -xf - -C /tmp/r0781-project
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: LastImpact_R0781_GodotProject
+          path: /tmp/r0781-project/
+          include-hidden-files: false
