@@ -8,6 +8,7 @@ const MUTED := Color("a2b6c2")
 const GOLD := Color("ffae58")
 const LOGO = preload("res://icon.svg")
 const Preview = preload("res://scripts/lobby_preview.gd")
+const MobileProfile = preload("res://scripts/mobile_profile.gd")
 var preview: SubViewport
 var mode := "home"
 var quality := 0
@@ -28,6 +29,7 @@ func _ready() -> void:
 	var config := ConfigFile.new()
 	if config.load("user://lastimpact.cfg") == OK:
 		quality = clampi(int(config.get_value("graphics","profile",0)),0,2)
+	MobileProfile.apply_android(get_tree().root,quality)
 	info = "%s | %s" % [RenderingServer.get_video_adapter_name(),RenderingServer.get_video_adapter_api_version()]
 	print("LAST IMPACT R073 LOBBY READY | ",info)
 	if DisplayServer.get_name() != "headless":
@@ -161,6 +163,7 @@ func _draw() -> void:
 
 func choose_profile(value: int) -> void:
 	quality = clampi(value,0,2)
+	MobileProfile.apply_android(get_tree().root,quality)
 	var config := ConfigFile.new()
 	config.set_value("graphics","profile",quality)
 	config.save("user://lastimpact.cfg")
