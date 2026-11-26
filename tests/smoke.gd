@@ -162,9 +162,16 @@ func run() -> void:
 			return
 	if not check(actor.ankle_basis.size()==2, "calibrated ankle orientations"):
 		return
-	var test_cadence: float = actor.gait_cadence(1.5,false)
-	var test_step: float = actor.gait_half_step(1.5,test_cadence,false)
-	if not check(absf(2.0*test_step*test_cadence/0.62-1.5)<0.001, "stance travel matches nominal speed"):
+	for speed in [0.5,1.5,2.8]:
+		var test_cadence: float = actor.gait_cadence(speed,false)
+		var test_step: float = actor.gait_half_step(speed,test_cadence,false)
+		var stance_speed := 2.0*test_step*test_cadence/0.62
+		print("GAIT nominal=",speed," stance=",stance_speed," cadence=",test_cadence," half_step=",test_step)
+		if not check(absf(stance_speed-speed)<0.001, "stance travel matches nominal speed "+str(speed)):
+			return
+	var sprint_cadence: float = actor.gait_cadence(6.2,true)
+	var sprint_step: float = actor.gait_half_step(6.2,sprint_cadence,true)
+	if not check(sprint_step<=0.36 and sprint_cadence<=3.2, "sprint respects leg reach and cadence budgets"):
 		return
 	var max_ik := 0.0
 	for i in range(8):
@@ -275,10 +282,26 @@ func run() -> void:
 	var survival = load("res://survival.tscn").instantiate()
 	root.add_child(survival)
 	await frames(5)
-	if not check(survival.survival_mode and survival.targets.size()==6 and survival.zone.radius>30.0 and survival.round_result=="", "survival scene starts"):
+	if not check(survival.survival_mode and survival.targets.size()==6 and survival.zone.radius>50.0 and survival.round_result=="", "survival scene starts"):
 		return
 	if not check(survival.pickups.size()==9 and survival.inventory.medkits==0, "survival loot startup"):
 		return
+	var frontier = survival.frontier
+	if not check(frontier.routes_ready and frontier.sectors.size()==4 and frontier.buildings.size()==4 and frontier.decor.batch_count==3, "frontier sectors, buildings and instanced decoration"):
+		return
+	var route: PackedVector3Array = frontier.route(Vector3(-38,0,-34),Vector3(-38,0,-44))
+	if not check(route.size()>=2, "building entrance route"):
+		return
+	for point in route:
+		if not check(not frontier.grid.is_point_solid(frontier.cell_at(point)), "route avoids marked obstacles"):
+			return
+	var loot_a: Array[Vector3] = frontier.loot_positions(7300)
+	var loot_b: Array[Vector3] = frontier.loot_positions(7301)
+	if not check(loot_a.size()==9 and loot_a==frontier.loot_positions(7300) and loot_a!=loot_b, "seeded loot reproducibility and variation"):
+		return
+	for i in range(loot_a.size()):
+		if not check(loot_a.count(loot_a[i])==1 and not frontier.grid.is_point_solid(frontier.cell_at(loot_a[i])), "unique reachable loot site"):
+			return
 	var opponent = survival.targets[2]
 	if not check(opponent.model_loaded and opponent.actor.skeleton!=survival.player.raze.skeleton and opponent.actor.skeleton.get_bone_count()>=70, "independent imported opponent rig"):
 		return
@@ -316,7 +339,7 @@ func run() -> void:
 	if not check(survival.targets[0].position.distance_to(drone_start)>0.1, "arcade drone moves"):
 		return
 	survival.zone.advance(84.0)
-	if not check(survival.zone.radius<34.0 and survival.zone.radius>6.0, "zone contracts"):
+	if not check(survival.zone.radius<54.0 and survival.zone.radius>6.0, "zone contracts"):
 		return
 	survival.zone.advance(200.0)
 	if not check(is_equal_approx(survival.zone.radius,6.0) and survival.zone.phase==2, "zone reaches final size"):
@@ -334,7 +357,7 @@ func run() -> void:
 	if not check(survival.round_result=="DERROTA" and survival.health==0 and not survival.fire, "defeat stops round"):
 		return
 	survival.reset_round()
-	if not check(survival.round_result=="" and survival.health==100 and survival.eliminated==0 and survival.zone.radius==34.0 and survival.targets[0].active, "survival reset"):
+	if not check(survival.round_result=="" and survival.health==100 and survival.eliminated==0 and survival.zone.radius==54.0 and survival.targets[0].active, "survival reset"):
 		return
 	if not check(opponent.active and opponent.hp==100 and opponent.anim_updates==0 and survival.player.is_physics_processing(), "opponent reset and player resume"):
 		return
@@ -343,5 +366,5 @@ func run() -> void:
 	survival.update_survival(0.0)
 	if not check(survival.round_result=="VICTORIA", "survival victory"):
 		return
-	print("LAST IMPACT R072 SMOKE PASS")
+	print("LAST IMPACT R073 SMOKE PASS")
 	quit(0)

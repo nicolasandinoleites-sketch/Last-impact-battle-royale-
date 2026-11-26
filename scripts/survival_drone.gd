@@ -9,6 +9,9 @@ var spin := 0.0
 var contact_left := 0.0
 var detour_left := 0.0
 var detour_side := 1.0
+var path_left := 0.0
+var route_points := PackedVector3Array()
+var route_index := 0
 
 func _ready() -> void:
 	spawn_point = position
@@ -59,10 +62,14 @@ func _physics_process(delta: float) -> void:
 	var difference: Vector3 = game.player.global_position-global_position
 	difference.y = 0.0
 	var direction := difference.normalized()
+	var destination: Vector3 = game.player.global_position
 	if game.zone.outside(global_position):
+		destination = game.zone.global_position
 		direction = Vector3(-global_position.x,0,-global_position.z).normalized()
 	elif difference.length()<1.35:
 		direction = Vector3.ZERO
+	if direction.length_squared()>0.01:
+		direction = navigation_direction(destination,delta,direction)
 	if detour_left>0.0 and direction.length_squared()>0.01:
 		direction = direction.rotated(Vector3.UP,detour_side*PI*0.5)
 	velocity = direction*2.2
@@ -103,4 +110,21 @@ func reset_target() -> void:
 	contact_left = 0.0
 	detour_left = 0.0
 	detour_side = 1.0
+	path_left = 0.0
+	route_points.clear()
+	route_index = 0
 	spin = 0.0
+
+func navigation_direction(destination: Vector3, delta: float, direct: Vector3) -> Vector3:
+	path_left -= delta
+	if path_left<=0.0:
+		route_points = game.frontier.route(global_position,destination)
+		route_index = 1
+		path_left = 0.8
+	while route_index<route_points.size():
+		var difference := route_points[route_index]-global_position
+		difference.y = 0.0
+		if difference.length()>0.65:
+			return difference.normalized()
+		route_index += 1
+	return direct

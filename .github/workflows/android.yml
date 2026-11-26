@@ -7,6 +7,8 @@ on:
         type: boolean
         default: false
   push:
+    branches: [r073-frontier]
+  pull_request:
     branches: [r072-operators]
 permissions:
   contents: read
@@ -85,7 +87,7 @@ jobs:
           Godot_v4.6-stable_linux.x86_64 --headless --path . --quit-after 90 2>&1 | tee /tmp/smoke.log
           if grep -E 'SCRIPT ERROR|Parse Error|Invalid (call|access)' /tmp/smoke.log; then exit 1; fi
           timeout 90s Godot_v4.6-stable_linux.x86_64 --headless --path . --script res://tests/smoke.gd 2>&1 | tee /tmp/tests.log
-          grep -F 'LAST IMPACT R072 SMOKE PASS' /tmp/tests.log
+          grep -F 'LAST IMPACT R073 SMOKE PASS' /tmp/tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|TEST FAILED' /tmp/tests.log; then exit 1; fi
       - name: Render desktop visual diagnostics
         run: |
@@ -106,23 +108,26 @@ jobs:
           test -s /tmp/lastimpact_visual/21_inventory_collected.png
           test -s /tmp/lastimpact_visual/22_operator_model.png
           test -s /tmp/lastimpact_visual/23_operator_motion.png
+          test -s /tmp/lastimpact_visual/24_frontier_overview.png
+          test -s /tmp/lastimpact_visual/25_frontier_interior.png
       - name: Render Android-safe material path
         run: |
           set -euo pipefail
           mkdir -p /tmp/lastimpact_visual_safe
           LASTIMPACT_SAFE_RENDER=1 LIBGL_ALWAYS_SOFTWARE=1 timeout 180s xvfb-run -a Godot_v4.6-stable_linux.x86_64 --path . --rendering-method gl_compatibility --script res://tests/safe_visual.gd 2>&1 | tee /tmp/safe_visual.log
           grep -F 'SAFE MATERIAL CAPTURE COMPLETE' /tmp/safe_visual.log
+          test -s /tmp/lastimpact_visual_safe/03_safe_frontier.png
           if grep -E 'SCRIPT ERROR|Parse Error|VISUAL CAPTURE FAILED' /tmp/safe_visual.log; then exit 1; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: LastImpact_R072_SafeVisual
+          name: LastImpact_R073_SafeVisual
           path: /tmp/lastimpact_visual_safe/
           if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: LastImpact_R072_Visual
+          name: LastImpact_R073_Visual
           path: /tmp/lastimpact_visual/
           if-no-files-found: ignore
       - name: Export debug APK
@@ -130,24 +135,24 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build
-          Godot_v4.6-stable_linux.x86_64 --headless --verbose --path . --export-debug Android build/LastImpact_R072.apk 2>&1 | tee /tmp/export.log
-          test -s build/LastImpact_R072.apk
-          "$ANDROID_HOME/build-tools/35.0.1/apksigner" verify --verbose build/LastImpact_R072.apk
-          "$ANDROID_HOME/build-tools/35.0.1/aapt" dump badging build/LastImpact_R072.apk | head -n 20 || true
-          sha256sum build/LastImpact_R072.apk > build/SHA256SUMS.txt
+          Godot_v4.6-stable_linux.x86_64 --headless --verbose --path . --export-debug Android build/LastImpact_R073.apk 2>&1 | tee /tmp/export.log
+          test -s build/LastImpact_R073.apk
+          "$ANDROID_HOME/build-tools/35.0.1/apksigner" verify --verbose build/LastImpact_R073.apk
+          "$ANDROID_HOME/build-tools/35.0.1/aapt" dump badging build/LastImpact_R073.apk | head -n 20 || true
+          sha256sum build/LastImpact_R073.apk > build/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.export_apk }}
         with:
-          name: LastImpact_R072_Android
+          name: LastImpact_R073_Android
           path: |
-            build/LastImpact_R072.apk
+            build/LastImpact_R073.apk
             build/SHA256SUMS.txt
           if-no-files-found: error
       - name: Upload diagnostic logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: LastImpact_R072_Diagnostico
+          name: LastImpact_R073_Diagnostico
           path: |
             /tmp/import.log
             /tmp/smoke.log

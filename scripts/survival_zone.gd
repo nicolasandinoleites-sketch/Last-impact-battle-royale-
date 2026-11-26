@@ -1,8 +1,8 @@
 extends Node3D
-const START_RADIUS := 34.0
+const START_RADIUS := 54.0
 const END_RADIUS := 6.0
-const GRACE := 18.0
-const SHRINK_TIME := 132.0
+const GRACE := 25.0
+const SHRINK_TIME := 180.0
 var radius := START_RADIUS
 var elapsed := 0.0
 var phase := 0

@@ -16,6 +16,9 @@ var contact_left := 0.0
 var detour_left := 0.0
 var detour_sign := 1.0
 var ai_state := "IDLE"
+var path_left := 0.0
+var route_points := PackedVector3Array()
+var route_index := 0
 var animation_interval := 1.0/20.0
 var full_animation_distance := 14.0
 
@@ -86,13 +89,17 @@ func _physics_process(delta: float) -> void:
 	difference.y = 0.0
 	var distance := difference.length()
 	var direction := difference.normalized()
+	var destination: Vector3 = game.player.global_position
 	ai_state = "FOLLOW"
 	if game.zone.outside(global_position):
 		ai_state = "ZONE"
+		destination = game.zone.global_position
 		direction = Vector3(-global_position.x,0,-global_position.z).normalized()
 	elif distance<1.3:
 		ai_state = "IDLE"
 		direction = Vector3.ZERO
+	if direction.length_squared()>0.01:
+		direction = navigation_direction(destination,delta,direction)
 	if detour_left>0.0 and direction.length_squared()>0.01:
 		direction = direction.rotated(Vector3.UP,detour_sign*PI*0.5)
 	velocity.x = move_toward(velocity.x,direction.x*2.35,delta*10.0)
@@ -151,9 +158,26 @@ func reset_target() -> void:
 	contact_left = 0.0
 	detour_left = 0.0
 	detour_sign = 1.0
+	path_left = 0.0
+	route_points.clear()
+	route_index = 0
 	anim_elapsed = 0.0
 	anim_updates = 0
 	ai_state = "IDLE"
 	visual.rotation.y = 0.0
 	if model_loaded:
 		actor.reset_locomotion()
+
+func navigation_direction(destination: Vector3, delta: float, direct: Vector3) -> Vector3:
+	path_left -= delta
+	if path_left<=0.0:
+		route_points = game.frontier.route(global_position,destination)
+		route_index = 1
+		path_left = 0.65
+	while route_index<route_points.size():
+		var difference := route_points[route_index]-global_position
+		difference.y = 0.0
+		if difference.length()>0.65:
+			return difference.normalized()
+		route_index += 1
+	return direct
