@@ -279,6 +279,11 @@ func run() -> void:
 		return
 	if not check(survival.pickups.size()==9 and survival.inventory.medkits==0, "survival loot startup"):
 		return
+	var opponent = survival.targets[2]
+	if not check(opponent.model_loaded and opponent.actor.skeleton!=survival.player.raze.skeleton and opponent.actor.skeleton.get_bone_count()>=70, "independent imported opponent rig"):
+		return
+	if not check(survival.targets[4].model_loaded and survival.targets[0].get_script()!=opponent.get_script(), "mixed drone and operator roster"):
+		return
 	var supply = survival.pickups[0]
 	survival.player.position = Vector3(0,0.1,24)
 	if not check(not survival.collect_nearby() and supply.active, "pickup distance gate"):
@@ -304,7 +309,10 @@ func run() -> void:
 	if not check(supply.active and energy.quantity==40 and survival.inventory.medkits==0 and survival.reserve==120, "loot reset"):
 		return
 	var drone_start: Vector3 = survival.targets[0].position
+	var operator_start: Vector3 = opponent.position
 	await frames(24)
+	if not check(opponent.position.distance_to(operator_start)>0.1 and opponent.anim_updates>0, "humanoid movement and animation"):
+		return
 	if not check(survival.targets[0].position.distance_to(drone_start)>0.1, "arcade drone moves"):
 		return
 	survival.zone.advance(84.0)
@@ -328,10 +336,12 @@ func run() -> void:
 	survival.reset_round()
 	if not check(survival.round_result=="" and survival.health==100 and survival.eliminated==0 and survival.zone.radius==34.0 and survival.targets[0].active, "survival reset"):
 		return
-	for drone in survival.targets:
-		drone.take_hit(100)
+	if not check(opponent.active and opponent.hp==100 and opponent.anim_updates==0 and survival.player.is_physics_processing(), "opponent reset and player resume"):
+		return
+	for rival in survival.targets:
+		rival.take_hit(100)
 	survival.update_survival(0.0)
 	if not check(survival.round_result=="VICTORIA", "survival victory"):
 		return
-	print("LAST IMPACT R071 SMOKE PASS")
+	print("LAST IMPACT R072 SMOKE PASS")
 	quit(0)
