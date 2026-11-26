@@ -23,12 +23,15 @@ static func sample(actor: Node3D, clip: Animation) -> Dictionary:
 		rig.force_update_all_bone_transforms()
 		for side in range(2):
 			var p := actor.to_local(rig.to_global(rig.get_bone_global_pose(ids[4+side]).origin))
-			feet[side].append(p)
+			var points := feet[side]
+			points.append(p)
+			feet[side] = points
 	rig.reset_bone_poses()
 	rig.force_update_all_bone_transforms()
 	var stance := PackedFloat64Array()
 	var masks: Array = []
 	var offset := 0.0
+	var left_contacts := 0
 	for side in range(2):
 		var points := feet[side]
 		var min_y := INF
@@ -47,11 +50,13 @@ static func sample(actor: Node3D, clip: Animation) -> Dictionary:
 			mask.append(1.0 if contact else 0.0)
 			if contact:
 				stance.append(velocity.z)
+				if side==0:
+					left_contacts += 1
 				if side==0 and points[k].z<best:
 					best = points[k].z
 					offset = float(k)/STEPS
 		masks.append(mask)
-	if stance.size()<12:
+	if stance.size()<12 or left_contacts<6:
 		return {"valid":false,"samples":stance.size()}
 	stance.sort()
 	var travel := stance[floori(float(stance.size())/2.0)]
