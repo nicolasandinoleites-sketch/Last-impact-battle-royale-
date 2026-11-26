@@ -7,9 +7,9 @@ on:
         type: boolean
         default: false
   push:
-    branches: [r0761-animation-pipeline]
+    branches: [r0762-clip-locomotion]
   pull_request:
-    branches: [r076-locomotion]
+    branches: [r0761-animation-pipeline]
 permissions:
   contents: read
 jobs:
@@ -99,7 +99,6 @@ jobs:
           if grep -E 'SCRIPT ERROR|Parse Error|TEST FAILED' /tmp/tests.log; then exit 1; fi
       - name: Audit verified CC0 animation source
         id: animation_source_audit
-        continue-on-error: true
         run: |
           set -euo pipefail
           # Fetch only the pinned archive, never execute third-party repository scripts.
@@ -121,7 +120,6 @@ jobs:
       - name: Experimental retarget preview on actual RAZE
         if: steps.animation_source_audit.outcome == 'success'
         id: retarget_preview
-        continue-on-error: true
         run: |
           set -euo pipefail
           mkdir -p /tmp/lastimpact_retarget
@@ -140,6 +138,16 @@ jobs:
           name: LastImpact_ANI02_RetargetPreview
           path: /tmp/lastimpact_retarget/
           if-no-files-found: ignore
+      - name: Package validated animation library and verify gameplay
+        run: |
+          set -euo pipefail
+          test -s /tmp/lastimpact_retarget/raze_experimental.tres
+          mkdir -p assets/animations
+          cp /tmp/lastimpact_retarget/raze_experimental.tres assets/animations/raze_locomotion.tres
+          timeout 90s Godot_v4.6-stable_linux.x86_64 --headless --path . --editor --import 2>&1 | tee /tmp/clip_import.log
+          timeout 90s Godot_v4.6-stable_linux.x86_64 --headless --path . --script res://tests/clip_gameplay.gd 2>&1 | tee /tmp/clip_gameplay.log
+          grep -F 'RAZE CLIP GAMEPLAY PASS' /tmp/clip_gameplay.log
+          if grep -E 'SCRIPT ERROR|Parse Error|TEST FAILED' /tmp/clip_gameplay.log /tmp/clip_import.log; then exit 1; fi
       - name: Render desktop visual diagnostics
         run: |
           set -euo pipefail
@@ -180,7 +188,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: LastImpact_R076_StaticAB
+          name: LastImpact_R0762_StaticAB
           path: /tmp/lastimpact_batch_ab/
           if-no-files-found: ignore
       - name: Render Android-safe material path
@@ -195,13 +203,13 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: LastImpact_R076_SafeVisual
+          name: LastImpact_R0762_SafeVisual
           path: /tmp/lastimpact_visual_safe/
           if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: LastImpact_R076_Visual
+          name: LastImpact_R0762_Visual
           path: /tmp/lastimpact_visual/
           if-no-files-found: ignore
       - name: Prepare internal emulator APK (x86_64 only)
@@ -233,7 +241,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: LastImpact_R076_AndroidQA
+          name: LastImpact_R0762_AndroidQA
           path: |
             /tmp/lastimpact_android_qa/
             /tmp/emulator_export.log
@@ -254,7 +262,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: ${{ success() }}
         with:
-          name: LastImpact_R076_Android
+          name: LastImpact_R0762_Android
           path: |
             build/LastImpact_R076.apk
             build/SHA256SUMS.txt
@@ -263,13 +271,15 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: LastImpact_R076_Diagnostico
+          name: LastImpact_R0762_Diagnostico
           path: |
             /tmp/import.log
             /tmp/smoke.log
             /tmp/tests.log
             /tmp/rig_audit.log
             /tmp/retarget_math.log
+            /tmp/clip_import.log
+            /tmp/clip_gameplay.log
             /tmp/raze_rig_audit.json
             /tmp/touch_tests.log
             /tmp/export.log
