@@ -291,6 +291,17 @@ func run() -> void:
 		return
 	if not check(storm.exposure(Vector3.ZERO)<0.01 and storm.exposure(Vector3(54,0,0))>0.2 and storm.exposure(Vector3(63,0,0))>0.99, "storm exposure increases across boundary"):
 		return
+	if not check(storm.wall.mesh.surface_get_array_len(0)>=3000 and not storm.ring.visible, "billowing storm geometry without artificial world ring"):
+		return
+	if not check(absf(storm.wall_vertex(0.17,0).length()-1.0)<0.001 and absf(storm.wall_vertex(0.17,5).y-storm.wall_vertex(0.47,5).y)>0.1, "storm ground boundary and irregular crown"):
+		return
+	storm.set_profile(0)
+	if not check(not storm.outer_cloud.visible, "low profile uses single storm surface"):
+		return
+	storm.set_profile(2)
+	if not check(storm.outer_cloud.visible and is_equal_approx(storm.outer_cloud.scale.x,storm.radius+5.0), "high profile adds exterior dust cloud"):
+		return
+	storm.set_profile(survival.profile)
 	var frontier = survival.frontier
 	if not check(frontier.routes_ready and frontier.sectors.size()==4 and frontier.buildings.size()==4 and frontier.decor.batch_count==3, "frontier sectors, buildings and instanced decoration"):
 		return
