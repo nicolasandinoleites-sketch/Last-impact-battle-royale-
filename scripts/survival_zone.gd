@@ -42,13 +42,19 @@ func _ready() -> void:
 
 func make_cloud_texture() -> ImageTexture:
 	var image := Image.create(128,128,false,Image.FORMAT_L8)
-	# Periodic procedural cloud texture; the shader only samples two texels.
+	var noise := FastNoiseLite.new()
+	noise.seed = 7531
+	noise.frequency = 0.036
+	noise.fractal_octaves = 4
+	noise.fractal_gain = 0.53
+	# Blend periodic noise at opposite edges, not trigonometric repeating waves.
 	for y in range(128):
 		for x in range(128):
-			var u := float(x)*TAU/128.0
-			var v := float(y)*TAU/128.0
-			var n := 0.5+0.18*sin(u*3.0+sin(v*2.0))*cos(v*2.0-u)+0.13*sin(u*5.0-v*3.0)+0.09*cos(u*9.0+v*7.0)+0.08*sin(v*11.0-u*4.0)
-			var value := clampf(n,0.0,1.0)
+			var u := smoothstep(0.0,1.0,float(x)/128.0)
+			var v := smoothstep(0.0,1.0,float(y)/128.0)
+			var a := lerpf(noise.get_noise_2d(x,y),noise.get_noise_2d(x-128,y),u)
+			var b := lerpf(noise.get_noise_2d(x,y-128),noise.get_noise_2d(x-128,y-128),u)
+			var value := clampf(0.5+lerpf(a,b,v)*1.05,0.0,1.0)
 			image.set_pixel(x,y,Color(value,value,value))
 	return ImageTexture.create_from_image(image)
 
