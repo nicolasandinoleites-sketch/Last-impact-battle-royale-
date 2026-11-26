@@ -100,8 +100,25 @@ func run() -> void:
 	scene.hud._input(touch)
 	if not check(scene.mobile_move==Vector2.ZERO, "touch release clears movement"):
 		return
-	scene.player.aiming = false
-	scene.hud.clear_controls()
+	# A cancelled finger must release its action even if the event was marked pressed.
+	var fire_touch := InputEventScreenTouch.new()
+	fire_touch.index = 4
+	fire_touch.pressed = true
+	fire_touch.position = scene.hud.buttons()["FIRE"]
+	scene.hud._input(fire_touch)
+	if not check(scene.fire and scene.hud.fire_id==4, "fire touch ownership"):
+		return
+	fire_touch.canceled = true
+	scene.hud._input(fire_touch)
+	if not check(not scene.fire and scene.hud.fire_id==-1, "cancelled fire touch releases action"):
+		return
+	scene.player.aiming = true
+	scene.player.jump_requested = true
+	scene.player.jump_buffer = 0.1
+	scene.mobile_sprint = true
+	scene.hud._notification(NOTIFICATION_APPLICATION_PAUSED)
+	if not check(not scene.player.aiming and not scene.player.jump_requested and scene.player.jump_buffer==0.0 and not scene.mobile_sprint, "pause clears transient inputs"):
+		return
 	var actor = scene.player.raze
 	scene.player.weapon.update_pose(0.1,true,0.0)
 	if not check(is_instance_valid(scene.player.weapon.right_goal) and is_instance_valid(scene.player.weapon.left_goal), "dual wrist targets"):
@@ -195,7 +212,7 @@ func run() -> void:
 	var origin: Vector3 = scene.player.position
 	scene.mobile_move = Vector2(0,-1)
 	await frames(20)
-	if not check(scene.player.position.distance_to(origin)>0.5, "movement"):
+	if not check(scene.player.position.distance_to(origin)>0.5 and scene.player.animation_speed>0.18, "movement drives animation from actual displacement"):
 		return
 	scene.player.request_slide()
 	await frames(4)
@@ -224,5 +241,14 @@ func run() -> void:
 	scene.reset_round()
 	if not check(scene.eliminated==0 and scene.ammo==30 and scene.targets[0].active, "reset"):
 		return
-	print("LAST IMPACT R062 SMOKE PASS")
+	# Walk into the arena boundary, then verify actual locomotion speed settles.
+	scene.player.position = Vector3(38.9,0.1,0)
+	scene.player.reset_movement()
+	scene.player.yaw = 0.0
+	scene.mobile_move = Vector2(1,0)
+	await frames(90)
+	if not check(scene.player.animation_speed<0.18 and scene.player.raze.motion_state=="IDLE", "blocked movement does not walk in place"):
+		return
+	scene.mobile_move = Vector2.ZERO
+	print("LAST IMPACT R063 SMOKE PASS")
 	quit(0)
