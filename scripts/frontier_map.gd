@@ -10,6 +10,11 @@ var buildings: Array[Rect2] = []
 var sectors: Array[Dictionary] = []
 var decor
 var routes_ready := false
+var block_batches: Dictionary = {}
+var batched_blocks := 0
+var batch_draw_groups := 0
+var batch_enabled := true
+var batch_region := "perimeter"
 static var surface_cache: Dictionary = {}
 var loot_sites: Array[Vector3] = [
 	Vector3(-3,0,10),Vector3(3,0,10),Vector3(0,0,7),
@@ -21,6 +26,7 @@ var building_centers: Array[Vector3] = [Vector3(-38,0,-34),Vector3(38,0,-34),Vec
 
 func build(owner_game) -> void:
 	game = owner_game
+	batch_enabled = OS.get_environment("LASTIMPACT_LEGACY_BLOCKS")!="1"
 	var floor_mat: StandardMaterial3D = game.mat("67767a")
 	floor_mat.albedo_texture = Art.floor_texture()
 	floor_mat.uv1_scale = Vector3(32,32,32)
@@ -49,9 +55,12 @@ func build(owner_game) -> void:
 		tile.uv1_scale = Vector3(16,16,16)
 		slab(Vector3(center.x,0.006,center.y),Vector3(area.size.x,0.012,area.size.y),tile)
 	for center in building_centers:
+		batch_region = "building_%s" % str(center)
 		building(center,wall_mat,roof_mat,accent)
+	batch_region = "cover"
 	for p in [Vector3(-6,0.75,1),Vector3(7,0.75,3),Vector3(4,0.75,-10),Vector3(-11,0.75,-14),Vector3(15,0.75,-4),Vector3(-25,0.75,0),Vector3(25,0.75,0),Vector3(-12,0.75,34),Vector3(12,0.75,-34)]:
 		wall(p,Vector3(2.5,1.5,1.3),accent)
+	flush_block_batches()
 	decor = Art.new()
 	add_child(decor)
 	var strips: Array[Transform3D] = []
@@ -99,7 +108,7 @@ func slab(pos: Vector3, dimensions: Vector3, material: Material) -> void:
 	add_child(instance)
 
 func wall(pos: Vector3, dimensions: Vector3, material: Material) -> void:
-	game.block(pos,dimensions,material)
+	static_block(pos,dimensions,material)
 	obstacles.append(Rect2(Vector2(pos.x-dimensions.x*0.5,pos.z-dimensions.z*0.5),Vector2(dimensions.x,dimensions.z)))
 
 func building(center: Vector3, material: Material, roof: Material, accent: Material) -> void:
@@ -109,8 +118,54 @@ func building(center: Vector3, material: Material, roof: Material, accent: Mater
 		wall(center+Vector3(side*5.0,1.8,0),Vector3(0.35,3.6,10.35),material)
 		for x in [-3.65,3.65]:
 			wall(center+Vector3(x,1.8,side*5.0),Vector3(2.7,3.6,0.35),material)
-		game.block(center+Vector3(0,3.35,side*5.0),Vector3(4.6,0.5,0.35),accent)
-	game.block(center+Vector3(0,3.75,0),Vector3(10.6,0.4,10.6),roof)
+		static_block(center+Vector3(0,3.35,side*5.0),Vector3(4.6,0.5,0.35),accent)
+	static_block(center+Vector3(0,3.75,0),Vector3(10.6,0.4,10.6),roof)
+
+# Group only identical BoxMesh dimensions/materials in the same area.
+# Physics bodies retain their original dimensions, positions and layer/mask.
+func static_block(pos: Vector3, dimensions: Vector3, material: Material) -> void:
+	if not batch_enabled:
+		game.block(pos,dimensions,material)
+		return
+	var body := StaticBody3D.new()
+	body.position = pos
+	game.add_child(body)
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = dimensions
+	collision.shape = shape
+	body.add_child(collision)
+	var key := "%s|%s|%s" % [batch_region,str(dimensions),str(material.get_instance_id())]
+	if not block_batches.has(key):
+		block_batches[key] = {"size":dimensions,"material":material,"positions":[]}
+	block_batches[key]["positions"].append(pos)
+	batched_blocks += 1
+
+func flush_block_batches() -> void:
+	for key in block_batches:
+		var data: Dictionary = block_batches[key]
+		var positions: Array = data["positions"]
+		var mesh := BoxMesh.new()
+		mesh.size = data["size"]
+		mesh.material = data["material"]
+		if positions.size()==1:
+			var single := MeshInstance3D.new()
+			single.mesh = mesh
+			single.position = positions[0]
+			add_child(single)
+		else:
+			var instances := MultiMesh.new()
+			instances.transform_format = MultiMesh.TRANSFORM_3D
+			instances.mesh = mesh
+			instances.instance_count = positions.size()
+			for i in range(positions.size()):
+				instances.set_instance_transform(i,Transform3D(Basis.IDENTITY,positions[i]))
+			var group := MultiMeshInstance3D.new()
+			group.multimesh = instances
+			add_child(group)
+		batch_draw_groups += 1
+	block_batches.clear()
+	print("FRONTIER STATIC BATCHES | blocks=",batched_blocks," groups=",batch_draw_groups," enabled=",batch_enabled)
 
 func cell_at(p: Vector3) -> Vector2i:
 	return Vector2i(clampi(floori((p.x+HALF)/CELL),0,CELLS-1),clampi(floori((p.z+HALF)/CELL),0,CELLS-1))
