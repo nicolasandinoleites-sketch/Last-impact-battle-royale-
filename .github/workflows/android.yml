@@ -7,9 +7,9 @@ on:
         type: boolean
         default: false
   push:
-    branches: [r0756-touch-qa]
+    branches: [r0757-static-batching]
   pull_request:
-    branches: [r0755-telemetry]
+    branches: [r0756-touch-qa]
 permissions:
   contents: read
 jobs:
@@ -119,6 +119,21 @@ jobs:
           test -s /tmp/lastimpact_visual/storm_cross_00.png
           test -s /tmp/lastimpact_visual/storm_cross_01.png
           test -s /tmp/lastimpact_visual/storm_cross_02.png
+      - name: Compare static draw batching in fixed camera
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/lastimpact_batch_ab
+          LASTIMPACT_SAFE_RENDER=1 LIBGL_ALWAYS_SOFTWARE=1 timeout 120s xvfb-run -a Godot_v4.6-stable_linux.x86_64 --path . --rendering-method gl_compatibility --script res://tests/static_batch_ab.gd 2>&1 | tee /tmp/lastimpact_batch_ab/metrics.log
+          grep -F 'STATIC BATCH AB COMPLETE' /tmp/lastimpact_batch_ab/metrics.log
+          if grep -E 'SCRIPT ERROR|Parse Error|TEST FAILED|SHADER ERROR' /tmp/lastimpact_batch_ab/metrics.log; then exit 1; fi
+          test -s /tmp/lastimpact_batch_ab/legacy.png
+          test -s /tmp/lastimpact_batch_ab/batched.png
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: LastImpact_R0757_StaticAB
+          path: /tmp/lastimpact_batch_ab/
+          if-no-files-found: ignore
       - name: Render Android-safe material path
         run: |
           set -euo pipefail
@@ -131,13 +146,13 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: LastImpact_R0756_SafeVisual
+          name: LastImpact_R0757_SafeVisual
           path: /tmp/lastimpact_visual_safe/
           if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: LastImpact_R0756_Visual
+          name: LastImpact_R0757_Visual
           path: /tmp/lastimpact_visual/
           if-no-files-found: ignore
       - name: Prepare internal emulator APK (x86_64 only)
@@ -169,7 +184,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: LastImpact_R0756_AndroidQA
+          name: LastImpact_R0757_AndroidQA
           path: |
             /tmp/lastimpact_android_qa/
             /tmp/emulator_export.log
@@ -179,27 +194,27 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build
-          Godot_v4.6-stable_linux.x86_64 --headless --verbose --path . --export-debug Android build/LastImpact_R0756.apk 2>&1 | tee /tmp/export.log
-          test -s build/LastImpact_R0756.apk
-          "$ANDROID_HOME/build-tools/35.0.1/apksigner" verify --verbose build/LastImpact_R0756.apk
-          "$ANDROID_HOME/build-tools/35.0.1/aapt" dump badging build/LastImpact_R0756.apk | head -n 20 || true
-          unzip -l build/LastImpact_R0756.apk > /tmp/arm-apk-contents.txt
+          Godot_v4.6-stable_linux.x86_64 --headless --verbose --path . --export-debug Android build/LastImpact_R0757.apk 2>&1 | tee /tmp/export.log
+          test -s build/LastImpact_R0757.apk
+          "$ANDROID_HOME/build-tools/35.0.1/apksigner" verify --verbose build/LastImpact_R0757.apk
+          "$ANDROID_HOME/build-tools/35.0.1/aapt" dump badging build/LastImpact_R0757.apk | head -n 20 || true
+          unzip -l build/LastImpact_R0757.apk > /tmp/arm-apk-contents.txt
           grep -F "lib/arm64-v8a/libgodot_android.so" /tmp/arm-apk-contents.txt
           grep -F "lib/armeabi-v7a/libgodot_android.so" /tmp/arm-apk-contents.txt
-          sha256sum build/LastImpact_R0756.apk > build/SHA256SUMS.txt
+          sha256sum build/LastImpact_R0757.apk > build/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         if: ${{ success() }}
         with:
-          name: LastImpact_R0756_Android
+          name: LastImpact_R0757_Android
           path: |
-            build/LastImpact_R0756.apk
+            build/LastImpact_R0757.apk
             build/SHA256SUMS.txt
           if-no-files-found: error
       - name: Upload diagnostic logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: LastImpact_R0756_Diagnostico
+          name: LastImpact_R0757_Diagnostico
           path: |
             /tmp/import.log
             /tmp/smoke.log
