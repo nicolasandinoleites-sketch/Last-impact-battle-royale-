@@ -91,4 +91,8 @@ func run() -> void:
 	if not check(game.health==100 and game.inventory.medkits==0,"heal consumes inventory"):
 		return
 	print("LAST IMPACT TOUCH FIXTURES PASS")
+	game.queue_free()
+	await process_frame
+	await process_frame
+	OS.delay_msec(200)
 	quit(0)

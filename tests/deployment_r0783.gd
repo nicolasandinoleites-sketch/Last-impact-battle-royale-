@@ -51,4 +51,5 @@ func run() -> void:
  await create_timer(0.25).timeout
  game.queue_free()
  await create_timer(0.25).timeout
+ OS.delay_msec(200)
  quit()

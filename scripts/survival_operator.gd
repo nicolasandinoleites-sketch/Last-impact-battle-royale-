@@ -172,7 +172,9 @@ func decide_tactical(delta: float) -> Vector3:
 		tactical_pickup = null
 		set_tactical_goal("ZONE",open_goal(center))
 		return tactical_goal
-	var supply = select_supply()
+	if ai_state == "COVER" and not seen and reload_left > 0:
+		return tactical_goal
+	var supply = select_supply() if not seen or hp<45 else null
 	if is_instance_valid(supply) and (not seen or hp<45):
 		tactical_pickup = supply
 		set_tactical_goal("LOOT",supply.global_position)
@@ -324,7 +326,7 @@ func _physics_process(delta: float) -> void:
 	update_lens_guard(camera.global_position)
 	# Use several conservative samples so a tall actor at the frustum edge is not
 	# treated as fully offscreen. Near actors retain the normal update rate.
-	var on_screen := camera.is_position_in_frustum(global_position+Vector3.UP*0.25) or camera.is_position_in_frustum(global_position+Vector3.UP*0.9) or camera.is_position_in_frustum(global_position+Vector3.UP*1.75)
+	var on_screen := distance<=8.0 or camera.is_position_in_frustum(global_position+Vector3.UP*0.25) or camera.is_position_in_frustum(global_position+Vector3.UP*0.9) or camera.is_position_in_frustum(global_position+Vector3.UP*1.75)
 	var reduced := animation_lod_enabled and (lens_hidden or (distance>8.0 and not on_screen))
 	animation_interval = 1.0/5.0 if reduced else (1.0/20.0 if distance<full_animation_distance else 1.0/10.0)
 	if reduced:
@@ -334,7 +336,14 @@ func _physics_process(delta: float) -> void:
 		var local := visual.global_transform.basis.orthonormalized().inverse()*horizontal
 		var start_us := Time.get_ticks_usec()
 		actor.locomotion(minf(anim_elapsed,0.20),horizontal.length(),is_on_floor(),false,ai_state=="ENGAGE",false,velocity.y,Vector2(local.x,local.z) if distance<full_animation_distance else Vector2.ZERO)
-		if weapon != null: weapon.update_pose(anim_elapsed,ai_state=="ENGAGE",reload_left/RELOAD_TIME)
+		if weapon != null:
+			var detail: bool = not (game.profile == 0 and (reduced or distance > full_animation_distance))
+			weapon.energy_cell.visible = detail or reload_left > 0
+			var pitch := 0.0
+			if ai_state == "ENGAGE" and is_instance_valid(enemy):
+				var aim := enemy.global_position-global_position
+				pitch = atan2(aim.y,Vector2(aim.x,aim.z).length())
+			weapon.update_pose(anim_elapsed,ai_state=="ENGAGE",reload_left/RELOAD_TIME,false,pitch)
 		animation_cost_us = lerpf(animation_cost_us,float(Time.get_ticks_usec()-start_us),0.12)
 		anim_elapsed = 0.0
 		anim_updates += 1

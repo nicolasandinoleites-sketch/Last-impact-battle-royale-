@@ -373,6 +373,10 @@ func next_profile() -> void:
 		message = ["Bajo seguro · 30 FPS","Medio · 45 FPS","Alto · 60 FPS"][profile]
 
 func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and experimental_deployment:
+		# Detach the instances before their shared render resources are released.
+		for instance in find_children("*","MeshInstance3D",true,false):
+			instance.mesh = null
 	if what == NOTIFICATION_APPLICATION_PAUSED or what == NOTIFICATION_APPLICATION_FOCUS_OUT:
 		telemetry_paused = true
 		telemetry.reset()
@@ -528,7 +532,7 @@ func _process(_delta: float) -> void:
 			report["seed"] = round_seed
 			report["zone_phase"] = zone.phase
 			report["storm_exposure"] = storm_exposure
-			report["build"] = "0.7.7.3"
+			report["build"] = ProjectSettings.get_setting("application/config/version")
 			report["air_clips"] = player.raze.air_motion.available
 			report["air_samples"] = player.raze.air_motion.samples
 			report["sprint_tuned"] = player.raze.clip_motion.sprint_lock_enabled

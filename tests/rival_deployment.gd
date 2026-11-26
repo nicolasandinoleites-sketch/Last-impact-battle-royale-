@@ -50,4 +50,5 @@ func run() -> void:
  game.queue_free()
  await process_frame
  await process_frame
+ OS.delay_msec(200)
  quit()
