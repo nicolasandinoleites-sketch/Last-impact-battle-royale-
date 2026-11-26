@@ -161,6 +161,9 @@ jobs:
           grep -F 'SPRINT CALIBRATION COMPLETE' /tmp/lastimpact_sprint_ab/metrics.log
           if grep -E 'SCRIPT ERROR|Parse Error|TEST FAILED' /tmp/lastimpact_sprint_ab/metrics.log; then exit 1; fi
           test -s /tmp/lastimpact_sprint_ab/report.json
+          timeout 90s Godot_v4.6-stable_linux.x86_64 --headless --path . --script res://tests/sprint_candidate_gameplay.gd 2>&1 | tee /tmp/lastimpact_sprint_ab/gameplay.log
+          grep -F 'SPRINT CANDIDATE GAMEPLAY PASS' /tmp/lastimpact_sprint_ab/gameplay.log
+          if grep -E 'SCRIPT ERROR|Parse Error|TEST FAILED' /tmp/lastimpact_sprint_ab/gameplay.log; then exit 1; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -184,6 +187,8 @@ jobs:
           test -s /tmp/lastimpact_visual/motion_carry_ads.png
           test -s /tmp/lastimpact_visual/motion_crouch_idle.png
           test -s /tmp/lastimpact_visual/motion_crouch_walk_03.png
+          test -s /tmp/lastimpact_visual/sprint_compare_reference_07.png
+          test -s /tmp/lastimpact_visual/sprint_compare_candidate_07.png
           test -s /tmp/lastimpact_visual/motion_reload_11.png
           test -s /tmp/lastimpact_visual/17_survival_start.png
           test -s /tmp/lastimpact_visual/19_survival_result.png
