@@ -209,6 +209,8 @@ func _physics_process(delta: float) -> void:
 		velocity.y -= 18.0*delta
 	if jump_buffer > 0.0 and ground_grace > 0.0 and not low_stance:
 		velocity.y = 6.0
+		if get_parent().has_method("qa_control"):
+			get_parent().qa_control("JUMP")
 		jump_buffer = 0.0
 		ground_grace = 0.0
 	move_and_slide()
