@@ -60,7 +60,7 @@ func _draw() -> void:
 	var font := int(12*u)
 	draw_minimap(u)
 	draw_rect(Rect2(at(0.145,0.025),Vector2(180,62)*u),DARK)
-	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0751",int(14*u),ACCENT)
+	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0752",int(14*u),ACCENT)
 	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d   ·   MEM %.0f MB" % [cached_fps,cached_mem],font)
 	label_at(at(0.145,0.025)+Vector2(9,50)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
 	if game.survival_mode:
@@ -332,7 +332,7 @@ func draw_storm_exposure() -> void:
 	if intensity<0.005:
 		return
 	# Cheap translucent dust tint and graduated edges behind the HUD.
-	draw_rect(Rect2(Vector2.ZERO,size),Color(0.53,0.34,0.18,intensity*0.19))
+	draw_rect(Rect2(Vector2.ZERO,size),Color(0.53,0.34,0.18,intensity*0.12))
 	for i in range(5):
 		var width := float(5-i)*size.y*0.018
 		var c := Color(0.29,0.17,0.09,intensity*0.065)
@@ -340,3 +340,15 @@ func draw_storm_exposure() -> void:
 		draw_rect(Rect2(0,size.y-width,size.x,width),c)
 		draw_rect(Rect2(0,width,width,size.y-width*2.0),c)
 		draw_rect(Rect2(size.x-width,width,width,size.y-width*2.0),c)
+
+	# Sparse, wind-driven sand streaks. Deterministic, no particle nodes or allocations per grain.
+	var count := [12,20,32][game.profile]
+	var t: float = game.zone.wind_clock
+	for i in range(count):
+		var seed := float(i)*0.61803399
+		var drift := fposmod(seed+ t*(0.16+0.028*float(i%5)),1.0)
+		var y := fposmod(seed*1.731+sin(t*0.37+float(i))*0.035,1.0)
+		var p := Vector2(drift*size.x,y*size.y)
+		var span := (6.0+float(i%4)*5.0)*unit()
+		var alpha := intensity*0.17*sin(drift*PI)
+		draw_line(p,p+Vector2(span,-span*0.14),Color(0.87,0.68,0.44,alpha),maxf(1.0,unit()),true)
