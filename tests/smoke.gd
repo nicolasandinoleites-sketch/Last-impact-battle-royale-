@@ -63,8 +63,16 @@ func run() -> void:
 	weapon.update_reload_cell(0.30)
 	if not check(weapon.cell_stage=="INSERT", "reload module return phase"):
 		return
+	weapon.sprint_pose = 0.8
 	weapon.clear_effects()
+	if not check(weapon.sprint_pose==0.0 and weapon.aim_pitch==0.0, "weapon visual reset"):
+		return
 	if not check(weapon.cell_stage=="DOCKED" and weapon.energy_cell.position.is_equal_approx(weapon.cell_dock), "reload module reset"):
+		return
+	var art_script = load("res://scripts/arena_art.gd")
+	var floor_tex: ImageTexture = art_script.floor_texture()
+	var panel_tex: ImageTexture = art_script.panel_texture()
+	if not check(floor_tex.get_width()==256 and panel_tex.get_width()==256 and floor_tex==art_script.floor_texture() and panel_tex==art_script.panel_texture(), "shared detailed arena textures"):
 		return
 	if not check(scene.arena_art.batch_count==4 and scene.arena_art.decoration_count>80, "batched arena decoration"):
 		return
