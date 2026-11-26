@@ -177,6 +177,23 @@ func run() -> void:
 	for tick in range(30):
 		await physics_frame
 	await capture("17_survival_start")
+	var rival = survival.targets[2]
+	var rival_camera := Camera3D.new()
+	survival.add_child(rival_camera)
+	rival_camera.position = rival.global_position+Vector3(2.4,1.4,2.4)
+	rival_camera.look_at(rival.global_position+Vector3.UP*0.9)
+	rival_camera.current = true
+	survival.hud.hide()
+	await capture("22_operator_model")
+	for tick in range(15):
+		await physics_frame
+	rival_camera.position = rival.global_position+Vector3(2.4,1.4,2.4)
+	rival_camera.look_at(rival.global_position+Vector3.UP*0.9)
+	await capture("23_operator_motion")
+	rival_camera.current = false
+	survival.player.camera.current = true
+	survival.hud.show()
+	rival_camera.queue_free()
 	survival.player.position = survival.pickups[0].position+Vector3.UP*0.1
 	await wait_frames(10)
 	await capture("20_loot_nearby")
