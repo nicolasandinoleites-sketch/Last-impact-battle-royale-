@@ -143,8 +143,7 @@ press_fraction 02_frontier 0.79 0.48
 wait_log "LAST IMPACT CONTROL AIM_OFF" 1
 press_fraction 02_frontier 0.92 0.80
 wait_log "LAST IMPACT CONTROL JUMP" 1
-tap_fraction 02_frontier 0.77 0.10
-sleep 2
+reset_verified
 swipe_fraction 02_frontier 0.14 0.80 0.14 0.66 2000
 wait_log "LAST IMPACT CONTROL MOVE_RELEASE" 1
 wait_log "LAST IMPACT CONTROL CLIP_ACTIVE" 1
