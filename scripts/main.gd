@@ -93,6 +93,7 @@ func _ready() -> void:
 	layer.add_child(hud)
 	hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	if survival_mode and OS.has_feature("android"):
+		print("ANDROID RAZE CLIPS READY ",player.raze.clip_motion.available)
 		print("ANDROID FRONTIER READY | player=",player.model_loaded," weapon=",player.weapon_loaded," rivals=",targets.size()," viewport=",get_tree().root.content_scale_size)
 
 func mat(hex: String) -> StandardMaterial3D:
@@ -439,7 +440,9 @@ func _process(_delta: float) -> void:
 			report["seed"] = round_seed
 			report["zone_phase"] = zone.phase
 			report["storm_exposure"] = storm_exposure
-			report["build"] = "0.7.6"
+			report["build"] = "0.7.6.2"
+			report["locomotion_clips"] = player.raze.clip_motion.available
+			report["clip_samples"] = player.raze.clip_motion.sample_count
 			report["static_blocks"] = frontier.batched_blocks
 			report["static_groups"] = frontier.batch_draw_groups
 			report["os"] = OS.get_name()
