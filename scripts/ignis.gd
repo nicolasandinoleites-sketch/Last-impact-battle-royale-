@@ -14,6 +14,7 @@ var right_goal: Marker3D
 var left_goal: Marker3D
 var aim_pitch := 0.0
 var pose_initialized := false
+var sprint_pose := 0.0
 var right_error := 0.0
 var left_error := 0.0
 var energy_cell: Node3D
@@ -83,7 +84,9 @@ func update_pose(delta: float, aiming: bool, reload: float, low: bool = false, p
 	var desired := body_origin + frame * Vector3(0.065,1.33+lower,-0.19+kick)
 	var tilt := sin(reload*PI) if reload>0.0 else 0.0
 	aim_pitch = lerpf(aim_pitch,clampf(pitch,-0.48,0.40) if aiming else -0.18,1.0-exp(-delta*16.0))
-	var sprint_tilt := -0.24 if is_instance_valid(actor) and actor.motion_state=="SPRINT" else 0.0
+	var sprint_target := 1.0 if is_instance_valid(actor) and actor.motion_state=="SPRINT" and not aiming and reload<=0.0 else 0.0
+	sprint_pose = lerpf(sprint_pose,sprint_target,1.0-exp(-delta*10.0))
+	var sprint_tilt := -0.24*sprint_pose
 	var local_basis := Basis.from_euler(Vector3(aim_pitch-tilt*0.15+sprint_tilt,0.0,tilt*0.50))
 	global_transform = Transform3D(frame*local_basis,desired)
 	flash.position = Vector3(0,0.045,-0.34)
@@ -102,7 +105,8 @@ func update_pose(delta: float, aiming: bool, reload: float, low: bool = false, p
 			support += correction.limit_length(0.045)
 		right_error = actor.solve_arm("R",right_goal.global_position,frame*Vector3(0.65,-0.7,0.25))
 		left_error = actor.solve_arm("L",support,frame*Vector3(-0.65,-0.7,0.10))
-		actor.close_fingers(clampf(1.0-reload*0.45,0.0,1.0))
+		# The right hand retains its cosmetic grip while the left animates the energy cell.
+		actor.close_fingers(1.0,clampf(1.0-0.45*sin(reload_progress*PI),0.0,1.0))
 
 func pulse() -> void:
 	if not loaded:
@@ -116,6 +120,11 @@ func clear_effects() -> void:
 	kick = 0.0
 	flash_left = 0.0
 	reload_phase = 0.0
+	aim_pitch = 0.0
+	sprint_pose = 0.0
+	pose_initialized = false
+	right_error = 0.0
+	left_error = 0.0
 	update_reload_cell(0.0)
 	if is_instance_valid(flash):
 		flash.hide()
