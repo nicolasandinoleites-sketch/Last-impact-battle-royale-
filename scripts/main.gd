@@ -117,6 +117,8 @@ func _ready() -> void:
 			ability = Ability.new()
 			add_child(ability)
 			ability.configure(self)
+			if player.model_loaded and ability.class_id!="RAZE":
+				preload("res://scripts/operator_appearance.gd").apply(player.raze,ability.class_id)
 			vehicles = Vehicles.new()
 			add_child(vehicles)
 			vehicles.configure(self)
