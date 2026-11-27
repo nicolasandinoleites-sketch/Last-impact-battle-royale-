@@ -38,6 +38,8 @@ func unit() -> float:
 func buttons() -> Dictionary:
 	if game!=null and game.deployment_active():
 		return {"JUMP":at(0.92,0.80),"RESET":at(0.77,0.10),"LOBBY":at(0.65,0.10)}
+	if game!=null and is_instance_valid(game.vehicles) and is_instance_valid(game.vehicles.mounted):
+		return {"VEHICLE":at(0.88,0.78),"RESET":at(0.77,0.10),"LOBBY":at(0.65,0.10)}
 	var positions := {"FIRE":at(0.91,0.59),"AIM":at(0.79,0.48),"JUMP":at(0.92,0.80),"SLIDE":at(0.80,0.82),"LOAD":at(0.68,0.82),"RUN":at(0.10,0.49),"CROUCH":at(0.29,0.49),"SIDE":at(0.66,0.49),"FPS":at(0.92,0.10),"RESET":at(0.77,0.10),"LOBBY":at(0.65,0.10)}
 	if game!=null and game.survival_mode:
 		positions["PICKUP"] = at(0.60,0.70)
@@ -48,6 +50,7 @@ func buttons() -> Dictionary:
 			positions["MELEE"] = at(0.40,0.82)
 			positions["GRENADE"] = at(0.40,0.63)
 			positions["ABILITY"] = at(0.40,0.43)
+			if is_instance_valid(game.vehicles) and is_instance_valid(game.vehicles.nearest()): positions["VEHICLE"] = at(0.51,0.42)
 			if is_instance_valid(game.supplies) and game.supplies.near_shop():
 				positions["BUY"] = at(0.32,0.24)
 				positions["MAG"] = at(0.45,0.24)
@@ -99,7 +102,7 @@ func _draw() -> void:
 	var font := int(12*u)
 	draw_minimap(u)
 	draw_rect(Rect2(at(0.145,0.025),Vector2(190,78)*u),DARK)
-	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0793",int(14*u),ACCENT)
+	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0794",int(14*u),ACCENT)
 	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d · MEM EST %.0f MB" % [cached_fps,cached_mem],font)
 	label_at(at(0.145,0.025)+Vector2(9,50)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
 	if game.survival_mode and not game.telemetry.latest.is_empty():
@@ -128,7 +131,7 @@ func _draw() -> void:
 	draw_arc(joystick,58*u,0,TAU,40,Color(1,1,1,0.55),2*u,true)
 	draw_circle(joystick+knob,25*u,Color(0.88,0.92,0.93,0.58))
 	var positions := buttons()
-	var names := {"FIRE":"FUEGO","AIM":"MIRA","JUMP":"SALTO","SLIDE":"SLIDE","LOAD":"REC.","RUN":"CORRER","CROUCH":"AGACHAR","SIDE":"LADO","FPS":"CALIDAD","RESET":"RESET","LOBBY":"LOBBY","PICKUP":"RECOGER","MED":"CURAR","SHIELD":"ESCUDO","SWAP":"ARMA","MELEE":"HOJA","GRENADE":"PULSO","BUY":"ARMA 200","MAG":"MAG 100","FAST":"REC 125","HOLO":"MIRA 75","ABILITY":"HABILIDAD"}
+	var names := {"FIRE":"FUEGO","AIM":"MIRA","JUMP":"SALTO","SLIDE":"SLIDE","LOAD":"REC.","RUN":"CORRER","CROUCH":"AGACHAR","SIDE":"LADO","FPS":"CALIDAD","RESET":"RESET","LOBBY":"LOBBY","PICKUP":"RECOGER","MED":"CURAR","SHIELD":"ESCUDO","SWAP":"ARMA","MELEE":"HOJA","GRENADE":"PULSO","BUY":"ARMA 200","MAG":"MAG 100","FAST":"REC 125","HOLO":"MIRA 75","ABILITY":"HABILIDAD","VEHICLE":"SUBIR"}
 	if game.survival_mode:
 		if is_instance_valid(game.supplies):
 			names["GRENADE"] = "PULSO %d" % game.supplies.grenades
@@ -145,6 +148,10 @@ func _draw() -> void:
 		label_at(at(0.145,0.025)+Vector2(9,83)*u,ability.class_id+" / "+str(ability.spec().skill),int(10*u),Color(str(ability.spec().color)))
 		if ability.active_left>0.0:
 			draw_arc(center,32*u,0,TAU*ability.active_left/maxf(0.01,float(ability.spec().duration)),32,Color(str(ability.spec().color)),2*u,true)
+	if is_instance_valid(game.vehicles) and is_instance_valid(game.vehicles.mounted):
+		var v = game.vehicles.mounted
+		names["VEHICLE"] = "BAJAR"
+		centered(at(0.49,0.31),"%s | %d km/h | %d HP" % [v.model_id,roundi(absf(v.speed)*3.6),v.hp],int(14*u),ACCENT)
 	for name in positions:
 		var p: Vector2 = positions[name]
 		var r := radius(name)
@@ -218,6 +225,8 @@ func press_button(name: String, index: int) -> void:
 		"MAG": game.supplies.buy_upgrade("MAG")
 		"FAST": game.supplies.buy_upgrade("RELOAD")
 		"HOLO": game.supplies.buy_upgrade("HOLO")
+		"VEHICLE":
+			if is_instance_valid(game.vehicles): game.vehicles.toggle()
 		"ABILITY":
 			if is_instance_valid(game.ability): game.ability.activate()
 		"PICKUP": game.collect_nearby()
@@ -326,7 +335,9 @@ func _input(event: InputEvent) -> void:
 				KEY_F: game.collect_nearby()
 				KEY_H: game.use_medkit()
 				KEY_G: game.use_shield_cell()
-				KEY_Q: game.player.shoulder *= -1.0
+				KEY_Z: game.player.shoulder *= -1.0
+				KEY_T:
+					if is_instance_valid(game.vehicles): game.vehicles.toggle()
 				KEY_E: game.player.aiming = not game.player.aiming
 				KEY_F1: game.next_profile()
 				KEY_F2: game.reset_round()
@@ -360,7 +371,7 @@ func draw_minimap(u: float) -> void:
 		draw_line(area.position+Vector2(d,0),area.position+Vector2(d,area.size.y),Color(0.5,0.65,0.72,0.18),1.0)
 		draw_line(area.position+Vector2(0,d),area.position+Vector2(area.size.x,d),Color(0.5,0.65,0.72,0.18),1.0)
 	var middle := area.get_center()
-	var k := 95.0*u/(game.frontier.half_extent*2.0 if game.survival_mode else 80.0)
+	var k: float = 95.0*u/(game.frontier.half_extent*2.0 if game.survival_mode else 80.0)
 	if game.survival_mode:
 		for sector in game.frontier.sectors:
 			var bounds: Rect2 = sector["rect"]
@@ -383,6 +394,11 @@ func draw_minimap(u: float) -> void:
 		if game.supplies.drop_state==1:
 			var drop: Vector3 = game.supplies.drop_site
 			draw_arc(middle+Vector2(drop.x,drop.z)*k,5*u,0,TAU,16,Color("f5db65"),2*u,true)
+	if is_instance_valid(game.vehicles):
+		for v in game.vehicles.vehicles:
+			if v.hp>0:
+				var pos2 := middle+Vector2(v.position.x,v.position.z)*k
+				draw_rect(Rect2(pos2-Vector2.ONE*2*u,Vector2.ONE*4*u),Color("d2a8ff"))
 	for target in game.targets:
 		if target.active and target.visible:
 			var airborne: bool = is_instance_valid(game.rival_deployment) and game.rival_deployment.airborne(target)

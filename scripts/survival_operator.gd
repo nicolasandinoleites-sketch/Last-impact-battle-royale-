@@ -93,14 +93,16 @@ func update_combat(delta: float) -> void:
 	if forward.dot(offset.normalized()) < 0.94: return
 	var ray := PhysicsRayQueryParameters3D.create(global_position + Vector3.UP, enemy.global_position + Vector3.UP, 7, [get_rid()])
 	var hit := get_world_3d().direct_space_state.intersect_ray(ray)
-	if hit.get("collider") != enemy: return
+	var hits_vehicle: bool = enemy==game.player and is_instance_valid(game.vehicles) and is_instance_valid(game.vehicles.mounted) and hit.get("collider")==game.vehicles.mounted
+	if hit.get("collider") != enemy and not hits_vehicle: return
 	rounds -= 1
 	shot_left = 0.72
 	weapon.pulse()
 	if is_instance_valid(game.combat_fx):
 		game.combat_fx.emit_shot(weapon.flash.global_position,hit.position,hit.normal,game.impact_kind(enemy),game.player.global_position)
 	if rounds == 0: reload_left = RELOAD_TIME
-	if enemy == game.player: game.damage_player(6)
+	if hits_vehicle: game.vehicles.mounted.take_hit(6)
+	elif enemy == game.player: game.damage_player(6)
 	else: enemy.take_hit(9)
 
 func clear_path(destination: Vector3) -> bool:

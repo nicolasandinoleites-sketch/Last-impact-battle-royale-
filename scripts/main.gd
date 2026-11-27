@@ -52,6 +52,8 @@ const Supplies = preload("res://scripts/battle_supplies.gd")
 var supplies: Node3D
 const Ability = preload("res://scripts/class_ability.gd")
 var ability: Node
+const Vehicles = preload("res://scripts/vehicle_director.gd")
+var vehicles: Node3D
 var magazine_bank: Dictionary = {}
 var reserve_bank: Dictionary = {}
 var ammo := 30
@@ -111,6 +113,9 @@ func _ready() -> void:
 			ability = Ability.new()
 			add_child(ability)
 			ability.configure(self)
+			vehicles = Vehicles.new()
+			add_child(vehicles)
+			vehicles.configure(self)
 	for p in [Vector3(0,0,-4),Vector3(-8,0,-8),Vector3(9,0,-13),Vector3(-15,0,-20),Vector3(14,0,7),Vector3(-18,0,7)]:
 		var target
 		if survival_mode:
@@ -271,6 +276,10 @@ func _physics_process(delta: float) -> void:
 	if is_instance_valid(supplies): supplies.step(delta)
 	if is_instance_valid(ability): ability.step(delta)
 	var keyboard := Vector2(float(keys.get(KEY_D,false))-float(keys.get(KEY_A,false)),float(keys.get(KEY_S,false))-float(keys.get(KEY_W,false)))
+	if is_instance_valid(vehicles) and is_instance_valid(vehicles.mounted):
+		fire = false
+		vehicles.step(delta,(mobile_move+keyboard).limit_length(1.0))
+		return
 	player.move_input = (mobile_move+keyboard).limit_length(1.0)
 	player.sprint = mobile_sprint or keys.get(KEY_SHIFT,false)
 	player.combat_facing = fire
@@ -290,6 +299,7 @@ func _physics_process(delta: float) -> void:
 		shoot()
 
 func shoot() -> void:
+	if is_instance_valid(vehicles) and is_instance_valid(vehicles.mounted): return
 	if deployment_active():
 		return
 	if round_result!="":
@@ -421,6 +431,7 @@ func sync_weapon_accessories() -> void:
 		player.weapon.set_accessories(mods)
 
 func cycle_weapon() -> bool:
+	if is_instance_valid(vehicles) and is_instance_valid(vehicles.mounted): return false
 	if owned_weapons.size()<2: return false
 	return equip_weapon(owned_weapons[(owned_weapons.find(weapon_id)+1)%owned_weapons.size()])
 
@@ -443,6 +454,7 @@ func map_pickup_sites() -> Array[Vector3]:
 	return sites
 
 func start_reload() -> void:
+	if is_instance_valid(vehicles) and is_instance_valid(vehicles.mounted): return
 	if deployment_active():
 		return
 	if round_result!="":
@@ -453,6 +465,7 @@ func start_reload() -> void:
 		message = "Recargando..."
 
 func reset_round() -> void:
+	if is_instance_valid(vehicles): vehicles.reset()
 	if deployment_active():
 		deployment.finish()
 	clear_operator_drops()
@@ -573,9 +586,11 @@ func damage_player(amount: int, combat: bool = true) -> void:
 	if health==0:
 		finish_survival("DERROTA")
 
+
 func finish_survival(result: String) -> void:
 	if round_result!="":
 		return
+	if is_instance_valid(vehicles) and is_instance_valid(vehicles.mounted): vehicles.exit_vehicle(true)
 	round_result = result
 	message = result+" · REINICIAR o LOBBY"
 	hud.clear_controls()
@@ -619,6 +634,7 @@ func nearest_pickup():
 	return closest
 
 func collect_nearby() -> bool:
+	if is_instance_valid(vehicles) and is_instance_valid(vehicles.mounted): return false
 	var pickup = nearest_pickup()
 	if pickup==null:
 		return false
@@ -651,6 +667,7 @@ func collect_nearby() -> bool:
 	return true
 
 func use_medkit() -> bool:
+	if is_instance_valid(vehicles) and is_instance_valid(vehicles.mounted): return false
 	if deployment_active():
 		return false
 	if not survival_mode or round_result!="":
@@ -663,6 +680,7 @@ func use_medkit() -> bool:
 	return true
 
 func use_shield_cell() -> bool:
+	if is_instance_valid(vehicles) and is_instance_valid(vehicles.mounted): return false
 	if deployment_active():
 		return false
 	if not survival_mode or round_result!="":

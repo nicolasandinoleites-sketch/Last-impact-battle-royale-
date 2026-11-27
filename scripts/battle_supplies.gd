@@ -74,7 +74,7 @@ func reset() -> void:
  blade.hide()
 
 func available() -> bool:
- return not game.deployment_active() and game.round_result==""
+ return not game.deployment_active() and game.round_result=="" and (not is_instance_valid(game.vehicles) or not is_instance_valid(game.vehicles.mounted))
 
 func near_shop() -> bool:
  return available() and game.player.global_position.distance_to(station.global_position)<3.0

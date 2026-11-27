@@ -19,6 +19,7 @@ func active(id: String) -> bool:
 
 func activate() -> bool:
  if not is_instance_valid(game) or game.deployment_active() or game.round_result!="" or game.health<=0 or cooldown_left>0.0: return false
+ if is_instance_valid(game.vehicles) and is_instance_valid(game.vehicles.mounted): return false
  if class_id=="SERAPH":
   if game.health>=100 and game.armor>=100: return false
   game.health = mini(100,game.health+30)
