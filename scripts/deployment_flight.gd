@@ -4,6 +4,9 @@ enum Phase { INTRO, IN_PLANE, FREEFALL, GLIDE, LAND, GROUND }
 const EDGE := 58.0
 const ALTITUDE := 78.0
 const LAND_DURATION := 0.65
+var edge := EDGE
+var altitude := ALTITUDE
+var start_x := -50.0
 var phase: int = Phase.INTRO
 var elapsed := 0.0
 var plane_position := Vector3(-50,ALTITUDE,0)
@@ -12,11 +15,16 @@ var velocity := Vector3.ZERO
 var jumped := false
 var ground_y := 0.0
 var time_in_phase := 0.0
+func configure_expanded() -> void:
+ edge = 122.0
+ altitude = 104.0
+ start_x = -104.0
+
 func reset() -> void:
  phase = Phase.INTRO
  elapsed = 0.0
  time_in_phase = 0.0
- plane_position = Vector3(-50,ALTITUDE,0)
+ plane_position = Vector3(start_x,altitude,0)
  position = Vector3.ZERO
  velocity = Vector3.ZERO
  jumped = false
@@ -35,7 +43,7 @@ func step(delta: float, input: Vector2, request_jump: bool, request_glide: bool,
   return
  if phase==Phase.IN_PLANE:
   plane_position.x += dt*15.0
-  if request_jump or plane_position.x>=50.0:
+  if request_jump or plane_position.x>=edge-8.0:
    jumped = true
    position = plane_position+Vector3(-6,-2.58,0)
    velocity = Vector3(9,-4,0)
@@ -58,8 +66,8 @@ func step(delta: float, input: Vector2, request_jump: bool, request_glide: bool,
   velocity.z = move_toward(velocity.z,desired.z,dt*12.0)
   velocity.y = move_toward(velocity.y,-5.5 if phase==Phase.GLIDE else -23.0,dt*(30.0 if phase==Phase.GLIDE else 14.0))
   var next := position+velocity*dt
-  next.x = clampf(next.x,-EDGE,EDGE)
-  next.z = clampf(next.z,-EDGE,EDGE)
+  next.x = clampf(next.x,-edge,edge)
+  next.z = clampf(next.z,-edge,edge)
   if horizontal_filter.is_valid():
    next = horizontal_filter.call(position,next)
   # Sample again at the proposed horizontal destination before touchdown.

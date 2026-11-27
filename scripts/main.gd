@@ -99,6 +99,8 @@ func _ready() -> void:
 		zone = ZoneScript.new()
 		add_child(zone)
 		zone.set_profile(profile)
+		if frontier.expanded: zone.configure_expanded()
+		if frontier.expanded: player.camera.far = 175.0
 		game_audio.prepare_storm()
 		message = "Supervivencia: permanece en la zona"
 		spawn_pickups()
@@ -437,6 +439,7 @@ func map_pickup_sites() -> Array[Vector3]:
 	var sites: Array[Vector3] = frontier.battle_loot_positions(round_seed)
 	sites.append_array(frontier.arsenal_sites(round_seed,sites))
 	sites.append_array(frontier.utility_sites(round_seed,sites))
+	sites.append_array(frontier.expansion_loot(round_seed,sites))
 	return sites
 
 func start_reload() -> void:
@@ -589,6 +592,8 @@ func spawn_pickups() -> void:
 	]
 	if experimental_deployment:
 		contents.append_array([["WEAPON_VOLTAR",1],["AMMO_LIGHT",72],["WEAPON_ARC",1],["AMMO_PLASMA",36],["WEAPON_HELIOS",1],["AMMO_HEAVY",18],["CASH",100],["GRENADE",1],["CASH",150],["GRENADE",2]])
+	if experimental_deployment:
+		for i in range(4): contents.append_array([["MED",1],["AMMO",50],["CASH",125]])
 	for data in contents:
 		var pickup = PickupScript.new()
 		pickup.kind = data[0]

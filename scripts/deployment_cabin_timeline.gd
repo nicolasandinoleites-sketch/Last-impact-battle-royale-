@@ -6,6 +6,7 @@ const EXIT_SECONDS := 2.45
 const AUTO_REQUEST_X := 8.0
 const CABIN_FLOOR_OFFSET := -2.0
 const EXIT_LOCAL := Vector3(0,-0.58,6)
+var auto_request_x := AUTO_REQUEST_X
 var requested := false
 var ready_to_exit := false
 var elapsed := 0.0
@@ -26,7 +27,7 @@ func reset() -> void:
 func step(delta: float, plane_x: float, request: bool) -> bool:
  if ready_to_exit:
   return true
- requested = requested or request or plane_x>=AUTO_REQUEST_X
+ requested = requested or request or plane_x>=auto_request_x
  if not requested:
   return false
  var dt := clampf(delta,0.0,0.05)

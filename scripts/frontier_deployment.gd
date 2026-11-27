@@ -39,7 +39,7 @@ func begin(actor) -> void:
  player.set_physics_process(false)
  player.contact_shadow.hide()
  saved_camera_far = player.camera.far
- player.camera.far = 220.0
+ player.camera.far = 350.0 if get_parent().frontier.expanded else 220.0
  if player.weapon_loaded:
   saved_weapon_visibility = player.weapon.visible
   player.weapon.hide()
@@ -56,6 +56,11 @@ func begin(actor) -> void:
   cinematic.configure(player,int(get_parent().profile))
  if is_instance_valid(cinematic):
   cinematic.reset()
+ if get_parent().frontier.expanded:
+  flight.configure_expanded()
+  if is_instance_valid(cinematic):
+   cinematic.timeline.auto_request_x = 38.0
+   cinematic.shot.far = 350.0
  flight.reset()
  active = true
  landing_clear = false

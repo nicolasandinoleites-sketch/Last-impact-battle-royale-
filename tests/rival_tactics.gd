@@ -49,7 +49,7 @@ func run() -> void:
  a.decision_left=0
  a.decide_tactical(0.4)
  assert(a.ai_state=="RETREAT")
- a.global_position=Vector3(-59,0,-20)
+ a.global_position=Vector3(-119,0,-20)
  a.decision_left=0
  a.decide_tactical(0.4)
  assert(a.ai_state=="ZONE")

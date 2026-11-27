@@ -52,7 +52,7 @@ func run() -> void:
  s.step(0.75)
  assert(rival.hp==3 and not s.orb.visible)
  game.reset_round()
- assert(game.owned_weapons.size()==1 and game.pickups.size()==19)
+ assert(game.owned_weapons.size()==1 and game.pickups.size()==31)
  assert(s.credits==300 and s.grenades==2 and s.upgrades.is_empty() and s.drop_state==0)
  print("R0790 SUPPLIES PASS | two slots, store, magazine, reload, airdrop, cash, pulse, melee, reset")
  game.queue_free()

@@ -8,6 +8,9 @@ const StormShader = preload("res://shaders/storm_wall.gdshader")
 const VolumeShader = preload("res://shaders/storm_volume.gdshader")
 var volume: MeshInstance3D
 var volume_material: ShaderMaterial
+var start_radius := START_RADIUS
+var grace := GRACE
+var shrink_time := SHRINK_TIME
 var radius := START_RADIUS
 var elapsed := 0.0
 var phase := 0
@@ -138,17 +141,23 @@ func _process(delta: float) -> void:
 	if is_instance_valid(volume_material):
 		volume_material.set_shader_parameter("wind_time",wind_clock)
 
+func configure_expanded() -> void:
+	start_radius = 114.0
+	grace = 45.0
+	shrink_time = 300.0
+	reset_zone()
+
 func reset_zone() -> void:
 	elapsed = 0.0
-	radius = START_RADIUS
+	radius = start_radius
 	phase = 0
 	update_ring()
 
 func advance(delta: float) -> void:
 	elapsed += maxf(delta,0.0)
-	var progress := clampf((elapsed-GRACE)/SHRINK_TIME,0.0,1.0)
-	radius = lerpf(START_RADIUS,END_RADIUS,progress)
-	phase = 0 if elapsed<GRACE else (2 if progress>=1.0 else 1)
+	var progress := clampf((elapsed-grace)/shrink_time,0.0,1.0)
+	radius = lerpf(start_radius,END_RADIUS,progress)
+	phase = 0 if elapsed<grace else (2 if progress>=1.0 else 1)
 	update_ring()
 
 func update_ring() -> void:
@@ -173,4 +182,4 @@ func exposure(world_position: Vector3) -> float:
 	return smoothstep(-7.0,8.0,signed_distance(world_position))
 
 func seconds_remaining() -> int:
-	return ceili(maxf(0.0,(GRACE if phase==0 else GRACE+SHRINK_TIME)-elapsed))
+	return ceili(maxf(0.0,(grace if phase==0 else grace+shrink_time)-elapsed))

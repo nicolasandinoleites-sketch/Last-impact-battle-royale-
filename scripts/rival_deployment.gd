@@ -51,6 +51,7 @@ func begin() -> void:
  enabled = true
  for d in drops:
   var t: CharacterBody3D = d.target
+  if game.frontier.expanded: d.flight.configure_expanded()
   d.flight.reset()
   d.launched = false
   d.landed = false
@@ -78,7 +79,11 @@ func launch(d: Dictionary, plane_position: Vector3) -> void:
  var t: CharacterBody3D = d.target
  var offset := -1.1 if d.delay<0.5 else 1.1
  f.position = plane_position+Vector3(-6,-2.58,offset)
- f.position.x = clampf(f.position.x,-Flight.EDGE,Flight.EDGE)
+ f.position.x = clampf(f.position.x,-f.edge,f.edge)
+ if game.frontier.expanded:
+  var goal := Vector3(clampf(f.position.x+24.0,-100.0,100.0),0,offset*24.0)
+  var cell: Vector2i = game.frontier.nearest_open(game.frontier.cell_at(goal))
+  d.goal = game.frontier.cell_center(cell)
  f.velocity = Vector3(9,-4,offset*2.0)
  f.jumped = true
  f.transition(Flight.Phase.FREEFALL)

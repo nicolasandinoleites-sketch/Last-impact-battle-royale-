@@ -3,6 +3,10 @@ const Art = preload("res://scripts/arena_art.gd")
 const HALF := 64.0
 const CELL := 2.0
 const CELLS := 64
+var half_extent := HALF
+var cells := CELLS
+var expanded := false
+var outer_sites: Array[Vector3] = []
 var game
 var grid := AStarGrid2D.new()
 var obstacles: Array[Rect2] = []
@@ -26,33 +30,47 @@ var building_centers: Array[Vector3] = [Vector3(-38,0,-34),Vector3(38,0,-34),Vec
 
 func build(owner_game) -> void:
 	game = owner_game
+	expanded = game.experimental_deployment
+	if expanded:
+		half_extent = 128.0
+		cells = 128
+		building_centers.append_array([Vector3(-84,0,-54),Vector3(84,0,-54),Vector3(-84,0,54),Vector3(84,0,54),Vector3(-48,0,-88),Vector3(48,0,-88),Vector3(-48,0,88),Vector3(48,0,88)])
 	batch_enabled = OS.get_environment("LASTIMPACT_LEGACY_BLOCKS")!="1"
 	var floor_mat: StandardMaterial3D = game.mat("67767a")
 	floor_mat.albedo_texture = Art.floor_texture()
-	floor_mat.uv1_scale = Vector3(32,32,32)
-	game.block(Vector3(0,-0.3,0),Vector3(HALF*2,0.6,HALF*2),floor_mat)
+	floor_mat.uv1_scale = Vector3(half_extent*0.5,half_extent*0.5,half_extent*0.5)
+	game.block(Vector3(0,-0.3,0),Vector3(half_extent*2,0.6,half_extent*2),floor_mat)
 	var wall_mat: StandardMaterial3D = game.mat("455763")
 	wall_mat.albedo_texture = Art.panel_texture()
 	wall_mat.uv1_scale = Vector3(4,2,1)
 	var roof_mat: StandardMaterial3D = game.mat("2f4554")
 	var accent: StandardMaterial3D = game.mat("a86a42")
 	accent.albedo_texture = Art.panel_texture()
-	for x in [-HALF,HALF]:
-		wall(Vector3(x,1.5,0),Vector3(0.6,3.0,HALF*2),wall_mat)
-	for z in [-HALF,HALF]:
-		wall(Vector3(0,1.5,z),Vector3(HALF*2,3.0,0.6),wall_mat)
+	for x in [-half_extent,half_extent]:
+		wall(Vector3(x,1.5,0),Vector3(0.6,3.0,half_extent*2),wall_mat)
+	for z in [-half_extent,half_extent]:
+		wall(Vector3(0,1.5,z),Vector3(half_extent*2,3.0,0.6),wall_mat)
 	sectors = [
 		{"name":"HELIX","rect":Rect2(-62,-62,62,62),"color":Color("455e65")},
 		{"name":"NEXUS","rect":Rect2(0,-62,62,62),"color":Color("4f5d72")},
 		{"name":"FORGE","rect":Rect2(-62,0,62,62),"color":Color("71645a")},
 		{"name":"HARBOR","rect":Rect2(0,0,62,62),"color":Color("526b66")}]
+	if expanded:
+		var span := half_extent-2.0
+		sectors[0].rect = Rect2(-span,-span,span,span)
+		sectors[1].rect = Rect2(0,-span,span,span)
+		sectors[2].rect = Rect2(-span,0,span,span)
+		sectors[3].rect = Rect2(0,0,span,span)
+		for x in [-1.0,1.0]:
+			for z in [-1.0,1.0]:
+				outer_sites.append_array([Vector3(x*73,0,z*37),Vector3(x*70,0,z*72),Vector3(x*35,0,z*78)])
 	for sector in sectors:
 		var area: Rect2 = sector["rect"]
 		var center := area.get_center()
 		var tile: StandardMaterial3D = game.mat("ffffff")
 		tile.albedo_color = sector["color"]
 		tile.albedo_texture = sector_texture(str(sector["name"]))
-		tile.uv1_scale = Vector3(16,16,16)
+		tile.uv1_scale = Vector3.ONE*(area.size.x/4.0)
 		slab(Vector3(center.x,0.006,center.y),Vector3(area.size.x,0.012,area.size.y),tile)
 	for center in building_centers:
 		batch_region = "building_%s" % str(center)
@@ -60,13 +78,26 @@ func build(owner_game) -> void:
 	batch_region = "cover"
 	for p in [Vector3(-6,0.75,1),Vector3(7,0.75,3),Vector3(4,0.75,-10),Vector3(-11,0.75,-14),Vector3(15,0.75,-4),Vector3(-25,0.75,0),Vector3(25,0.75,0),Vector3(-12,0.75,34),Vector3(12,0.75,-34)]:
 		wall(p,Vector3(2.5,1.5,1.3),accent)
+	if expanded:
+		batch_region = "outer_cover"
+		for x in [-1.0,1.0]:
+			for z in [-1.0,1.0]:
+				for offset in [0.0,10.0,20.0]:
+					wall(Vector3(x*(66.0+offset),0.75,z*18.0),Vector3(3.0,1.5,1.8),accent)
+					wall(Vector3(x*18.0,0.75,z*(66.0+offset)),Vector3(1.8,1.5,3.0),accent)
+		# Flat arterial corridors reserve space for future drivable vehicles.
+		var road: StandardMaterial3D = game.mat("39494e")
+		for x in [-58.0,58.0]:
+			slab(Vector3(x,0.018,0),Vector3(7,0.014,244),road)
+		for z in [-58.0,58.0]:
+			slab(Vector3(0,0.020,z),Vector3(244,0.014,7),road)
 	flush_block_batches()
 	decor = Art.new()
 	add_child(decor)
 	var strips: Array[Transform3D] = []
 	var lights: Array[Transform3D] = []
 	var details: Array[Transform3D] = []
-	for i in range(-56,57,4):
+	for i in range(-int(half_extent)+8,int(half_extent)-7,4):
 		for side in [-1.0,1.0]:
 			strips.append(decor.piece(Vector3(i,0.026,side*3.0),Vector3(2.0,0.018,0.12)))
 			strips.append(decor.piece(Vector3(side*3.0,0.026,i),Vector3(0.12,0.018,2.0)))
@@ -168,17 +199,17 @@ func flush_block_batches() -> void:
 	print("FRONTIER STATIC BATCHES | blocks=",batched_blocks," groups=",batch_draw_groups," enabled=",batch_enabled)
 
 func cell_at(p: Vector3) -> Vector2i:
-	return Vector2i(clampi(floori((p.x+HALF)/CELL),0,CELLS-1),clampi(floori((p.z+HALF)/CELL),0,CELLS-1))
+	return Vector2i(clampi(floori((p.x+half_extent)/CELL),0,cells-1),clampi(floori((p.z+half_extent)/CELL),0,cells-1))
 
 func cell_center(id: Vector2i) -> Vector3:
-	return Vector3(float(id.x)*CELL-HALF+CELL*0.5,0,float(id.y)*CELL-HALF+CELL*0.5)
+	return Vector3(float(id.x)*CELL-half_extent+CELL*0.5,0,float(id.y)*CELL-half_extent+CELL*0.5)
 
 func build_grid() -> void:
-	grid.region = Rect2i(0,0,CELLS,CELLS)
+	grid.region = Rect2i(0,0,cells,cells)
 	grid.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES
 	grid.update()
-	for x in range(CELLS):
-		for z in range(CELLS):
+	for x in range(cells):
+		for z in range(cells):
 			var id := Vector2i(x,z)
 			var center := cell_center(id)
 			for rect in obstacles:
@@ -263,11 +294,12 @@ func arsenal_sites(seed_value: int, reserved: Array[Vector3]) -> Array[Vector3]:
 		var sector: Dictionary = sectors[order.pop_at(index)]
 		var bounds: Rect2 = sector.rect
 		var candidates: Array[Vector3] = []
-		for x in range(0,CELLS,2):
-			for z in range(0,CELLS,2):
+		for x in range(0,cells,4 if expanded else 2):
+			for z in range(0,cells,4 if expanded else 2):
 				var cell := Vector2i(x,z)
 				var point := cell_center(cell)
 				if not bounds.grow(-6.0).has_point(Vector2(point.x,point.z)) or grid.is_point_solid(cell): continue
+				if expanded and Vector2(point.x,point.z).length()>106.0: continue
 				var blocked := false
 				for building in buildings:
 					if building.grow(2.0).has_point(Vector2(point.x,point.z)): blocked = true
@@ -293,12 +325,12 @@ func utility_sites(seed_value: int, reserved: Array[Vector3]) -> Array[Vector3]:
 	for sector in sectors:
 		var bounds: Rect2 = sector.rect
 		var options: Array[Vector3] = []
-		for x in range(4,CELLS-4,3):
-			for z in range(4,CELLS-4,3):
+		for x in range(4,cells-4,6 if expanded else 3):
+			for z in range(4,cells-4,6 if expanded else 3):
 				var cell := Vector2i(x,z)
 				var point := cell_center(cell)
 				if not bounds.grow(-4.0).has_point(Vector2(point.x,point.z)) or grid.is_point_solid(cell): continue
-				if Vector2(point.x,point.z).length()>48.0: continue
+				if Vector2(point.x,point.z).length()>(100.0 if expanded else 48.0): continue
 				var blocked := false
 				for area in buildings:
 					if area.grow(2.0).has_point(Vector2(point.x,point.z)): blocked = true
@@ -306,6 +338,28 @@ func utility_sites(seed_value: int, reserved: Array[Vector3]) -> Array[Vector3]:
 					if prior.distance_to(point)<4.0: blocked = true
 				if not blocked: options.append(point)
 		result.append(options[rng.randi_range(0,options.size()-1)])
+	return result
+
+func expansion_loot(seed_value: int, reserved: Array[Vector3]) -> Array[Vector3]:
+	var result: Array[Vector3] = []
+	if not expanded: return result
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value+7930
+	for original in outer_sites:
+		var chosen: Vector3 = original
+		# Try several small deterministic variations, keeping all items reachable.
+		for attempt in range(20):
+			var candidate := original+Vector3(rng.randi_range(-2,2)*2,0,rng.randi_range(-2,2)*2)
+			if grid.is_point_solid(cell_at(candidate)) or Vector2(candidate.x,candidate.z).length()>110.0: continue
+			var valid := true
+			for p in reserved+result:
+				if p.distance_to(candidate)<4.0: valid = false
+			for area in buildings:
+				if area.grow(2.0).has_point(Vector2(candidate.x,candidate.z)): valid = false
+			if valid:
+				chosen = candidate
+				break
+		result.append(chosen)
 	return result
 
 static func sector_texture(kind: String) -> ImageTexture:
