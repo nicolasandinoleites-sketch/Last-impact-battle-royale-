@@ -67,6 +67,8 @@ var keys := {}
 var mobile_move := Vector2.ZERO
 var mobile_sprint := false
 var profile := 0
+const GraphicsOptions = preload("res://scripts/graphics_options.gd")
+var graphics_options := GraphicsOptions.new()
 var sun: DirectionalLight3D
 var world_environment: Environment
 var storm_exposure := 0.0
@@ -82,6 +84,8 @@ func _ready() -> void:
 	var config := ConfigFile.new()
 	if config.load("user://lastimpact.cfg") == OK:
 		profile = clampi(int(config.get_value("graphics","profile",0)),0,2)
+	graphics_options.load_options()
+	profile = mini(graphics_options.profile,2)
 	game_audio = GameAudio.new()
 	add_child(game_audio)
 	build_arena()
@@ -138,6 +142,7 @@ func _ready() -> void:
 		deployment = Deployment.new()
 		add_child(deployment)
 		start_deployment()
+	apply_graphics_options()
 	if survival_mode and OS.has_feature("android"):
 		print("ANDROID RAZE CLIPS READY ",player.raze.clip_motion.available)
 		print("ANDROID FRONTIER READY | player=",player.model_loaded," weapon=",player.weapon_loaded," rivals=",targets.size()," viewport=",get_tree().root.content_scale_size)
@@ -532,6 +537,14 @@ func apply_profile() -> void:
 		zone.set_profile(profile)
 	sun.shadow_enabled = profile == 2 and not OS.has_feature("android")
 
+func apply_graphics_options() -> void:
+	graphics_options.load_options()
+	profile = mini(graphics_options.profile,2)
+	apply_profile()
+	graphics_options.apply(get_tree().root)
+	sun.shadow_enabled = graphics_options.shadows
+	if is_instance_valid(player) and not deployment_active(): player.camera.far = float(graphics_options.distance)
+
 func next_profile() -> void:
 	profile = (profile+1)%3
 	qa_control("PROFILE_%d" % profile)
@@ -693,7 +706,7 @@ func use_shield_cell() -> bool:
 	return true
 
 func update_adaptive_resolution() -> void:
-	if not OS.has_feature("android") or profile!=0 or not survival_mode or telemetry_paused or round_result!="" or not is_instance_valid(hud) or not is_instance_valid(player):
+	if not graphics_options.dynamic or not OS.has_feature("android") or profile!=0 or not survival_mode or telemetry_paused or round_result!="" or not is_instance_valid(hud) or not is_instance_valid(player):
 		return
 	var safe: bool = hud.move_id<0 and hud.look_id<0 and hud.fire_id<0 and not fire and not player.aiming and reload_left<=0.0 and player.animation_speed<0.15 and player.is_on_floor() and player.slide_time<=0.0
 	if adaptive_resolution.commit_if_safe(safe):

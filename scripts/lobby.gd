@@ -36,7 +36,9 @@ func _ready() -> void:
 	var config := ConfigFile.new()
 	if config.load("user://lastimpact.cfg") == OK:
 		quality = clampi(int(config.get_value("graphics","profile",0)),0,2)
-	MobileProfile.apply_android(get_tree().root,quality)
+	var graphics = preload("res://scripts/graphics_options.gd").new()
+	graphics.load_options()
+	graphics.apply(get_tree().root)
 	info = "%s | %s" % [RenderingServer.get_video_adapter_name(),RenderingServer.get_video_adapter_api_version()]
 	print("LAST IMPACT R073 LOBBY READY | ",info)
 	if DisplayServer.get_name() != "headless":
@@ -115,7 +117,7 @@ func _draw() -> void:
 		draw_line(point(i*150-300,540),point(i*150+250,0),Color(0.25,0.36,0.43,0.14),1.0)
 	draw_texture_rect(LOGO,rect(24,18,58,58),false)
 	text_at(96,47,"LAST IMPACT",31)
-	text_at(98,69,"R0794 / ALPHA TECNICA",13,MUTED)
+	text_at(98,69,"R0795 / ALPHA TECNICA",13,MUTED)
 	text_at(768,40,"OFFLINE",15,GOLD)
 	text_at(768,64,"%d FPS" % Engine.get_frames_per_second(),15,MUTED)
 	draw_line(point(24,88),point(936,88),EDGE,1.0)
@@ -223,7 +225,9 @@ func activate(pos: Vector2) -> void:
 		elif rect(690,270,246,48).has_point(pos):
 			launch("res://diagnostic.tscn")
 		elif rect(24,341,248,54).has_point(pos):
-			mode = "settings"
+			var menu = preload("res://scripts/graphics_menu.gd").new()
+			add_child(menu)
+			menu.open()
 		elif rect(24,211,248,54).has_point(pos):
 			mode = "operator"
 		elif rect(24,276,248,54).has_point(pos):

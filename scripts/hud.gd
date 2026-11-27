@@ -37,7 +37,7 @@ func unit() -> float:
 
 func buttons() -> Dictionary:
 	if game!=null and game.deployment_active():
-		return {"JUMP":at(0.92,0.80),"RESET":at(0.77,0.10),"LOBBY":at(0.65,0.10)}
+		return {"JUMP":at(0.92,0.80),"RESET":at(0.77,0.10),"LOBBY":at(0.65,0.10),"FPS":at(0.92,0.10)}
 	if game!=null and is_instance_valid(game.vehicles) and is_instance_valid(game.vehicles.mounted):
 		return {"VEHICLE":at(0.88,0.78),"RESET":at(0.77,0.10),"LOBBY":at(0.65,0.10)}
 	var positions := {"FIRE":at(0.91,0.59),"AIM":at(0.79,0.48),"JUMP":at(0.92,0.80),"SLIDE":at(0.80,0.82),"LOAD":at(0.68,0.82),"RUN":at(0.10,0.49),"CROUCH":at(0.29,0.49),"SIDE":at(0.66,0.49),"FPS":at(0.92,0.10),"RESET":at(0.77,0.10),"LOBBY":at(0.65,0.10)}
@@ -102,7 +102,7 @@ func _draw() -> void:
 	var font := int(12*u)
 	draw_minimap(u)
 	draw_rect(Rect2(at(0.145,0.025),Vector2(190,78)*u),DARK)
-	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0794",int(14*u),ACCENT)
+	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0795",int(14*u),ACCENT)
 	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d · MEM EST %.0f MB" % [cached_fps,cached_mem],font)
 	label_at(at(0.145,0.025)+Vector2(9,50)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
 	if game.survival_mode and not game.telemetry.latest.is_empty():
@@ -196,8 +196,15 @@ func button_at(pos: Vector2) -> String:
 			nearest = distance
 	return best
 
+func open_graphics() -> void:
+	clear_controls()
+	game.keys.clear()
+	var menu = preload("res://scripts/graphics_menu.gd").new()
+	add_child(menu)
+	menu.open(game)
+
 func press_button(name: String, index: int) -> void:
-	if game.deployment_active() and name not in ["JUMP","RESET","LOBBY"]:
+	if game.deployment_active() and name not in ["JUMP","RESET","LOBBY","FPS"]:
 		return
 	if game.round_result!="" and name not in ["RESET","LOBBY","FPS"]:
 		return
@@ -233,7 +240,7 @@ func press_button(name: String, index: int) -> void:
 		"MED": game.use_medkit()
 		"SHIELD": game.use_shield_cell()
 		"RESET": game.reset_round()
-		"FPS": game.next_profile()
+		"FPS": open_graphics()
 		"LOBBY": get_tree().change_scene_to_file("res://lobby.tscn")
 
 func set_move(pos: Vector2) -> void:
@@ -339,7 +346,7 @@ func _input(event: InputEvent) -> void:
 				KEY_T:
 					if is_instance_valid(game.vehicles): game.vehicles.toggle()
 				KEY_E: game.player.aiming = not game.player.aiming
-				KEY_F1: game.next_profile()
+				KEY_F1: open_graphics()
 				KEY_F2: game.reset_round()
 				KEY_ESCAPE: get_tree().change_scene_to_file("res://lobby.tscn")
 	elif event is InputEventMouseButton:
