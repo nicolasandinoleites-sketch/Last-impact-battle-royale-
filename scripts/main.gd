@@ -50,6 +50,8 @@ var weapon_id := "IGNIS"
 var owned_weapons: Array[String] = ["IGNIS"]
 const Supplies = preload("res://scripts/battle_supplies.gd")
 var supplies: Node3D
+const Ability = preload("res://scripts/class_ability.gd")
+var ability: Node
 var magazine_bank: Dictionary = {}
 var reserve_bank: Dictionary = {}
 var ammo := 30
@@ -104,6 +106,9 @@ func _ready() -> void:
 			supplies = Supplies.new()
 			add_child(supplies)
 			supplies.configure(self)
+			ability = Ability.new()
+			add_child(ability)
+			ability.configure(self)
 	for p in [Vector3(0,0,-4),Vector3(-8,0,-8),Vector3(9,0,-13),Vector3(-15,0,-20),Vector3(14,0,7),Vector3(-18,0,7)]:
 		var target
 		if survival_mode:
@@ -262,6 +267,7 @@ func _physics_process(delta: float) -> void:
 		if round_result!="":
 			return
 	if is_instance_valid(supplies): supplies.step(delta)
+	if is_instance_valid(ability): ability.step(delta)
 	var keyboard := Vector2(float(keys.get(KEY_D,false))-float(keys.get(KEY_A,false)),float(keys.get(KEY_S,false))-float(keys.get(KEY_W,false)))
 	player.move_input = (mobile_move+keyboard).limit_length(1.0)
 	player.sprint = mobile_sprint or keys.get(KEY_SHIFT,false)
@@ -291,7 +297,7 @@ func shoot() -> void:
 		return
 	ammo -= 1
 	qa_control("SHOT")
-	cooldown = float(Arsenal.spec(weapon_id).delay)
+	cooldown = float(Arsenal.spec(weapon_id).delay)*(ability.shot_factor() if is_instance_valid(ability) else 1.0)
 	if player.weapon_loaded:
 		player.weapon.pulse()
 	game_audio.fire_player.play()
@@ -448,6 +454,7 @@ func reset_round() -> void:
 		deployment.finish()
 	clear_operator_drops()
 	if is_instance_valid(supplies): supplies.reset()
+	if is_instance_valid(ability): ability.reset()
 	if is_instance_valid(combat_fx): combat_fx.reset()
 	telemetry.reset()
 	telemetry.latest = {}
@@ -542,7 +549,7 @@ func update_survival(delta: float) -> void:
 	while zone_tick>=1.0:
 		zone_tick -= 1.0
 		if zone.outside(player.global_position):
-			damage_player(5 if zone.phase<2 else 10)
+			damage_player(5 if zone.phase<2 else 10,false)
 		if round_result!="":
 			return
 		for target in targets:
@@ -551,11 +558,12 @@ func update_survival(delta: float) -> void:
 	if eliminated>=targets.size():
 		finish_survival("VICTORIA")
 
-func damage_player(amount: int) -> void:
+func damage_player(amount: int, combat: bool = true) -> void:
 	if deployment_active():
 		return
 	if not survival_mode or round_result!="" or amount<=0:
 		return
+	if is_instance_valid(ability): amount = ability.reduce_damage(amount,combat)
 	var absorbed := mini(armor,amount)
 	armor -= absorbed
 	health = maxi(0,health-(amount-absorbed))

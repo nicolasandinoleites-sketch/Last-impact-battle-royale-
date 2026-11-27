@@ -47,6 +47,7 @@ func buttons() -> Dictionary:
 			positions["SWAP"] = at(0.55,0.87)
 			positions["MELEE"] = at(0.40,0.82)
 			positions["GRENADE"] = at(0.40,0.63)
+			positions["ABILITY"] = at(0.40,0.43)
 			if is_instance_valid(game.supplies) and game.supplies.near_shop():
 				positions["BUY"] = at(0.32,0.24)
 				positions["MAG"] = at(0.45,0.24)
@@ -98,7 +99,7 @@ func _draw() -> void:
 	var font := int(12*u)
 	draw_minimap(u)
 	draw_rect(Rect2(at(0.145,0.025),Vector2(190,78)*u),DARK)
-	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0789",int(14*u),ACCENT)
+	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0792",int(14*u),ACCENT)
 	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d · MEM EST %.0f MB" % [cached_fps,cached_mem],font)
 	label_at(at(0.145,0.025)+Vector2(9,50)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
 	if game.survival_mode and not game.telemetry.latest.is_empty():
@@ -127,7 +128,7 @@ func _draw() -> void:
 	draw_arc(joystick,58*u,0,TAU,40,Color(1,1,1,0.55),2*u,true)
 	draw_circle(joystick+knob,25*u,Color(0.88,0.92,0.93,0.58))
 	var positions := buttons()
-	var names := {"FIRE":"FUEGO","AIM":"MIRA","JUMP":"SALTO","SLIDE":"SLIDE","LOAD":"REC.","RUN":"CORRER","CROUCH":"AGACHAR","SIDE":"LADO","FPS":"CALIDAD","RESET":"RESET","LOBBY":"LOBBY","PICKUP":"RECOGER","MED":"CURAR","SHIELD":"ESCUDO","SWAP":"ARMA","MELEE":"HOJA","GRENADE":"PULSO","BUY":"ARMA 200","MAG":"MAG 100","FAST":"REC 125","HOLO":"MIRA 75"}
+	var names := {"FIRE":"FUEGO","AIM":"MIRA","JUMP":"SALTO","SLIDE":"SLIDE","LOAD":"REC.","RUN":"CORRER","CROUCH":"AGACHAR","SIDE":"LADO","FPS":"CALIDAD","RESET":"RESET","LOBBY":"LOBBY","PICKUP":"RECOGER","MED":"CURAR","SHIELD":"ESCUDO","SWAP":"ARMA","MELEE":"HOJA","GRENADE":"PULSO","BUY":"ARMA 200","MAG":"MAG 100","FAST":"REC 125","HOLO":"MIRA 75","ABILITY":"HABILIDAD"}
 	if game.survival_mode:
 		if is_instance_valid(game.supplies):
 			names["GRENADE"] = "PULSO %d" % game.supplies.grenades
@@ -138,11 +139,18 @@ func _draw() -> void:
 		var pickup = game.nearest_pickup()
 		if pickup!=null:
 			centered(at(0.60,0.62),game.pickup_label(pickup.kind),int(12*u),pickup.item_color())
+	if is_instance_valid(game.ability):
+		var ability = game.ability
+		names["ABILITY"] = "%ds" % ceili(ability.cooldown_left) if ability.cooldown_left>0.0 else "HABILIDAD"
+		label_at(at(0.145,0.025)+Vector2(9,83)*u,ability.class_id+" / "+str(ability.spec().skill),int(10*u),Color(str(ability.spec().color)))
+		if ability.active_left>0.0:
+			draw_arc(center,32*u,0,TAU*ability.active_left/maxf(0.01,float(ability.spec().duration)),32,Color(str(ability.spec().color)),2*u,true)
 	for name in positions:
 		var p: Vector2 = positions[name]
 		var r := radius(name)
 		var active: bool = (name == "FIRE" and game.fire) or (name == "AIM" and game.player.aiming) or (name == "RUN" and game.mobile_sprint) or (name == "CROUCH" and game.player.crouch_requested)
 		var fill := Color(0.70,0.29,0.11,0.68) if active else DARK
+		if name=="ABILITY" and is_instance_valid(game.ability) and game.ability.cooldown_left>0.0: fill.a = 0.35
 		if game.survival_mode:
 			if (name=="MED" and game.inventory.medkits==0) or (name=="SHIELD" and game.inventory.shield_cells==0) or (name=="PICKUP" and game.nearest_pickup()==null):
 				fill.a = 0.35
@@ -210,6 +218,8 @@ func press_button(name: String, index: int) -> void:
 		"MAG": game.supplies.buy_upgrade("MAG")
 		"FAST": game.supplies.buy_upgrade("RELOAD")
 		"HOLO": game.supplies.buy_upgrade("HOLO")
+		"ABILITY":
+			if is_instance_valid(game.ability): game.ability.activate()
 		"PICKUP": game.collect_nearby()
 		"MED": game.use_medkit()
 		"SHIELD": game.use_shield_cell()
@@ -307,6 +317,8 @@ func _input(event: InputEvent) -> void:
 				KEY_X: game.player.toggle_crouch()
 				KEY_R: game.start_reload()
 				KEY_TAB: game.cycle_weapon()
+				KEY_Q:
+					if is_instance_valid(game.ability): game.ability.activate()
 				KEY_V:
 					if is_instance_valid(game.supplies): game.supplies.melee()
 				KEY_B:
@@ -374,6 +386,7 @@ func draw_minimap(u: float) -> void:
 	for target in game.targets:
 		if target.active and target.visible:
 			var airborne: bool = is_instance_valid(game.rival_deployment) and game.rival_deployment.airborne(target)
+			if not airborne and not game.deployment_active() and is_instance_valid(game.ability) and not game.ability.reveals(game.player.global_position.distance_to(target.global_position)): continue
 			var marker := middle+Vector2(target.position.x,target.position.z)*k
 			if airborne:
 				draw_arc(marker,4.0*u,0,TAU,12,Color("75c9ff"),1.5*u,true)

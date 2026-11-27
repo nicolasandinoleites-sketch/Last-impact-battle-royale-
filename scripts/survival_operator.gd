@@ -60,6 +60,7 @@ func choose_enemy() -> CharacterBody3D:
 			candidates.append(rival)
 	for candidate: CharacterBody3D in candidates:
 		var offset := candidate.global_position - global_position
+		if candidate==game.player and is_instance_valid(game.ability) and offset.length()>game.ability.detection_range(): continue
 		if absf(offset.y) <= 3.0 and offset.length_squared() < best_distance and clear_path(candidate.global_position):
 			best = candidate
 			best_distance = offset.length_squared()
@@ -85,6 +86,7 @@ func update_combat(delta: float) -> void:
 		if reload_left == 0: rounds = MAGAZINE
 		return
 	if ai_state != "ENGAGE" or shot_left > 0 or not is_instance_valid(enemy) or enemy.collision_layer == 0: return
+	if enemy==game.player and is_instance_valid(game.ability) and global_position.distance_to(enemy.global_position)>game.ability.detection_range(): return
 	var offset := enemy.global_position - global_position
 	if offset.length_squared() > 324 or offset.length_squared() < 0.01: return
 	var forward := -visual.global_basis.z

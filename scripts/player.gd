@@ -230,6 +230,9 @@ func _physics_process(delta: float) -> void:
 		slide_time = maxf(0.0,slide_time-delta)
 		direction = slide_direction
 		speed = lerpf(3.0,8.0,slide_time/0.65)
+	var owner_game = get_parent()
+	if owner_game.get("ability")!=null and not sliding:
+		speed *= owner_game.ability.movement_factor()
 	var desired := Vector2(direction.x,direction.z)*speed
 	var horizontal_velocity := Vector2(velocity.x,velocity.z)
 	var next_velocity := LocomotionController.step(horizontal_velocity,desired,is_on_floor(),sprint_forward and not aiming and not combat_facing,delta)

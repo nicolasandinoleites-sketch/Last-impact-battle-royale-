@@ -12,6 +12,8 @@ const MobileProfile = preload("res://scripts/mobile_profile.gd")
 const Preset = preload("res://scripts/loadout_preset.gd")
 const Catalog = preload("res://scripts/weapon_catalog.gd")
 var loadout := Preset.new()
+const Classes = preload("res://scripts/operator_classes.gd")
+var class_selection := Classes.new()
 var preview: SubViewport
 var mode := "home"
 var quality := 0
@@ -28,6 +30,7 @@ const PREVIEW_PATHS = ["res://assets/tripo/raze.glb","res://assets/tripo/ignis_x
 
 func _ready() -> void:
 	loadout.load_preset()
+	class_selection.load_selection()
 	Engine.max_fps = 30
 	get_viewport().scaling_3d_scale = 1.0
 	var config := ConfigFile.new()
@@ -112,13 +115,13 @@ func _draw() -> void:
 		draw_line(point(i*150-300,540),point(i*150+250,0),Color(0.25,0.36,0.43,0.14),1.0)
 	draw_texture_rect(LOGO,rect(24,18,58,58),false)
 	text_at(96,47,"LAST IMPACT",31)
-	text_at(98,69,"R0791 / ALPHA TECNICA",13,MUTED)
+	text_at(98,69,"R0792 / ALPHA TECNICA",13,MUTED)
 	text_at(768,40,"OFFLINE",15,GOLD)
 	text_at(768,64,"%d FPS" % Engine.get_frames_per_second(),15,MUTED)
 	draw_line(point(24,88),point(936,88),EDGE,1.0)
 	if mode == "home":
 		panel(rect(24,112,248,84))
-		text_at(40,143,"RECLUTA",23)
+		text_at(40,143,class_selection.selected,23)
 		text_at(40,173,"Nivel 01  |  Perfil local",15,MUTED)
 		action(rect(24,211,248,54),"OPERADOR")
 		action(rect(24,276,248,54),"ARMAMENTO")
@@ -158,11 +161,19 @@ func _draw() -> void:
 		action(rect(338,410,350,49),"GUARDAR",true)
 		action(rect(710,450,226,62),"VOLVER")
 	elif mode == "operator":
-		text_at(35,128,"OPERADORES",29)
-		operator_art()
-		text_at(35,186,"OPERADOR 01",20,GOLD)
-		text_at(35,214,"Recluta de pruebas",17,MUTED)
-		text_at(35,242,"Modelo RAZE",16,MUTED)
+		text_at(35,128,"CLASES / OPERADORES",25,GOLD)
+		text_at(35,151,"Selecciona tu habilidad para Battle Royale.",15,MUTED)
+		for i in range(Classes.ORDER.size()):
+			var id: String = Classes.ORDER[i]
+			action(rect(35,176+i*49,278,43),id+" / "+str(Classes.DATA[id].role),class_selection.selected==id)
+		var detail: Dictionary = Classes.DATA[class_selection.selected]
+		panel(rect(338,176,598,220))
+		text_at(355,211,class_selection.selected+" / "+str(detail.role),23,Color(str(detail.color)))
+		text_at(355,253,str(detail.skill),20,GOLD)
+		text_at(355,286,str(detail.desc),15)
+		text_at(355,321,"RECARGA: %d s" % int(detail.cooldown),16,MUTED)
+		text_at(355,366,"Modelo RAZE compartido temporalmente.",14,MUTED)
+		action(rect(338,410,350,49),"CONFIRMAR",true)
 		action(rect(710,450,226,62),"VOLVER")
 	if launching:
 		panel(rect(290,465,380,52),Color("27333d"))
@@ -214,12 +225,17 @@ func activate(pos: Vector2) -> void:
 		elif rect(24,341,248,54).has_point(pos):
 			mode = "settings"
 		elif rect(24,211,248,54).has_point(pos):
-			launch("res://operator.tscn")
+			mode = "operator"
 		elif rect(24,276,248,54).has_point(pos):
 			mode = "loadout"
 	else:
 		if rect(710,450,226,62).has_point(pos):
 			mode = "home"
+		elif mode == "operator":
+			for i in range(Classes.ORDER.size()):
+				if rect(35,176+i*49,278,43).has_point(pos): class_selection.selected = Classes.ORDER[i]
+			if rect(338,410,350,49).has_point(pos):
+				status = "Clase guardada" if class_selection.save_selection()==OK else "No se pudo guardar"
 		elif mode == "loadout":
 			for i in range(Catalog.ORDER.size()):
 				if rect(35,176+i*55,278,47).has_point(pos): loadout.weapon_id = Catalog.ORDER[i]
