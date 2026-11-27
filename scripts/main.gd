@@ -45,6 +45,11 @@ var health := 100
 var armor := 0
 var hud
 var targets: Array = []
+const Arsenal = preload("res://scripts/weapon_catalog.gd")
+var weapon_id := "IGNIS"
+var owned_weapons: Array[String] = ["IGNIS"]
+var magazine_bank: Dictionary = {}
+var reserve_bank: Dictionary = {}
 var ammo := 30
 var reserve := 120
 var eliminated := 0
@@ -254,13 +259,13 @@ func _physics_process(delta: float) -> void:
 	player.move_input = (mobile_move+keyboard).limit_length(1.0)
 	player.sprint = mobile_sprint or keys.get(KEY_SHIFT,false)
 	player.combat_facing = fire
-	player.reload_visual = clampf(reload_left/1.4,0.0,1.0)
+	player.reload_visual = clampf(reload_left/reload_duration(),0.0,1.0)
 	cooldown = maxf(0.0,cooldown-delta)
 	hit_left = maxf(0.0,hit_left-delta)
 	if reload_left > 0.0:
 		reload_left -= delta
 		if reload_left <= 0.0:
-			var amount := mini(30-ammo,reserve)
+			var amount := mini(magazine_capacity()-ammo,reserve)
 			ammo += amount
 			reserve -= amount
 			message = "Listo"
@@ -279,7 +284,7 @@ func shoot() -> void:
 		return
 	ammo -= 1
 	qa_control("SHOT")
-	cooldown = 0.15
+	cooldown = float(Arsenal.spec(weapon_id).delay)
 	if player.weapon_loaded:
 		player.weapon.pulse()
 	game_audio.fire_player.play()
@@ -287,7 +292,7 @@ func shoot() -> void:
 	var cam: Camera3D = player.camera
 	var center := get_viewport().get_visible_rect().size*0.5
 	var origin := cam.project_ray_origin(center)
-	var endpoint := origin+cam.project_ray_normal(center)*100.0
+	var endpoint := origin+cam.project_ray_normal(center)*float(Arsenal.spec(weapon_id).range)
 	var state := get_world_3d().direct_space_state
 	var ray := PhysicsRayQueryParameters3D.create(origin,endpoint,3)
 	var result := state.intersect_ray(ray)
@@ -306,9 +311,9 @@ func shoot() -> void:
 			impact = attack.position
 			normal = attack.normal
 			hit_kind = impact_kind(attack.collider)
-		combat_fx.emit_shot(muzzle,impact,normal,hit_kind,player.global_position)
+		combat_fx.emit_shot(muzzle,impact,normal,hit_kind,player.global_position,str(Arsenal.spec(weapon_id).family))
 	if not attack.is_empty() and attack["collider"].has_method("take_hit"):
-		attack["collider"].take_hit(34)
+		attack["collider"].take_hit(int(Arsenal.spec(weapon_id).damage))
 		hit_left = 0.15
 		game_audio.hit_player.play()
 
@@ -339,13 +344,64 @@ func clear_operator_drops() -> void:
 			pickup.queue_free()
 	corpse_pickups.clear()
 
+func magazine_capacity() -> int:
+	return int(Arsenal.spec(weapon_id).mag)
+
+func reload_duration() -> float:
+	return float(Arsenal.spec(weapon_id).reload)
+
+func weapon_name() -> String:
+	return str(Arsenal.spec(weapon_id).name)
+
+func pickup_label(kind: String) -> String:
+	return Arsenal.pickup_label(kind)
+
+func equip_weapon(id: String, acquire: bool = false) -> bool:
+	if not experimental_deployment or deployment_active() or round_result!="" or not Arsenal.DATA.has(id) or id==weapon_id: return false
+	if not owned_weapons.has(id):
+		if not acquire: return false
+		owned_weapons.append(id)
+		magazine_bank[id] = int(Arsenal.spec(id).mag)
+	magazine_bank[weapon_id] = ammo
+	reserve_bank[str(Arsenal.spec(weapon_id).family)] = reserve
+	weapon_id = id
+	ammo = int(magazine_bank.get(id,0))
+	reserve = int(reserve_bank.get(str(Arsenal.spec(id).family),0))
+	reload_left = 0.0
+	cooldown = maxf(cooldown,0.25)
+	if player.weapon_loaded:
+		player.weapon.clear_effects()
+		player.weapon.set_variant(Arsenal.spec(id).tint)
+	message = weapon_name()+" equipado"
+	return true
+
+func cycle_weapon() -> bool:
+	if owned_weapons.size()<2: return false
+	return equip_weapon(owned_weapons[(owned_weapons.find(weapon_id)+1)%owned_weapons.size()])
+
+func collect_ammo(kind: String, quantity: int) -> int:
+	var family: String = str(Arsenal.AMMO_TYPES.get(kind,""))
+	if family.is_empty(): return 0
+	var selected: bool = family==str(Arsenal.spec(weapon_id).family)
+	var current: int = reserve if selected else int(reserve_bank.get(family,0))
+	var taken := mini(maxi(0,quantity),maxi(0,InventoryScript.AMMO_MAX-current))
+	if selected: reserve += taken
+	else: reserve_bank[family] = current+taken
+	return taken
+
+func map_pickup_sites() -> Array[Vector3]:
+	if not experimental_deployment: return frontier.loot_positions(round_seed)
+	var sites: Array[Vector3] = frontier.battle_loot_positions(round_seed)
+	sites.append_array(frontier.arsenal_sites(round_seed,sites))
+	return sites
+
 func start_reload() -> void:
 	if deployment_active():
 		return
 	if round_result!="":
 		return
-	if ammo < 30 and reserve > 0 and reload_left <= 0.0:
-		reload_left = 1.4
+	if ammo < magazine_capacity() and reserve > 0 and reload_left <= 0.0:
+		reload_left = reload_duration()
 		game_audio.reload_player.play()
 		message = "Recargando..."
 
@@ -363,7 +419,7 @@ func reset_round() -> void:
 		zone.reset_zone()
 		inventory.reset()
 		round_seed += 1
-		var sites: Array[Vector3] = frontier.battle_loot_positions(round_seed) if experimental_deployment else frontier.loot_positions(round_seed)
+		var sites: Array[Vector3] = map_pickup_sites()
 		for i in range(pickups.size()):
 			pickups[i].position = sites[i]
 			pickups[i].reset_pickup()
@@ -373,6 +429,11 @@ func reset_round() -> void:
 	eliminated = 0
 	health = 100
 	armor = 0
+	weapon_id = "IGNIS"
+	owned_weapons.assign(["IGNIS"])
+	magazine_bank.clear()
+	reserve_bank.clear()
+	if player.weapon_loaded: player.weapon.set_variant(Color.WHITE)
 	ammo = 30
 	reserve = 120
 	reload_left = 0.0
@@ -472,12 +533,15 @@ func finish_survival(result: String) -> void:
 	reload_left = 0.0
 
 func spawn_pickups() -> void:
-	var sites: Array[Vector3] = frontier.battle_loot_positions(round_seed) if experimental_deployment else frontier.loot_positions(round_seed)
-	for data in [
+	var sites: Array[Vector3] = map_pickup_sites()
+	var contents: Array = [
 		["MED",1,Vector3(-3,0,10)],["SHIELD",1,Vector3(3,0,10)],["AMMO",40,Vector3(0,0,7)],
 		["MED",2,Vector3(-10,0,3)],["SHIELD",2,Vector3(10,0,5)],["AMMO",50,Vector3(0,0,-7)],
 		["MED",1,Vector3(-7,0,-19)],["SHIELD",1,Vector3(7,0,-20)],["AMMO",40,Vector3(17,0,13)]
-	]:
+	]
+	if experimental_deployment:
+		contents.append_array([["WEAPON_VOLTAR",1],["AMMO_LIGHT",72],["WEAPON_ARC",1],["AMMO_PLASMA",36],["WEAPON_HELIOS",1],["AMMO_HEAVY",18]])
+	for data in contents:
 		var pickup = PickupScript.new()
 		pickup.kind = data[0]
 		pickup.quantity = data[1]
@@ -506,9 +570,17 @@ func collect_nearby() -> bool:
 	if pickup==null:
 		return false
 	var taken := 0
-	if pickup.kind=="AMMO":
-		taken = mini(pickup.quantity,maxi(0,InventoryScript.AMMO_MAX-reserve))
-		reserve += taken
+	if pickup.kind.begins_with("WEAPON_"):
+		var id: String = pickup.kind.trim_prefix("WEAPON_")
+		if owned_weapons.has(id):
+			message = "Arma ya disponible"
+			return false
+		if not equip_weapon(id,true): return false
+		pickup.collect(1)
+		qa_control("PICKUP")
+		return true
+	elif Arsenal.AMMO_TYPES.has(pickup.kind):
+		taken = collect_ammo(pickup.kind,pickup.quantity)
 	else:
 		taken = inventory.add_item(pickup.kind,pickup.quantity)
 	if taken<=0:

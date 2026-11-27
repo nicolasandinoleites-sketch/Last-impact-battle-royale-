@@ -252,6 +252,40 @@ func battle_loot_positions(seed_value: int) -> Array[Vector3]:
 		result.append(remaining.pop_at(rng.randi_range(0,remaining.size()-1)))
 	return result
 
+func arsenal_sites(seed_value: int, reserved: Array[Vector3]) -> Array[Vector3]:
+	# Paired weapon/ammo sites in three distinct sectors. Sample walkable cells.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value+8900
+	var result: Array[Vector3] = []
+	var order := [0,1,2,3]
+	for i in range(3):
+		var index := rng.randi_range(0,order.size()-1)
+		var sector: Dictionary = sectors[order.pop_at(index)]
+		var bounds: Rect2 = sector.rect
+		var candidates: Array[Vector3] = []
+		for x in range(0,CELLS,2):
+			for z in range(0,CELLS,2):
+				var cell := Vector2i(x,z)
+				var point := cell_center(cell)
+				if not bounds.grow(-6.0).has_point(Vector2(point.x,point.z)) or grid.is_point_solid(cell): continue
+				var blocked := false
+				for building in buildings:
+					if building.grow(2.0).has_point(Vector2(point.x,point.z)): blocked = true
+				for prior in reserved:
+					if point.distance_to(prior)<4.0: blocked = true
+				if not blocked: candidates.append(point)
+		var first: Vector3 = candidates[rng.randi_range(0,candidates.size()-1)]
+		result.append(first)
+		var closest := Vector3.INF
+		var distance := INF
+		for point in candidates:
+			var gap := point.distance_to(first)
+			if gap>=3.0 and gap<distance:
+				distance = gap
+				closest = point
+		result.append(closest)
+	return result
+
 static func sector_texture(kind: String) -> ImageTexture:
 	if surface_cache.has(kind):
 		return surface_cache[kind]

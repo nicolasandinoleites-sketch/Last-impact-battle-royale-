@@ -17,6 +17,9 @@ func flat(c: Color) -> StandardMaterial3D:
 func configure(profile: int) -> void:
  if not slots.is_empty(): return
  mats = {"BEAM":flat(Color("ffd79a")),"SHIELD":flat(Color("55dfff")),"BODY":flat(Color("bd3038")),"WORLD":flat(Color("ffb85b"))}
+ mats["BEAM_LIGHT"] = flat(Color("8de7ff"))
+ mats["BEAM_PLASMA"] = flat(Color("c58dff"))
+ mats["BEAM_HEAVY"] = flat(Color("ffe082"))
  var beam_mesh := BoxMesh.new()
  beam_mesh.size = Vector3(0.025,0.025,1)
  var dot_mesh := SphereMesh.new()
@@ -42,7 +45,7 @@ func configure(profile: int) -> void:
   holder.hide()
   slots.append({"holder":holder,"beam":beam,"dots":dots,"age":1.0,"impact":false,"point":Vector3.ZERO,"normal":Vector3.UP,"seed":0})
 
-func emit_shot(start: Vector3, end: Vector3, normal: Vector3, kind: String, viewer: Vector3) -> void:
+func emit_shot(start: Vector3, end: Vector3, normal: Vector3, kind: String, viewer: Vector3, family: String = "ENERGY") -> void:
  if slots.is_empty() or start.distance_squared_to(end)<0.0001: return
  shot_count += 1
  if kind!="":
@@ -54,6 +57,7 @@ func emit_shot(start: Vector3, end: Vector3, normal: Vector3, kind: String, view
  var holder: Node3D = slot.holder
  var beam: MeshInstance3D = slot.beam
  holder.global_transform = Transform3D.IDENTITY
+ beam.material_override = mats.get("BEAM_"+family,mats.BEAM)
  beam.global_position = start.lerp(end,0.5)
  beam.look_at(end,Vector3.RIGHT if absf(start.direction_to(end).dot(Vector3.UP))>0.98 else Vector3.UP)
  beam.scale = Vector3(1,1,start.distance_to(end))

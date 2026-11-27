@@ -43,6 +43,7 @@ func buttons() -> Dictionary:
 		positions["PICKUP"] = at(0.60,0.70)
 		positions["MED"] = at(0.08,0.32)
 		positions["SHIELD"] = at(0.19,0.32)
+		if game.experimental_deployment: positions["SWAP"] = at(0.55,0.87)
 	return positions
 
 func radius(name: String) -> float:
@@ -89,7 +90,7 @@ func _draw() -> void:
 	var font := int(12*u)
 	draw_minimap(u)
 	draw_rect(Rect2(at(0.145,0.025),Vector2(190,78)*u),DARK)
-	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0783",int(14*u),ACCENT)
+	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0789",int(14*u),ACCENT)
 	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d · MEM EST %.0f MB" % [cached_fps,cached_mem],font)
 	label_at(at(0.145,0.025)+Vector2(9,50)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
 	if game.survival_mode and not game.telemetry.latest.is_empty():
@@ -115,14 +116,13 @@ func _draw() -> void:
 	draw_arc(joystick,58*u,0,TAU,40,Color(1,1,1,0.55),2*u,true)
 	draw_circle(joystick+knob,25*u,Color(0.88,0.92,0.93,0.58))
 	var positions := buttons()
-	var names := {"FIRE":"FUEGO","AIM":"MIRA","JUMP":"SALTO","SLIDE":"SLIDE","LOAD":"REC.","RUN":"CORRER","CROUCH":"AGACHAR","SIDE":"LADO","FPS":"CALIDAD","RESET":"RESET","LOBBY":"LOBBY","PICKUP":"RECOGER","MED":"CURAR","SHIELD":"ESCUDO"}
+	var names := {"FIRE":"FUEGO","AIM":"MIRA","JUMP":"SALTO","SLIDE":"SLIDE","LOAD":"REC.","RUN":"CORRER","CROUCH":"AGACHAR","SIDE":"LADO","FPS":"CALIDAD","RESET":"RESET","LOBBY":"LOBBY","PICKUP":"RECOGER","MED":"CURAR","SHIELD":"ESCUDO","SWAP":"ARMA"}
 	if game.survival_mode:
 		names["MED"] = "CURAR %d" % game.inventory.medkits
 		names["SHIELD"] = "ESCUDO %d" % game.inventory.shield_cells
 		var pickup = game.nearest_pickup()
 		if pickup!=null:
-			var supply_name := {"MED":"BOTIQUIN","SHIELD":"ESCUDO","AMMO":"ENERGIA"}
-			centered(at(0.60,0.62),str(supply_name.get(pickup.kind,pickup.kind)),int(12*u),pickup.item_color())
+			centered(at(0.60,0.62),game.pickup_label(pickup.kind),int(12*u),pickup.item_color())
 	for name in positions:
 		var p: Vector2 = positions[name]
 		var r := radius(name)
@@ -138,9 +138,9 @@ func _draw() -> void:
 	var ammo_pos := ammo_anchor()
 	draw_rect(Rect2(ammo_pos-Vector2(70,17)*u,Vector2(140,39)*u),DARK)
 	centered(ammo_pos, "%02d / %03d" % [game.ammo,game.reserve],int(20*u))
-	centered(ammo_pos+Vector2(0,14)*u,"IGNIS X1",int(10*u),ACCENT)
+	centered(ammo_pos+Vector2(0,14)*u,game.weapon_name(),int(10*u),ACCENT)
 	if game.reload_left>0.0:
-		var progress := 1.0-clampf(float(game.reload_left)/1.4,0.0,1.0)
+		var progress := 1.0-clampf(float(game.reload_left)/game.reload_duration(),0.0,1.0)
 		var track := Rect2(ammo_pos+Vector2(-72,-27)*u,Vector2(144,4)*u)
 		draw_rect(track,DARK)
 		draw_rect(Rect2(track.position,Vector2(track.size.x*progress,track.size.y)),ACCENT)
@@ -183,6 +183,7 @@ func press_button(name: String, index: int) -> void:
 		"JUMP": game.request_jump()
 		"SLIDE": game.player.request_slide()
 		"LOAD": game.start_reload()
+		"SWAP": game.cycle_weapon()
 		"PICKUP": game.collect_nearby()
 		"MED": game.use_medkit()
 		"SHIELD": game.use_shield_cell()
@@ -279,6 +280,7 @@ func _input(event: InputEvent) -> void:
 				KEY_C: game.player.request_slide()
 				KEY_X: game.player.toggle_crouch()
 				KEY_R: game.start_reload()
+				KEY_TAB: game.cycle_weapon()
 				KEY_F: game.collect_nearby()
 				KEY_H: game.use_medkit()
 				KEY_G: game.use_shield_cell()

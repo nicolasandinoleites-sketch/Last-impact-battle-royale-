@@ -24,6 +24,7 @@ var cell_stage := "DOCKED"
 var cell_dock := Vector3(-0.075,-0.035,0.015)
 var cell_path := Vector3.ZERO
 var reload_progress := 0.0
+var base_tints: Dictionary = {}
 func equip(hand: Node3D, body_visual: Node3D) -> bool:
 	anchor = hand
 	facing = body_visual
@@ -52,6 +53,7 @@ func equip(hand: Node3D, body_visual: Node3D) -> bool:
 				if OS.has_feature("android") or OS.get_environment("LASTIMPACT_SAFE_RENDER")=="1":
 					mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 				mesh.set_surface_override_material(i,mat)
+				base_tints[mat] = mat.albedo_color
 	build_energy_cell()
 	flash = MeshInstance3D.new()
 	var shape := SphereMesh.new()
@@ -124,6 +126,10 @@ func update_pose(delta: float, aiming: bool, reload: float, low: bool = false, p
 		left_error = actor.solve_arm("L",support,frame*Vector3(-0.65,-0.7,0.10))
 		# The right hand retains its cosmetic grip while the left animates the energy cell.
 		actor.close_fingers(1.0,clampf(1.0-0.45*sin(reload_progress*PI),0.0,1.0))
+
+func set_variant(tint: Color) -> void:
+	for material: StandardMaterial3D in base_tints:
+		material.albedo_color = base_tints[material]*tint
 
 func pulse() -> void:
 	if not loaded:
