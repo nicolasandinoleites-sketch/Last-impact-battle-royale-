@@ -12,6 +12,9 @@ var turn_rate := 1.9
 var visual: Node3D
 var thrusters: Array[MeshInstance3D] = []
 var wheels: Array[MeshInstance3D] = []
+var engine_trails: Array[MeshInstance3D] = []
+var suspension_clock := 0.0
+var previous_speed := 0.0
 
 func material(color: Color, luminous: bool = false) -> StandardMaterial3D:
  var m := StandardMaterial3D.new()
@@ -76,6 +79,22 @@ func _ready() -> void:
     wheel.rotation.z=PI*0.5
     wheels.append(wheel)
    thrusters.append(box(Vector3(0.10,0.08,0.33),Vector3(side*0.72,0.8,1.70),glow))
+ var trim:=material(Color("8799a4"))
+ for side in [-1.0,1.0]:
+  if bike:
+   var fairing:=box(Vector3(.23,.32,1.25),Vector3(side*.34,.68,-.18),shell)
+   fairing.rotation.x=-.12
+   box(Vector3(.07,.06,.75),Vector3(side*.45,.68,-.15),glow)
+   box(Vector3(.22,.08,.35),Vector3(side*.32,1.10,-.66),trim)
+  else:
+   for z in [-1.12,0.0,1.12]:
+    box(Vector3(.30,.19,.84),Vector3(side*.91,.88,z),shell)
+   box(Vector3(.08,.24,2.6),Vector3(side*.91,.83,0),trim)
+   box(Vector3(.26,.12,.06),Vector3(side*.65,.90,-1.70),glow)
+   box(Vector3(.22,.12,.06),Vector3(side*.65,.90,1.70),glow)
+  var trail:=box(Vector3(.10,.10,.8),Vector3(side*(.40 if bike else .72),.32 if bike else .8,1.5 if bike else 2.0),glow)
+  trail.hide()
+  engine_trails.append(trail)
  reset_vehicle()
 
 func reset_vehicle() -> void:
@@ -83,6 +102,11 @@ func reset_vehicle() -> void:
  rotation = Vector3.ZERO
  velocity = Vector3.ZERO
  speed = 0.0
+ previous_speed=0.0
+ suspension_clock=0.0
+ visual.rotation=Vector3.ZERO
+ visual.position=Vector3.ZERO
+ for trail in engine_trails:trail.hide()
  hp = max_hp
  occupied = false
  collision_layer = 1
@@ -116,3 +140,16 @@ func drive(delta: float, input: Vector2) -> void:
    break
  for wheel in wheels: wheel.rotate_object_local(Vector3.UP,speed*delta/0.39)
  for light in thrusters: light.scale.y = 1.0+absf(speed)/max_speed*1.6
+ update_visual_motion(delta,input.x)
+
+func update_visual_motion(delta:float,steering:float)->void:
+ suspension_clock+=delta*absf(speed)*1.8
+ var ratio:=clampf(absf(speed)/max_speed,0,1)
+ var lean:=steering*ratio*(.20 if model_id=="VELOCITY" else .055)
+ visual.rotation.z=lerpf(visual.rotation.z,lean,1.0-exp(-delta*7))
+ visual.rotation.x=lerpf(visual.rotation.x,clampf((previous_speed-speed)*.06,-.09,.09),1.0-exp(-delta*8))
+ visual.position.y=sin(suspension_clock)*.025*ratio
+ previous_speed=speed
+ for trail in engine_trails:
+  trail.visible=ratio>.18
+  trail.scale.z=.35+ratio*1.8

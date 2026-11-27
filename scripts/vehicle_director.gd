@@ -37,7 +37,11 @@ func toggle() -> bool:
  p.reset_movement()
  p.set_physics_process(false)
  p.collision_mask = 0
- p.visual.hide()
+ if v.model_id=="VELOCITY":
+  p.visual.show()
+  p.visual.scale=Vector3.ONE*.85
+ else:
+  p.visual.hide()
  p.contact_shadow.hide()
  if p.weapon_loaded: p.weapon.hide()
  p.boom.add_excluded_object(v.get_rid())
@@ -51,9 +55,18 @@ func sync_driver(delta: float) -> void:
  var p = game.player
  p.global_position = mounted.global_position+Vector3.UP*(0.80 if mounted.model_id=="VELOCITY" else 1.10)
  p.yaw = lerp_angle(p.yaw,mounted.rotation.y,1.0-exp(-delta*9.0))
- p.pitch = -0.16
+ p.pitch = lerpf(p.pitch,-0.23,1.0-exp(-delta*5))
+ if mounted.model_id=="VELOCITY" and p.model_loaded:
+  p.visual.rotation.y=mounted.rotation.y
+  p.raze.bone_motion("L_Thigh",Vector3(-65,0,-15),1.0)
+  p.raze.bone_motion("R_Thigh",Vector3(-65,0,15),1.0)
+  p.raze.bone_motion("L_Calf",Vector3(80,0,0),1.0)
+  p.raze.bone_motion("R_Calf",Vector3(80,0,0),1.0)
+  p.raze.bone_motion("L_Upperarm",Vector3(-40,0,0),1.0)
+  p.raze.bone_motion("R_Upperarm",Vector3(-40,0,0),1.0)
  p.update_camera(delta)
- p.boom.spring_length = 5.2 if mounted.model_id=="BASTION" else 4.3
+ p.boom.spring_length = (5.2 if mounted.model_id=="BASTION" else 4.3)+absf(mounted.speed)*.055
+ p.camera.fov=lerpf(p.camera.fov,65.0+absf(mounted.speed)*.6,1.0-exp(-delta*4))
  p.boom.position.x = 0.0
 
 func clear_exit(point: Vector3) -> bool:
@@ -89,6 +102,7 @@ func exit_vehicle(force: bool = false) -> bool:
  p.collision_mask=saved_mask
  p.global_position=exit_point
  p.reset_movement()
+ p.visual.scale=Vector3.ONE
  p.visual.show()
  p.contact_shadow.show()
  if p.weapon_loaded: p.weapon.show()
