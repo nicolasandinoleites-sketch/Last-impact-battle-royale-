@@ -3,6 +3,7 @@ const ASSET := "res://assets/tripo/ignis_x1.glb"
 var model: Node3D
 var anchor: Node3D
 var flash: MeshInstance3D
+var muzzle_offset := Vector3(0,0.045,-0.34)
 var flash_left := 0.0
 var kick := 0.0
 var loaded := false
@@ -26,12 +27,12 @@ var cell_path := Vector3.ZERO
 var reload_progress := 0.0
 var base_tints: Dictionary = {}
 var accessories: Dictionary = {}
-func equip(hand: Node3D, body_visual: Node3D) -> bool:
+func equip(hand: Node3D, body_visual: Node3D, asset_path: String = ASSET, grip_profile: Dictionary = {}) -> bool:
 	anchor = hand
 	facing = body_visual
-	if not ResourceLoader.exists(ASSET):
+	if not ResourceLoader.exists(asset_path):
 		return false
-	var asset := load(ASSET) as PackedScene
+	var asset := load(asset_path) as PackedScene
 	if asset == null:
 		return false
 	model = asset.instantiate() as Node3D
@@ -40,10 +41,10 @@ func equip(hand: Node3D, body_visual: Node3D) -> bool:
 	add_child(model)
 	model.scale = Vector3.ONE
 	right_goal = Marker3D.new()
-	right_goal.position = Vector3(0,-0.075,0.12)
+	right_goal.position = grip_profile.get("right",Vector3(0,-0.075,0.12))
 	model.add_child(right_goal)
 	left_goal = Marker3D.new()
-	left_goal.position = Vector3(-0.025,-0.045,-0.065)
+	left_goal.position = grip_profile.get("left",Vector3(-0.025,-0.045,-0.065))
 	model.add_child(left_goal)
 	for child in model.find_children("*","MeshInstance3D",true,false):
 		var mesh := child as MeshInstance3D
@@ -55,6 +56,8 @@ func equip(hand: Node3D, body_visual: Node3D) -> bool:
 					mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 				mesh.set_surface_override_material(i,mat)
 				base_tints[mat] = mat.albedo_color
+	cell_dock = grip_profile.get("cell",cell_dock)
+	muzzle_offset = grip_profile.get("muzzle",muzzle_offset)
 	build_energy_cell()
 	flash = MeshInstance3D.new()
 	var shape := SphereMesh.new()
@@ -67,7 +70,7 @@ func equip(hand: Node3D, body_visual: Node3D) -> bool:
 	glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	glow.albedo_color = Color("ffd38b")
 	flash.material_override = glow
-	flash.position = Vector3(0,0.045,-0.34)
+	flash.position = muzzle_offset
 	add_child(flash)
 	flash.hide()
 	build_accessories()
@@ -110,7 +113,7 @@ func update_pose(delta: float, aiming: bool, reload: float, low: bool = false, p
 	var sprint_tilt := -0.24*sprint_pose
 	var local_basis := Basis.from_euler(Vector3(aim_pitch-tilt*0.15+sprint_tilt,0.0,tilt*0.50+carry_roll))
 	global_transform = Transform3D(frame*local_basis,desired)
-	flash.position = Vector3(0,0.045,-0.34)
+	flash.position = muzzle_offset
 	if is_instance_valid(actor):
 		var support := left_goal.global_position
 		if reload>0.0:
