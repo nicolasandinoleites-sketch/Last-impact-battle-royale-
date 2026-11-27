@@ -51,6 +51,7 @@ func buttons() -> Dictionary:
 				positions["BUY"] = at(0.32,0.24)
 				positions["MAG"] = at(0.45,0.24)
 				positions["FAST"] = at(0.58,0.24)
+				positions["HOLO"] = at(0.71,0.24)
 	return positions
 
 func radius(name: String) -> float:
@@ -118,16 +119,19 @@ func _draw() -> void:
 	var c := ACCENT if game.hit_left>0.0 else WHITE
 	for v in [Vector2.LEFT,Vector2.RIGHT,Vector2.UP,Vector2.DOWN]:
 		draw_line(center+v*4*u*spread,center+v*12*u*spread,c,2*u,true)
+	if is_instance_valid(game.supplies) and game.player.aiming and game.supplies.has_upgrade(game.weapon_id,"HOLO"):
+		draw_arc(center,21*u,0,TAU,32,Color("58f0dc"),1.5*u,true)
+		draw_circle(center,2*u,Color("58f0dc"))
 	var joystick := move_center if move_id>=0 else at(0.14,0.80)
 	draw_circle(joystick,58*u,Color(0.04,0.07,0.09,0.38))
 	draw_arc(joystick,58*u,0,TAU,40,Color(1,1,1,0.55),2*u,true)
 	draw_circle(joystick+knob,25*u,Color(0.88,0.92,0.93,0.58))
 	var positions := buttons()
-	var names := {"FIRE":"FUEGO","AIM":"MIRA","JUMP":"SALTO","SLIDE":"SLIDE","LOAD":"REC.","RUN":"CORRER","CROUCH":"AGACHAR","SIDE":"LADO","FPS":"CALIDAD","RESET":"RESET","LOBBY":"LOBBY","PICKUP":"RECOGER","MED":"CURAR","SHIELD":"ESCUDO","SWAP":"ARMA","MELEE":"HOJA","GRENADE":"PULSO","BUY":"ARMA 200","MAG":"MAG 100","FAST":"REC 125"}
+	var names := {"FIRE":"FUEGO","AIM":"MIRA","JUMP":"SALTO","SLIDE":"SLIDE","LOAD":"REC.","RUN":"CORRER","CROUCH":"AGACHAR","SIDE":"LADO","FPS":"CALIDAD","RESET":"RESET","LOBBY":"LOBBY","PICKUP":"RECOGER","MED":"CURAR","SHIELD":"ESCUDO","SWAP":"ARMA","MELEE":"HOJA","GRENADE":"PULSO","BUY":"ARMA 200","MAG":"MAG 100","FAST":"REC 125","HOLO":"MIRA 75"}
 	if game.survival_mode:
 		if is_instance_valid(game.supplies):
 			names["GRENADE"] = "PULSO %d" % game.supplies.grenades
-			if game.supplies.near_shop(): names["BUY"] = str(game.supplies.next_store_weapon())+" 200"
+			if game.supplies.near_shop(): names["BUY"] = "%s %d" % [game.supplies.next_store_weapon(),game.supplies.store_price()]
 			centered(at(0.49,0.15),"CREDITOS %d | ARMAS %d/2" % [game.supplies.credits,game.owned_weapons.size()],int(11*u),ACCENT)
 		names["MED"] = "CURAR %d" % game.inventory.medkits
 		names["SHIELD"] = "ESCUDO %d" % game.inventory.shield_cells
@@ -153,6 +157,7 @@ func _draw() -> void:
 	if is_instance_valid(game.supplies):
 		if game.supplies.has_upgrade(game.weapon_id,"MAG"): weapon_text += " +M"
 		if game.supplies.has_upgrade(game.weapon_id,"RELOAD"): weapon_text += " +R"
+		if game.supplies.has_upgrade(game.weapon_id,"HOLO"): weapon_text += " +H"
 	centered(ammo_pos+Vector2(0,14)*u,weapon_text,int(10*u),ACCENT)
 	if game.reload_left>0.0:
 		var progress := 1.0-clampf(float(game.reload_left)/game.reload_duration(),0.0,1.0)
@@ -204,6 +209,7 @@ func press_button(name: String, index: int) -> void:
 		"BUY": game.supplies.buy_weapon()
 		"MAG": game.supplies.buy_upgrade("MAG")
 		"FAST": game.supplies.buy_upgrade("RELOAD")
+		"HOLO": game.supplies.buy_upgrade("HOLO")
 		"PICKUP": game.collect_nearby()
 		"MED": game.use_medkit()
 		"SHIELD": game.use_shield_cell()

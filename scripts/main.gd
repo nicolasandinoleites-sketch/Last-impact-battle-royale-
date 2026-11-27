@@ -403,8 +403,14 @@ func equip_weapon(id: String, acquire: bool = false, loaded_rounds: int = -1, at
 	if player.weapon_loaded:
 		player.weapon.clear_effects()
 		player.weapon.set_variant(Arsenal.spec(id).tint)
+	sync_weapon_accessories()
 	message = weapon_name()+" equipado"
 	return true
+
+func sync_weapon_accessories() -> void:
+	if is_instance_valid(player) and player.weapon_loaded:
+		var mods: Dictionary = supplies.upgrades.get(weapon_id,{}) if is_instance_valid(supplies) else {}
+		player.weapon.set_accessories(mods)
 
 func cycle_weapon() -> bool:
 	if owned_weapons.size()<2: return false
@@ -467,6 +473,7 @@ func reset_round() -> void:
 	magazine_bank.clear()
 	reserve_bank.clear()
 	if player.weapon_loaded: player.weapon.set_variant(Color.WHITE)
+	sync_weapon_accessories()
 	ammo = 30
 	reserve = 120
 	reload_left = 0.0

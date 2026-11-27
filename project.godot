@@ -1,8 +1,8 @@
 ; Engine configuration file.
 config_version=5
 [application]
-config/name="Last Impact R0790"
-config/version="0.7.9.0"
+config/name="Last Impact R0791"
+config/version="0.7.9.1"
 run/main_scene="res://lobby.tscn"
 config/quit_on_go_back=false
 boot_splash/bg_color=Color(0.07, 0.11, 0.15, 1)

@@ -9,6 +9,9 @@ const GOLD := Color("ffae58")
 const LOGO = preload("res://icon.svg")
 const Preview = preload("res://scripts/lobby_preview.gd")
 const MobileProfile = preload("res://scripts/mobile_profile.gd")
+const Preset = preload("res://scripts/loadout_preset.gd")
+const Catalog = preload("res://scripts/weapon_catalog.gd")
+var loadout := Preset.new()
 var preview: SubViewport
 var mode := "home"
 var quality := 0
@@ -24,6 +27,7 @@ var preview_resources: Array[Resource] = []
 const PREVIEW_PATHS = ["res://assets/tripo/raze.glb","res://assets/tripo/ignis_x1.glb"]
 
 func _ready() -> void:
+	loadout.load_preset()
 	Engine.max_fps = 30
 	get_viewport().scaling_3d_scale = 1.0
 	var config := ConfigFile.new()
@@ -108,7 +112,7 @@ func _draw() -> void:
 		draw_line(point(i*150-300,540),point(i*150+250,0),Color(0.25,0.36,0.43,0.14),1.0)
 	draw_texture_rect(LOGO,rect(24,18,58,58),false)
 	text_at(96,47,"LAST IMPACT",31)
-	text_at(98,69,"R0783 / ALPHA TECNICA",13,MUTED)
+	text_at(98,69,"R0791 / ALPHA TECNICA",13,MUTED)
 	text_at(768,40,"OFFLINE",15,GOLD)
 	text_at(768,64,"%d FPS" % Engine.get_frames_per_second(),15,MUTED)
 	draw_line(point(24,88),point(936,88),EDGE,1.0)
@@ -139,14 +143,19 @@ func _draw() -> void:
 		text_at(35,440,info.left(85),13,MUTED)
 		action(rect(710,450,226,62),"VOLVER")
 	elif mode == "loadout":
-		operator_art()
-		panel(rect(24,112,248,210))
-		text_at(40,142,"EQUIPAMIENTO",17,GOLD)
-		text_at(40,178,"IGNIS X1",24)
-		text_at(40,207,"Rifle de energia",15,MUTED)
-		text_at(40,233,"Capacidad: 30",15,MUTED)
-		text_at(40,259,"Reserva inicial: 120",15,MUTED)
-		text_at(40,291,"Equipado",15,GOLD)
+		text_at(35,125,"ARMERO / PREAJUSTE",25,GOLD)
+		text_at(35,151,"Compra tu configuracion en la armeria durante la partida.",15,MUTED)
+		for i in range(Catalog.ORDER.size()):
+			var id: String = Catalog.ORDER[i]
+			action(rect(35,176+i*55,278,47),str(Catalog.spec(id).name),loadout.weapon_id==id)
+		panel(rect(338,176,598,220))
+		text_at(355,202,"ACCESORIOS",18,GOLD)
+		action(rect(355,219,560,46),"CARGADOR AMPLIADO +100",loadout.extended)
+		action(rect(355,276,560,46),"MIRA HOLOGRAFICA +75",loadout.holographic)
+		text_at(355,351,"Recarga rapida incluida en el arma de 200 creditos.",15,MUTED)
+		text_at(355,379,"TOTAL: %d CREDITOS" % loadout.price(),21,GOLD)
+		action(rect(35,410,278,49),"SIN PREAJUSTE",loadout.weapon_id.is_empty())
+		action(rect(338,410,350,49),"GUARDAR",true)
 		action(rect(710,450,226,62),"VOLVER")
 	elif mode == "operator":
 		text_at(35,128,"OPERADORES",29)
@@ -165,6 +174,7 @@ func choose_profile(value: int) -> void:
 	quality = clampi(value,0,2)
 	MobileProfile.apply_android(get_tree().root,quality)
 	var config := ConfigFile.new()
+	config.load("user://lastimpact.cfg")
 	config.set_value("graphics","profile",quality)
 	config.save("user://lastimpact.cfg")
 	queue_redraw()
@@ -210,6 +220,14 @@ func activate(pos: Vector2) -> void:
 	else:
 		if rect(710,450,226,62).has_point(pos):
 			mode = "home"
+		elif mode == "loadout":
+			for i in range(Catalog.ORDER.size()):
+				if rect(35,176+i*55,278,47).has_point(pos): loadout.weapon_id = Catalog.ORDER[i]
+			if rect(355,219,560,46).has_point(pos): loadout.extended = not loadout.extended
+			if rect(355,276,560,46).has_point(pos): loadout.holographic = not loadout.holographic
+			if rect(35,410,278,49).has_point(pos): loadout.weapon_id = ""
+			if rect(338,410,350,49).has_point(pos):
+				status = "Preajuste guardado" if loadout.save_preset()==OK else "No se pudo guardar"
 		elif mode == "settings":
 			for i in range(3):
 				if rect(35,190+i*64,500,52).has_point(pos):

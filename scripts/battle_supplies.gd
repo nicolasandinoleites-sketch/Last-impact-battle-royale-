@@ -4,6 +4,8 @@ var game
 var credits := 300
 var grenades := 2
 var upgrades: Dictionary = {}
+const Preset = preload("res://scripts/loadout_preset.gd")
+var preset := Preset.new()
 var station: Node3D
 var crate: Node3D
 var canopy: MeshInstance3D
@@ -36,6 +38,7 @@ func mesh_part(parent: Node3D, size: Vector3, offset: Vector3, color: Color) -> 
 
 func configure(owner_game) -> void:
  game = owner_game
+ preset.load_preset()
  station = Node3D.new()
  add_child(station)
  station.position = SHOP_POS
@@ -80,28 +83,34 @@ func has_upgrade(id: String, key: String) -> bool:
  return bool(upgrades.get(id,{}).get(key,false))
 
 func buy_upgrade(key: String) -> bool:
- if not near_shop() or key not in ["MAG","RELOAD"] or has_upgrade(game.weapon_id,key): return false
- var cost := 100 if key=="MAG" else 125
+ if not near_shop() or key not in ["MAG","RELOAD","HOLO"] or has_upgrade(game.weapon_id,key): return false
+ var cost := 100 if key=="MAG" else (75 if key=="HOLO" else 125)
  if credits<cost: return false
  credits -= cost
  var data: Dictionary = upgrades.get(game.weapon_id,{})
  data[key] = true
  upgrades[game.weapon_id] = data
+ game.sync_weapon_accessories()
  game.message = "ACCESORIO INSTALADO: "+key
  return true
 
 func next_store_weapon() -> String:
+ if not preset.weapon_id.is_empty() and not game.owned_weapons.has(preset.weapon_id): return preset.weapon_id
  for id in game.Arsenal.ORDER:
   if not game.owned_weapons.has(id): return id
  return ""
 
+func store_price() -> int:
+ return preset.price() if next_store_weapon()==preset.weapon_id and not preset.weapon_id.is_empty() else 200
+
 func buy_weapon() -> bool:
- if not near_shop() or credits<200: return false
+ if not near_shop(): return false
  var id := next_store_weapon()
- if id.is_empty() or not game.equip_weapon(id,true): return false
- credits -= 200
- # Customized store loadout: fast reload module included.
- upgrades[id] = {"RELOAD":true}
+ var price := store_price()
+ if id.is_empty() or credits<price: return false
+ var mods: Dictionary = preset.attachments() if id==preset.weapon_id else {"RELOAD":true}
+ if not game.equip_weapon(id,true,-1,mods): return false
+ credits -= price
  game.message = game.weapon_name()+" PERSONALIZADA"
  return true
 

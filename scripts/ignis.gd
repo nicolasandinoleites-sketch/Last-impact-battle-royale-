@@ -25,6 +25,7 @@ var cell_dock := Vector3(-0.075,-0.035,0.015)
 var cell_path := Vector3.ZERO
 var reload_progress := 0.0
 var base_tints: Dictionary = {}
+var accessories: Dictionary = {}
 func equip(hand: Node3D, body_visual: Node3D) -> bool:
 	anchor = hand
 	facing = body_visual
@@ -69,6 +70,7 @@ func equip(hand: Node3D, body_visual: Node3D) -> bool:
 	flash.position = Vector3(0,0.045,-0.34)
 	add_child(flash)
 	flash.hide()
+	build_accessories()
 	loaded = true
 	return true
 
@@ -126,6 +128,43 @@ func update_pose(delta: float, aiming: bool, reload: float, low: bool = false, p
 		left_error = actor.solve_arm("L",support,frame*Vector3(-0.65,-0.7,0.10))
 		# The right hand retains its cosmetic grip while the left animates the energy cell.
 		actor.close_fingers(1.0,clampf(1.0-0.45*sin(reload_progress*PI),0.0,1.0))
+
+func accessory_piece(parent: Node3D, size: Vector3, offset: Vector3, color: Color) -> void:
+	var part := MeshInstance3D.new()
+	var shape := BoxMesh.new()
+	shape.size = size
+	part.mesh = shape
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = color
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	part.material_override = mat
+	part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(part)
+	part.position = offset
+
+func build_accessories() -> void:
+	# Cosmetic parts only: original Tripo model and wrist targets stay intact.
+	for key in ["HOLO","MAG","RELOAD"]:
+		var group := Node3D.new()
+		group.name = "Accessory_"+key
+		add_child(group)
+		accessories[key] = group
+		group.hide()
+	var scope: Node3D = accessories.HOLO
+	accessory_piece(scope,Vector3(0.105,0.035,0.14),Vector3(0,0.12,-0.035),Color("26333e"))
+	for x in [-0.05,0.05]:
+		accessory_piece(scope,Vector3(0.018,0.105,0.045),Vector3(x,0.185,-0.045),Color("3c515e"))
+	accessory_piece(scope,Vector3(0.116,0.018,0.045),Vector3(0,0.24,-0.045),Color("3c515e"))
+	accessory_piece(scope,Vector3(0.012,0.012,0.012),Vector3(0,0.185,-0.045),Color("58f0dc"))
+	var mag: Node3D = accessories.MAG
+	accessory_piece(mag,Vector3(0.105,0.09,0.13),Vector3(0,-0.14,0.015),Color("26333e"))
+	accessory_piece(mag,Vector3(0.11,0.018,0.14),Vector3(0,-0.185,0.015),Color("7ec8d0"))
+	var quick: Node3D = accessories.RELOAD
+	accessory_piece(quick,Vector3(0.035,0.075,0.10),Vector3(0.085,0,0.035),Color("eaad58"))
+
+func set_accessories(mods: Dictionary) -> void:
+	for key in accessories:
+		accessories[key].visible = bool(mods.get(key,false))
 
 func set_variant(tint: Color) -> void:
 	for material: StandardMaterial3D in base_tints:
