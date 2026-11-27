@@ -1,6 +1,8 @@
 extends Node3D
 var kind := "MED"
 var quantity := 1
+var loaded_rounds := -1
+var attachments: Dictionary = {}
 var initial_quantity := 1
 var body: Node3D
 var glow: MeshInstance3D
@@ -40,6 +42,8 @@ func item_color() -> Color:
 		"WEAPON_VOLTAR","AMMO_LIGHT": return Color("7ad8e8")
 		"WEAPON_ARC","AMMO_PLASMA": return Color("bc91f8")
 		"WEAPON_HELIOS","AMMO_HEAVY": return Color("f4c378")
+		"CASH": return Color("f5db65")
+		"GRENADE": return Color("ca8df8")
 		"MED": return Color("68d9a4")
 		"SHIELD": return Color("63bde8")
 		_: return Color("ffae58")

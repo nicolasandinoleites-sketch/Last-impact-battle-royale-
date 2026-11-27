@@ -12,4 +12,4 @@ static func spec(id: String) -> Dictionary:
  return DATA.get(id,DATA.IGNIS)
 static func pickup_label(kind: String) -> String:
  if kind.begins_with("WEAPON_"): return str(spec(kind.trim_prefix("WEAPON_")).name)
- return str({"MED":"BOTIQUIN","SHIELD":"ESCUDO","AMMO":"ENERGIA","AMMO_LIGHT":"CELDAS LIGERAS","AMMO_PLASMA":"PLASMA","AMMO_HEAVY":"CELDAS PESADAS"}.get(kind,kind))
+ return str({"CASH":"CREDITOS","GRENADE":"GRANADA DE PULSO","MED":"BOTIQUIN","SHIELD":"ESCUDO","AMMO":"ENERGIA","AMMO_LIGHT":"CELDAS LIGERAS","AMMO_PLASMA":"PLASMA","AMMO_HEAVY":"CELDAS PESADAS"}.get(kind,kind))

@@ -9,7 +9,7 @@ func run() -> void:
  game.set_physics_process(false)
  game.player.set_physics_process(false)
  for t in game.targets: t.set_physics_process(false)
- assert(game.pickups.size()==15 and game.magazine_capacity()==30 and game.weapon_id=="IGNIS")
+ assert(game.pickups.size()==19 and game.magazine_capacity()==30 and game.weapon_id=="IGNIS")
  for seed_value in range(7300,7350):
   var basic: Array[Vector3] = game.frontier.battle_loot_positions(seed_value)
   var extra: Array[Vector3] = game.frontier.arsenal_sites(seed_value,basic)
@@ -20,6 +20,10 @@ func run() -> void:
    assert(not game.frontier.grid.is_point_solid(game.frontier.cell_at(site)))
    sectors[game.frontier.sector_name(site)] = true
   assert(sectors.size()==3)
+  var utility: Array[Vector3] = game.frontier.utility_sites(seed_value,basic+extra)
+  assert(utility.size()==4 and utility==game.frontier.utility_sites(seed_value,basic+extra))
+  for site in utility:
+   assert(not basic.has(site) and not extra.has(site) and not game.frontier.grid.is_point_solid(game.frontier.cell_at(site)))
  game.ammo = 19
  game.reserve = 42
  for i in [9,11,13]:
@@ -40,16 +44,17 @@ func run() -> void:
   game._physics_process(0.02)
   assert(game.ammo==capacity and stored-1==game.reserve)
   game.ammo -= 2
- assert(game.owned_weapons.size()==4)
+ assert(game.owned_weapons.size()==2 and game.owned_weapons.has("IGNIS") and game.owned_weapons.has("HELIOS"))
  assert(game.cycle_weapon() and game.weapon_id=="IGNIS" and game.ammo==19 and game.reserve==42)
- assert(game.cycle_weapon() and game.weapon_id=="VOLTAR" and game.ammo==34 and game.reserve==71)
+ assert(not game.equip_weapon("VOLTAR"))
  assert(game.collect_ammo("AMMO_HEAVY",999)==163)
- assert(game.reserve==71)
+ assert(game.reserve==42)
  assert(game.equip_weapon("HELIOS") and game.reserve==180 and game.ammo==4)
+ assert(game.corpse_pickups.size()==2 and game.corpse_pickups[0].loaded_rounds==34)
  game.reset_round()
  assert(game.weapon_id=="IGNIS" and game.owned_weapons.size()==1 and game.ammo==30 and game.reserve==120)
- assert(game.pickups.size()==15 and game.pickups[9].active)
- print("R0789 ARSENAL PASS | 4 weapons, 3 ammo families plus energy, 50 seeds, pickup, swap, cap, reset")
+ assert(game.pickups.size()==19 and game.pickups[9].active)
+ print("R0789 ARSENAL PASS | 4 weapon types, 2 carry slots, 3 ammo families plus energy, 50 seeds, pickup, swap, cap, reset")
  game.queue_free()
  await process_frame
  await process_frame

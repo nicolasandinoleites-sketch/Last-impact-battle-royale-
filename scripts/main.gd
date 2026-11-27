@@ -48,6 +48,8 @@ var targets: Array = []
 const Arsenal = preload("res://scripts/weapon_catalog.gd")
 var weapon_id := "IGNIS"
 var owned_weapons: Array[String] = ["IGNIS"]
+const Supplies = preload("res://scripts/battle_supplies.gd")
+var supplies: Node3D
 var magazine_bank: Dictionary = {}
 var reserve_bank: Dictionary = {}
 var ammo := 30
@@ -98,6 +100,10 @@ func _ready() -> void:
 		game_audio.prepare_storm()
 		message = "Supervivencia: permanece en la zona"
 		spawn_pickups()
+		if experimental_deployment:
+			supplies = Supplies.new()
+			add_child(supplies)
+			supplies.configure(self)
 	for p in [Vector3(0,0,-4),Vector3(-8,0,-8),Vector3(9,0,-13),Vector3(-15,0,-20),Vector3(14,0,7),Vector3(-18,0,7)]:
 		var target
 		if survival_mode:
@@ -255,6 +261,7 @@ func _physics_process(delta: float) -> void:
 		update_survival(delta)
 		if round_result!="":
 			return
+	if is_instance_valid(supplies): supplies.step(delta)
 	var keyboard := Vector2(float(keys.get(KEY_D,false))-float(keys.get(KEY_A,false)),float(keys.get(KEY_S,false))-float(keys.get(KEY_W,false)))
 	player.move_input = (mobile_move+keyboard).limit_length(1.0)
 	player.sprint = mobile_sprint or keys.get(KEY_SHIFT,false)
@@ -335,6 +342,16 @@ func spawn_operator_drop(operator: Node3D) -> void:
 		pickups.append(pickup)
 		corpse_pickups.append(pickup)
 
+func spawn_dynamic_pickup(kind: String, quantity: int, point: Vector3):
+	var pickup = PickupScript.new()
+	pickup.kind = kind
+	pickup.quantity = quantity
+	add_child(pickup)
+	pickup.global_position = point
+	pickups.append(pickup)
+	corpse_pickups.append(pickup)
+	return pickup
+
 func clear_operator_drops() -> void:
 	for pickup in corpse_pickups:
 		pickups.erase(pickup)
@@ -345,10 +362,12 @@ func clear_operator_drops() -> void:
 	corpse_pickups.clear()
 
 func magazine_capacity() -> int:
-	return int(Arsenal.spec(weapon_id).mag)
+	var base := int(Arsenal.spec(weapon_id).mag)
+	return ceili(base*1.25) if is_instance_valid(supplies) and supplies.has_upgrade(weapon_id,"MAG") else base
 
 func reload_duration() -> float:
-	return float(Arsenal.spec(weapon_id).reload)
+	var base := float(Arsenal.spec(weapon_id).reload)
+	return base*0.8 if is_instance_valid(supplies) and supplies.has_upgrade(weapon_id,"RELOAD") else base
 
 func weapon_name() -> String:
 	return str(Arsenal.spec(weapon_id).name)
@@ -356,13 +375,25 @@ func weapon_name() -> String:
 func pickup_label(kind: String) -> String:
 	return Arsenal.pickup_label(kind)
 
-func equip_weapon(id: String, acquire: bool = false) -> bool:
+func equip_weapon(id: String, acquire: bool = false, loaded_rounds: int = -1, attachments: Dictionary = {}) -> bool:
 	if not experimental_deployment or deployment_active() or round_result!="" or not Arsenal.DATA.has(id) or id==weapon_id: return false
 	if not owned_weapons.has(id):
 		if not acquire: return false
-		owned_weapons.append(id)
-		magazine_bank[id] = int(Arsenal.spec(id).mag)
-	magazine_bank[weapon_id] = ammo
+		if owned_weapons.size()>=2:
+			var old: String = weapon_id
+			var drop = spawn_dynamic_pickup("WEAPON_"+old,1,player.global_position+Vector3(0.8,0,0))
+			drop.loaded_rounds = ammo
+			if is_instance_valid(supplies): drop.attachments = supplies.upgrades.get(old,{}).duplicate()
+			owned_weapons[owned_weapons.find(old)] = id
+			if is_instance_valid(supplies): supplies.upgrades.erase(old)
+			magazine_bank.erase(old)
+		else:
+			owned_weapons.append(id)
+		if is_instance_valid(supplies) and not attachments.is_empty(): supplies.upgrades[id] = attachments.duplicate()
+		var limit := int(Arsenal.spec(id).mag)
+		if is_instance_valid(supplies) and supplies.has_upgrade(id,"MAG"): limit = ceili(limit*1.25)
+		magazine_bank[id] = limit if loaded_rounds<0 else mini(loaded_rounds,limit)
+	if owned_weapons.has(weapon_id): magazine_bank[weapon_id] = ammo
 	reserve_bank[str(Arsenal.spec(weapon_id).family)] = reserve
 	weapon_id = id
 	ammo = int(magazine_bank.get(id,0))
@@ -393,6 +424,7 @@ func map_pickup_sites() -> Array[Vector3]:
 	if not experimental_deployment: return frontier.loot_positions(round_seed)
 	var sites: Array[Vector3] = frontier.battle_loot_positions(round_seed)
 	sites.append_array(frontier.arsenal_sites(round_seed,sites))
+	sites.append_array(frontier.utility_sites(round_seed,sites))
 	return sites
 
 func start_reload() -> void:
@@ -409,6 +441,7 @@ func reset_round() -> void:
 	if deployment_active():
 		deployment.finish()
 	clear_operator_drops()
+	if is_instance_valid(supplies): supplies.reset()
 	if is_instance_valid(combat_fx): combat_fx.reset()
 	telemetry.reset()
 	telemetry.latest = {}
@@ -540,7 +573,7 @@ func spawn_pickups() -> void:
 		["MED",1,Vector3(-7,0,-19)],["SHIELD",1,Vector3(7,0,-20)],["AMMO",40,Vector3(17,0,13)]
 	]
 	if experimental_deployment:
-		contents.append_array([["WEAPON_VOLTAR",1],["AMMO_LIGHT",72],["WEAPON_ARC",1],["AMMO_PLASMA",36],["WEAPON_HELIOS",1],["AMMO_HEAVY",18]])
+		contents.append_array([["WEAPON_VOLTAR",1],["AMMO_LIGHT",72],["WEAPON_ARC",1],["AMMO_PLASMA",36],["WEAPON_HELIOS",1],["AMMO_HEAVY",18],["CASH",100],["GRENADE",1],["CASH",150],["GRENADE",2]])
 	for data in contents:
 		var pickup = PickupScript.new()
 		pickup.kind = data[0]
@@ -575,10 +608,16 @@ func collect_nearby() -> bool:
 		if owned_weapons.has(id):
 			message = "Arma ya disponible"
 			return false
-		if not equip_weapon(id,true): return false
+		if not equip_weapon(id,true,pickup.loaded_rounds,pickup.attachments): return false
 		pickup.collect(1)
 		qa_control("PICKUP")
 		return true
+	elif pickup.kind=="CASH" and is_instance_valid(supplies):
+		taken = pickup.quantity
+		supplies.credits += taken
+	elif pickup.kind=="GRENADE" and is_instance_valid(supplies):
+		taken = mini(pickup.quantity,4-supplies.grenades)
+		supplies.grenades += taken
 	elif Arsenal.AMMO_TYPES.has(pickup.kind):
 		taken = collect_ammo(pickup.kind,pickup.quantity)
 	else:

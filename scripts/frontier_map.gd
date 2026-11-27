@@ -286,6 +286,28 @@ func arsenal_sites(seed_value: int, reserved: Array[Vector3]) -> Array[Vector3]:
 		result.append(closest)
 	return result
 
+func utility_sites(seed_value: int, reserved: Array[Vector3]) -> Array[Vector3]:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value+7900
+	var result: Array[Vector3] = []
+	for sector in sectors:
+		var bounds: Rect2 = sector.rect
+		var options: Array[Vector3] = []
+		for x in range(4,CELLS-4,3):
+			for z in range(4,CELLS-4,3):
+				var cell := Vector2i(x,z)
+				var point := cell_center(cell)
+				if not bounds.grow(-4.0).has_point(Vector2(point.x,point.z)) or grid.is_point_solid(cell): continue
+				if Vector2(point.x,point.z).length()>48.0: continue
+				var blocked := false
+				for area in buildings:
+					if area.grow(2.0).has_point(Vector2(point.x,point.z)): blocked = true
+				for prior in reserved:
+					if prior.distance_to(point)<4.0: blocked = true
+				if not blocked: options.append(point)
+		result.append(options[rng.randi_range(0,options.size()-1)])
+	return result
+
 static func sector_texture(kind: String) -> ImageTexture:
 	if surface_cache.has(kind):
 		return surface_cache[kind]
