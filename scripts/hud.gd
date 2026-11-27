@@ -1,5 +1,7 @@
 extends Control
 var game
+const Layout=preload("res://scripts/hud_layout.gd")
+var layout=Layout.new()
 var move_id := -1
 var look_id := -1
 var fire_id := -1
@@ -18,6 +20,7 @@ const DARK := Color(0.04,0.07,0.09,0.77)
 const ACCENT := Color(0.96,0.57,0.24,1)
 
 func _ready() -> void:
+	layout.load_layout()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_process_input(true)
 
@@ -36,6 +39,12 @@ func unit() -> float:
 	return clampf(size.y/540.0,0.7,1.4)
 
 func buttons() -> Dictionary:
+	var result := default_buttons()
+	for id in result:
+		result[id]=layout.position(id,result[id]/size)*size
+	return result
+
+func default_buttons() -> Dictionary:
 	if game!=null and game.deployment_active():
 		return {"JUMP":at(0.92,0.80),"RESET":at(0.77,0.10),"LOBBY":at(0.65,0.10),"FPS":at(0.92,0.10)}
 	if game!=null and is_instance_valid(game.vehicles) and is_instance_valid(game.vehicles.mounted):
@@ -59,7 +68,7 @@ func buttons() -> Dictionary:
 	return positions
 
 func radius(name: String) -> float:
-	return (42.0 if name == "FIRE" else 30.0)*unit()
+	return (42.0 if name == "FIRE" else 30.0)*unit()*layout.scale(name)
 
 func label_at(pos: Vector2, text: String, font_size: int, color: Color = WHITE) -> void:
 	draw_string(ThemeDB.fallback_font,pos,text,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size,color)
@@ -102,7 +111,7 @@ func _draw() -> void:
 	var font := int(12*u)
 	draw_minimap(u)
 	draw_rect(Rect2(at(0.145,0.025),Vector2(190,78)*u),DARK)
-	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0795",int(14*u),ACCENT)
+	label_at(at(0.145,0.025)+Vector2(9,16)*u,"LAST IMPACT / R0796",int(14*u),ACCENT)
 	label_at(at(0.145,0.025)+Vector2(9,33)*u,"FPS %d · MEM EST %.0f MB" % [cached_fps,cached_mem],font)
 	label_at(at(0.145,0.025)+Vector2(9,50)*u,"OBJETIVOS  %d / %d" % [game.eliminated,game.targets.size()],font)
 	if game.survival_mode and not game.telemetry.latest.is_empty():
@@ -161,8 +170,9 @@ func _draw() -> void:
 		if game.survival_mode:
 			if (name=="MED" and game.inventory.medkits==0) or (name=="SHIELD" and game.inventory.shield_cells==0) or (name=="PICKUP" and game.nearest_pickup()==null):
 				fill.a = 0.35
+		fill.a *= layout.opacity(name)
 		draw_circle(p,r,fill)
-		draw_arc(p,r,0,TAU,32,Color(1,1,1,0.68),1.5*u,true)
+		draw_arc(p,r,0,TAU,32,Color(1,1,1,0.68*layout.opacity(name)),1.5*u,true)
 		draw_button_icon(name,p,u)
 		centered(p+Vector2(0,13*u),names[name],int(9*u))
 	var ammo_pos := ammo_anchor()

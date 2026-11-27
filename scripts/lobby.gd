@@ -117,7 +117,7 @@ func _draw() -> void:
 		draw_line(point(i*150-300,540),point(i*150+250,0),Color(0.25,0.36,0.43,0.14),1.0)
 	draw_texture_rect(LOGO,rect(24,18,58,58),false)
 	text_at(96,47,"LAST IMPACT",31)
-	text_at(98,69,"R0795 / ALPHA TECNICA",13,MUTED)
+	text_at(98,69,"R0796 / ALPHA TECNICA",13,MUTED)
 	text_at(768,40,"OFFLINE",15,GOLD)
 	text_at(768,64,"%d FPS" % Engine.get_frames_per_second(),15,MUTED)
 	draw_line(point(24,88),point(936,88),EDGE,1.0)
@@ -128,6 +128,7 @@ func _draw() -> void:
 		action(rect(24,211,248,54),"OPERADOR")
 		action(rect(24,276,248,54),"ARMAMENTO")
 		action(rect(24,341,248,54),"AJUSTES")
+		action(rect(24,406,248,54),"PERSONALIZAR HUD")
 		operator_art()
 		panel(rect(690,112,246,154))
 		text_at(704,139,"MODO DE JUEGO",14,GOLD)
@@ -224,6 +225,10 @@ func activate(pos: Vector2) -> void:
 			launch("res://main.tscn")
 		elif rect(690,270,246,48).has_point(pos):
 			launch("res://diagnostic.tscn")
+		elif rect(24,406,248,54).has_point(pos):
+			var editor = preload("res://scripts/hud_editor.gd").new()
+			add_child(editor)
+			editor.open()
 		elif rect(24,341,248,54).has_point(pos):
 			var menu = preload("res://scripts/graphics_menu.gd").new()
 			add_child(menu)
